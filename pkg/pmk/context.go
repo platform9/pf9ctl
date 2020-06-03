@@ -1,4 +1,4 @@
-package core
+package pmk
 
 // Create a context containing connection information to PF9 controller
 func (c *Context) Create() error {

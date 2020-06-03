@@ -14,38 +14,18 @@ CWD := $(shell pwd)
 PF9_VERSION ?= 1.0.0
 VERSION := $(PF9_VERSION)-$(BUILD_NUMBER)
 DETECTED_OS := $(shell uname -s)
-DEP_BIN_GIT := https://github.com/golang/dep/releases/download/v0.5.4/dep-$(DETECTED_OS)-amd64
 BIN := pf9ctl
 REPO := pf9ctl
 PACKAGE_GOPATH := /go/src/github.com/platform9/$(REPO)
-DEP_TEST=$(shell which dep)
 LDFLAGS := $(shell source ./version.sh ; KUBE_ROOT=. ; KUBE_GIT_VERSION=${VERSION_OVERRIDE} ; kube::version::ldflags)
 GIT_STORAGE_MOUNT := $(shell source ./git_utils.sh; container_git_storage_mount)
 
-ifeq ($(DEP_TEST),)
-	DEP_BIN := $(CWD)/bin/dep
-else
-	DEP_BIN := $(DEP_TEST)
-endif
-
-.PHONY: clean clean-all container-build default ensure format test
+.PHONY: clean clean-all container-build default format test
 
 default: $(BIN)
 
 container-build:
 	docker run --rm -e VERSION_OVERRIDE=${VERSION_OVERRIDE} -v $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) -w $(PACKAGE_GOPATH) golang:1.14.1 make
-
-$(DEP_BIN):
-ifeq ($(DEP_BIN),$(CWD)/bin/dep)
-	echo "Downloading dep from GitHub" &&\
-	mkdir -p $(CWD)/bin &&\
-	wget $(DEP_BIN_GIT) -O $(DEP_BIN) &&\
-	chmod +x $(DEP_BIN)
-endif
-
-ensure: $(DEP_BIN)
-	echo $(DEP_BIN)
-	$(DEP_BIN) ensure -v
 
 $(BIN): test
 	go build -o $(BIN) -ldflags "$(LDFLAGS)"
