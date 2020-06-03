@@ -1,4 +1,4 @@
-package core
+package pmk
 
 // Create a cluster in PF9 qbert
 func (c *Cluster) Create() error {
