@@ -1,25 +1,61 @@
 package pmk
 
-// Create a context containing connection information to PF9 controller
-func (c *Context) Create() error {
+import (
+	"encoding/json"
+	"errors"
+	"os"
 
-	return nil
+	"github.com/prometheus/common/log"
+)
+
+//Context stores information to contact with the
+// pf9 controller.
+type Context struct {
+	Fqdn     string `json:"fqdn"`
+	Username string `json:"os_username"`
+	Password string `json:"os_password"`
+	Tenant   string `json:"os_tenant"`
+	Region   string `json:"os_region"`
 }
 
-// Get retrieves context information
-func (c *Context) Get() error {
+// StoreContext simply updates the in-memory object
+func StoreContext(ctx Context, loc string) error {
+	log.Infof("Received a call to store context")
 
-	return nil
+	f, err := os.Create(loc)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	encoder := json.NewEncoder(f)
+	return encoder.Encode(ctx)
 }
 
-// Use marks the specified context as active
-func (c *Context) Use() error {
+// LoadContext returns the information for communication
+// with PF9 controller.
+func LoadContext(loc string) (Context, error) {
+	log.Infof("Received a call to load context")
 
-	return nil
+	f, err := os.Open(loc)
+	if err != nil {
+
+		if os.IsNotExist(err) {
+			return Context{}, errors.New("Context absent")
+		}
+		return Context{}, err
+	}
+
+	defer f.Close()
+
+	ctx := Context{}
+	err = json.NewDecoder(f).Decode(&ctx)
+	return ctx, err
 }
 
-// Delete removes a context from the context file
-func (c *Context) Delete() error {
-
-	return nil
-}
+// DEMO
+// fetch the cli + ( chmod  +x )
+// 1. pf9ctl context create --region --dufqdn --tenant ( entry location )
+// 2. pf9ctl prepnode ( context )
+// 3.

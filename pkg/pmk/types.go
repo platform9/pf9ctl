@@ -2,7 +2,6 @@ package pmk
 
 import (
 	"net"
-	"net/url"
 )
 
 // CloudProviderType specifies the infrastructure where the cluster runs
@@ -51,11 +50,3 @@ type Cluster struct {
 }
 
 // Context specifies information required to connect to the PF9 Controller
-type Context struct {
-	Name        string
-	Username    string
-	Password    string
-	ProjectName string
-	Region      string
-	KeystoneURL url.URL
-}
