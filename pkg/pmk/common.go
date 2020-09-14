@@ -19,14 +19,14 @@ func setupNode(hostOS string) (err error) {
 	}
 
 	switch hostOS {
-	case "centos":
+	case "redhat":
 		err = redhatCentosPackageInstall()
 		if err != nil {
 			return
 		}
 		err = ntpInstallActivateRedhatCentos()
 
-	case "ubuntu":
+	case "debian":
 		err = ubuntuPackageInstall()
 		if err != nil {
 			return

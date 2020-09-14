@@ -37,7 +37,7 @@ func PrepNode(
 		ctx.Tenant)
 
 	if err != nil {
-		return errors.New("Unable to locate keystone credentials")
+		return fmt.Errorf("Unable to locate keystone credentials: %s",err.Error())
 	}
 
 	// TODO: Common Functionality
@@ -68,13 +68,14 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 		ctx.Tenant)
 
 	hostagentInstaller := fmt.Sprintf(
-		"https://%s/private/platform9-install-%s.sh",
+		"%s/private/platform9-install-%s.sh",
 		ctx.Fqdn, hostOS)
 
 	cmd := fmt.Sprintf(`curl --silent --show-error -O -H "X-Auth-Token: %s" extra_opts="%s" %s > /tmp/installer.sh`,
 		keystoneAuth.Token,
 		hostagentInstallOptions,
 		hostagentInstaller)
+	fmt.Println(cmd)
 
 	_, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
@@ -86,7 +87,7 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 		return err
 	}
 
-	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, hostagentInstallOptions)
+	cmd = fmt.Sprintf(`sudo /tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, hostagentInstallOptions)
 	_, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return err
@@ -167,7 +168,7 @@ func validatePlatform() (string, error) {
 			return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 		}
 		if strings.Contains(string(out), "7.5") || strings.Contains(string(out), "7.6") || strings.Contains(string(out), "7.7") || strings.Contains(string(out), "7.8") {
-			return "centos", nil
+			return "redhat", nil
 		}
 
 	case strings.Contains(strDataLower, "ubuntu"):
@@ -179,7 +180,7 @@ func validatePlatform() (string, error) {
 			return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 		}
 		if strings.Contains(string(out), "16") || strings.Contains(string(out), "18") {
-			return "ubuntu", nil
+			return "debian", nil
 		}
 	}
 
