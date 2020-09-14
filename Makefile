@@ -27,18 +27,41 @@ default: $(BIN)
 container-build:
 	docker run --rm -e VERSION_OVERRIDE=${VERSION_OVERRIDE} -v $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) -w $(PACKAGE_GOPATH) golang:1.14.1 make
 
-$(BIN): test
+$(BIN)-old: test
 	go build -o $(BIN) -ldflags "$(LDFLAGS)"
 
-format:
-	gofmt -w -s *.go
-	gofmt -w -s */*.go
+$(BIN):
+	mkdir -p ./bin
+	CGO_ENABLED=0 go build -o ./bin/pf9ctl ./cmd/pf9ctl
 
-clean-all: clean
-	rm -rf bin
+.PHONY: generate
+generate:
+	./hack/update-codegen.sh
+	$(MAKE) format # Ensure that the generated code is properly formatted
+
+.PHONY: test
+test: ## Run all unit and integration tests.
+	go test -v ./cmd/... ./pkg/...
+
+.PHONY: test-e2e
+test-e2e: test docker-build ## Run all unit, integration, and end-to-end tests.
+	E2E_DOCKER_IMAGE=$(IMAGE_NAME_TAG) ginkgo -v ./test
+
+.PHONY: verify
+verify: ## Run all static analysis checks.
+	# Check if codebase is formatted.
+	@which goimports > /dev/null || ! echo 'goimports not found'
+	@bash -c "[ -z \"$$(goimports -l cmd pkg)\" ] && echo 'OK' || (echo 'ERROR: files are not formatted:' && goimports -l cmd pkg && echo -e \"\nRun 'make format' or manually fix the formatting issues.\n\" && false)"
+	# Run static checks on codebase.
+	go vet ./cmd/... ./pkg/...
+
+.PHONY: format
+format: ## Run all formatters on the codebase.
+	# Format the Go codebase.
+	goimports -w cmd pkg
+
+	# Format the go.mod file.
+	go mod tidy
 
 clean:
-	rm -rf $(BIN)
-
-test:
-	go test -v ./...
+	rm -rf $(BIN) bin
