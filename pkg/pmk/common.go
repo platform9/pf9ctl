@@ -42,7 +42,7 @@ func setupNode(hostOS string) (err error) {
 
 func handlePF9UserGroup() error {
 
-	err := os.MkdirAll("/opt/pf9",0755)
+	err := os.MkdirAll("/opt/pf9", 0755)
 	if err != nil {
 		return err
 	}
