@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os/exec"
 	"strings"
 )
 
@@ -57,18 +58,18 @@ func NewClusterCreate(
 }
 
 // Create a cluster in the management plan.
-func (c Cluster) Create(ctx Context, auth KeystoneAuth) error {
+func (c Cluster) Create(ctx Context, auth KeystoneAuth) (string, error) {
 	log.Println("Received a call to create a cluster in management plane")
 
 	np, err := GetNodePoolUUID(ctx, auth)
 	if err != nil {
-		return fmt.Errorf("Unable to fetch nodepoolUuid: %s", err.Error())
+		return "", fmt.Errorf("Unable to fetch nodepoolUuid: %s", err.Error())
 	}
 
 	c.NodePoolUUID = np
 	byt, err := json.Marshal(c)
 	if err != nil {
-		return fmt.Errorf("Unable to marshal payload: %s", err.Error())
+		return "", fmt.Errorf("Unable to marshal payload: %s", err.Error())
 	}
 
 	url := fmt.Sprintf("%s/qbert/v3/%s/clusters", ctx.Fqdn, auth.ProjectID)
@@ -78,19 +79,30 @@ func (c Cluster) Create(ctx Context, auth KeystoneAuth) error {
 
 	if err != nil {
 		fmt.Println(err.Error())
-		return err
+		return "", err
 	}
 
 	req.Header.Set("X-Auth-Token", auth.Token)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
+		return "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
 	}
-	return nil
+	var payload map[string]string
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&payload)
+	if err != nil {
+		return "", err
+	}
+
+	for _, val := range payload {
+		return val, err
+
+	}
+	return "", err
 }
 
 // Exists checks if the cluster with the same name
@@ -141,4 +153,31 @@ func GetNodePoolUUID(ctx Context, keystoneAuth KeystoneAuth) (string, error) {
 
 	//fmt.Println(cloudProviderData)
 
+}
+
+func AttachNodeBootStrap(clus_uuid string, ctx Context, auth KeystoneAuth) error {
+
+	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
+	nodeUUID, err := exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		fmt.Errorf("Host_id.conf not found: %s", err.Error())
+	}
+
+	nodeStruct := fmt.Sprintf(`{
+	"uuid": "%s"
+	"isMaster" : true	
+	}`, nodeUUID)
+	attachEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters/%s/attach", ctx.Fqdn, auth.ProjectID)
+	fmt.Println(attachEndpoint)
+
+	resp, err := http.Post(attachEndpoint, "application/json", strings.NewReader(nodeStruct))
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 201 {
+		return fmt.Errorf("Unable to get keystone token, status: %d", resp.StatusCode)
+	}
+
+	return err
 }

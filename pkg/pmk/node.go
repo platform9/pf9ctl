@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"os/exec"
 	"runtime"
 	"strings"
-        "time"
+	"time"
 )
 
 // PrepNode sets up prerequisites for k8s stack
@@ -37,7 +38,7 @@ func PrepNode(
 		ctx.Tenant)
 
 	if err != nil {
-		return fmt.Errorf("Unable to locate keystone credentials: %s",err.Error())
+		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
 	// TODO: Common Functionality
@@ -54,7 +55,7 @@ func PrepNode(
 	}
 
 	hostID := strings.TrimSuffix(string(byt[:]), "\n")
-        time.Sleep(60 * time.Second)
+	time.Sleep(60 * time.Second)
 	return authorizeHost(
 		hostID,
 		keystoneAuth.Token,
@@ -99,18 +100,17 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 	return nil
 }
 
-
 func authorizeHost(hostID, token, fqdn string) error {
 	log.Printf("Received a call to authorize host: %s to fqdn: %s\n", hostID, fqdn)
 
 	client := http.Client{}
 
 	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s/roles/pf9-kube", fqdn, hostID)
-        fmt.Println(url)
+	fmt.Println(url)
 	req, err := http.NewRequest("PUT", url, nil)
 	if err != nil {
 		fmt.Println(err.Error())
-                return err
+		return err
 	}
 
 	req.Header.Set("X-Auth-Token", token)
@@ -123,7 +123,7 @@ func authorizeHost(hostID, token, fqdn string) error {
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("unable to add a new host to resmgr: %d", resp.StatusCode)
 	}
-        fmt.Println("Node added to resmgr successfully")
+	fmt.Println("Node added to resmgr successfully")
 
 	return nil
 }
@@ -169,4 +169,16 @@ func validatePlatform() (string, error) {
 	}
 
 	return "", nil
+}
+
+func GetOutboundIP() net.IP {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer conn.Close()
+
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+	return localAddr.IP
 }

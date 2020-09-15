@@ -74,13 +74,12 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 	)
 
 	keystoneAuth, err := pmk.GetKeystoneAuth(ctx.Fqdn, ctx.Username, ctx.Password, ctx.Tenant)
-	err = cluster.Create(ctx, keystoneAuth)
+	clusteruuid, err := cluster.Create(ctx, keystoneAuth)
 	if err != nil {
 		return fmt.Errorf("Unable to create cluster: %s", err.Error())
 	}
-
-	// TODO: Cluster Attach remaining
-	return nil
+	err = pmk.AttachNodeBootStrap(clusteruuid, ctx, keystoneAuth)
+	return err
 }
 
 func init() {
