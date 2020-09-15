@@ -48,9 +48,19 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
 	name := args[0]
-	_, _ = pmk.NewClusterCreate(
+
+	resp, err := util.AskBool("PrepLocal node for kubernetes cluster")
+	if err != nil || !resp {
+		return fmt.Errorf("Couldn't fetch user content")
+	}
+
+	err = pmk.PrepNode(ctx, "", "", "", []string{})
+	if err != nil {
+		return fmt.Errorf("Unable to prepnode: %s", err.Error())
+	}
+
+	cluster, _ := pmk.NewClusterCreate(
 		name,
 		containersCIDR,
 		servicesCIDR,
@@ -63,25 +73,13 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 		privileged,
 	)
 
-	resp, err := util.AskBool("PrepLocal node for kubernetes cluster")
-	if err != nil || !resp {
-		return fmt.Errorf("Couldn't fetch user content")
-	}
-
-	err = pmk.PrepNode(ctx, "", "", "", []string{})
-	if err != nil {
-		return fmt.Errorf("Unable to prepnode: %s", err.Error())
-	}
-
 	keystoneAuth, err := pmk.GetKeystoneAuth(ctx.Fqdn, ctx.Username, ctx.Password, ctx.Tenant)
-	uuid, err := pmk.GetNodePoolUUID(ctx, keystoneAuth)
+	err = cluster.Create(ctx, keystoneAuth)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to create cluster: %s", err.Error())
 	}
-	fmt.Println(uuid)
 
-	// **TODO**: cluster attach
-
+	// TODO: Cluster Attach remaining
 	return nil
 }
 

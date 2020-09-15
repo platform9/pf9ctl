@@ -4,23 +4,27 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 )
 
 // Cluster defines Kubernetes cluster
 type Cluster struct {
-	Name                  string
-	ContainerCIDR         string
-	ServiceCIDR           string
-	MasterVirtualIP       string
-	MasterVirtualIPIface  string
-	AllowWorkloadOnMaster bool
-	Privileged            bool
-	CloudProvider         CloudProviderType
-	ExternalDNSName       string
-	NetworkPlugin         CNIBackend
-	MetalLBAddressPool    string
-	CloudProviderParams   interface{}
+	Name                  string            `json:"name"`
+	ContainerCIDR         string            `json:"containersCidr"`
+	ServiceCIDR           string            `json:"servicesCidr"`
+	MasterVirtualIP       string            `json:"masterVipIpv4"`
+	MasterVirtualIPIface  string            `json:"masterVipIface"`
+	AllowWorkloadOnMaster bool              `json:"allowWorkloadsOnMaster"`
+	Privileged            bool              `json:"privileged"`
+	CloudProvider         CloudProviderType `json:"-"`
+	ExternalDNSName       string            `json:"externalDnsName"`
+	NetworkPlugin         CNIBackend        `json:"networkPlugin"`
+	MetalLBAddressPool    string            `json:"metallbCidr"`
+	NodePoolUUID          string            `json:"nodePoolUuid"`
+	EnableMetalLb         bool              `json:"enableMetallb"`
+	Masterless            bool              `json:"masterless"`
 }
 
 // NewClusterCreate returns an instance of new cluster.
@@ -48,11 +52,35 @@ func NewClusterCreate(
 		NetworkPlugin:         CNIBackend(networkPlugin),
 		ExternalDNSName:       externalDNSName,
 		MetalLBAddressPool:    metallbAddressPool,
+		EnableMetalLb:         metallbAddressPool != "",
 	}, nil
 }
 
 // Create a cluster in the management plan.
 func (c Cluster) Create(ctx Context, auth KeystoneAuth) error {
+	log.Println("Received a call to create a cluster in management plane")
+
+	np, err := GetNodePoolUUID(ctx, auth)
+	if err != nil {
+		return fmt.Errorf("Unable to fetch nodepoolUuid: %s", err.Error())
+	}
+
+	c.NodePoolUUID = np
+	byt, err := json.Marshal(c)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal payload: %s", err.Error())
+	}
+
+	url := fmt.Sprintf("%s/qbert/v3/%s/clusters", ctx.Fqdn, auth.ProjectID)
+	resp, err := http.Post(url, "application/json", strings.NewReader(string(byt)))
+	if err != nil {
+		return fmt.Errorf("Unable to POST a call to create cluster: %s", err.Error())
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Cluster create failed, statuscode: %d", resp.StatusCode)
+	}
+
 	return nil
 }
 
@@ -62,14 +90,7 @@ func (c Cluster) Exists(name string) (bool, string) {
 	return false, ""
 }
 
-// type CloudProvider struct {
-// 	name         string
-// 	Providertype string
-// 	uuid         string
-// 	nodePoolUuid string
-// }
-
-// TODO: Piyush ?
+// GetNodePoolUUID fetches the nodepooluuid
 func GetNodePoolUUID(ctx Context, keystoneAuth KeystoneAuth) (string, error) {
 
 	qbertAPIEndpoint := fmt.Sprintf("%s/qbert/v3/%s/cloudProviders", ctx.Fqdn, keystoneAuth.ProjectID) // Context should return projectID,make changes to keystoneAuth.
@@ -91,7 +112,7 @@ func GetNodePoolUUID(ctx Context, keystoneAuth KeystoneAuth) (string, error) {
 		return "", err
 	}
 	if resp.StatusCode != 200 {
-		fmt.Errorf("Couldn't query the qbert Endpoint: %s", err.Error())
+		return "", fmt.Errorf("Couldn't query the qbert Endpoint: %s", err.Error())
 	}
 	var payload []map[string]string
 
