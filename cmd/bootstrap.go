@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -62,9 +63,16 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 		privileged,
 	)
 
-	// **TODO**: Take a request from user to prep local node ?
+	resp, err := util.AskBool("PrepLocal node for kubernetes cluster")
+	if err != nil || !resp {
+		return fmt.Errorf("Couldn't fetch user content")
+	}
 
-	// **TODO**: prep_node locally
+	err = pmk.PrepNode(ctx, "", "", "", []string{})
+	if err != nil {
+		return fmt.Errorf("Unable to prepnode: %s", err.Error())
+	}
+
 	keystoneAuth, err := pmk.GetKeystoneAuth(ctx.Fqdn, ctx.Username, ctx.Password, ctx.Tenant)
 	uuid, err := pmk.GetNodePoolUUID(ctx, keystoneAuth)
 	if err != nil {
