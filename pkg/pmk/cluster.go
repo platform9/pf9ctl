@@ -54,3 +54,8 @@ func (c Cluster) Create(ctx Context, auth KeystoneAuth) error {
 func (c Cluster) Exists(name string) (bool, string) {
 	return false, ""
 }
+
+// TODO: Piyush ?
+func getNodePoolUUID(ctx Context, keystoneAuth KeystoneAuth) (string, error) {
+	return "", nil
+}
