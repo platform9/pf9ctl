@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os/exec"
 	"strings"
 )
 
 // Cluster defines Kubernetes cluster
 type Cluster struct {
 	Name                  string            `json:"name"`
+	UUID                  string            `json:"-"`
 	ContainerCIDR         string            `json:"containersCidr"`
 	ServiceCIDR           string            `json:"servicesCidr"`
 	MasterVirtualIP       string            `json:"masterVipIpv4"`
@@ -40,9 +40,9 @@ func NewClusterCreate(
 	metallbAddressPool string,
 	allowWorkloadsOnMaster,
 	privileged bool,
-) (Cluster, error) {
+) (*Cluster, error) {
 
-	return Cluster{
+	return &Cluster{
 		Name:                  name,
 		ContainerCIDR:         containerCidr,
 		ServiceCIDR:           serviceCidr,
@@ -58,10 +58,10 @@ func NewClusterCreate(
 }
 
 // Create a cluster in the management plan.
-func (c Cluster) Create(ctx Context, auth KeystoneAuth) (string, error) {
+func (c *Cluster) Create(ctx Context, auth KeystoneAuth) (string, error) {
 	log.Println("Received a call to create a cluster in management plane")
 
-	np, err := GetNodePoolUUID(ctx, auth)
+	np, err := c.getNodePoolUUID(ctx, auth)
 	if err != nil {
 		return "", fmt.Errorf("Unable to fetch nodepoolUuid: %s", err.Error())
 	}
@@ -88,9 +88,11 @@ func (c Cluster) Create(ctx Context, auth KeystoneAuth) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
 	}
+
 	var payload map[string]string
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
@@ -98,11 +100,11 @@ func (c Cluster) Create(ctx Context, auth KeystoneAuth) (string, error) {
 		return "", err
 	}
 
-	for _, val := range payload {
-		return val, err
+	// Setin the UUID for the cluster
+	// achieved by creating the cluster.
+	c.UUID = payload["uuid"]
 
-	}
-	return "", err
+	return payload["uuid"], nil
 }
 
 // Exists checks if the cluster with the same name
@@ -111,8 +113,34 @@ func (c Cluster) Exists(name string) (bool, string) {
 	return false, ""
 }
 
+// AttachNode attaches a node onto the cluster/
+func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) error {
+	log.Printf("Received a call to attachnode: %s to cluster: %s\n",
+		nodeUUID, c.UUID)
+
+	payload := fmt.Sprintf(`{
+	"uuid": "%s"
+	"isMaster" : true	
+	}`, nodeUUID)
+
+	attachEndpoint := fmt.Sprintf(
+		"%s/qbert/v3/%s/clusters/%s/attach",
+		ctx.Fqdn, auth.ProjectID, c.UUID)
+
+	resp, err := http.Post(attachEndpoint, "application/json", strings.NewReader(payload))
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 201 {
+		return fmt.Errorf("Unable to attach node, respCode: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // GetNodePoolUUID fetches the nodepooluuid
-func GetNodePoolUUID(ctx Context, keystoneAuth KeystoneAuth) (string, error) {
+func (c Cluster) getNodePoolUUID(ctx Context, keystoneAuth KeystoneAuth) (string, error) {
 
 	qbertAPIEndpoint := fmt.Sprintf("%s/qbert/v3/%s/cloudProviders", ctx.Fqdn, keystoneAuth.ProjectID) // Context should return projectID,make changes to keystoneAuth.
 	fmt.Println(qbertAPIEndpoint)
@@ -151,33 +179,4 @@ func GetNodePoolUUID(ctx Context, keystoneAuth KeystoneAuth) (string, error) {
 	}
 	return "", errors.New("Unable to locate local Node Pool")
 
-	//fmt.Println(cloudProviderData)
-
-}
-
-func AttachNodeBootStrap(clus_uuid string, ctx Context, auth KeystoneAuth) error {
-
-	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	nodeUUID, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		fmt.Errorf("Host_id.conf not found: %s", err.Error())
-	}
-
-	nodeStruct := fmt.Sprintf(`{
-	"uuid": "%s"
-	"isMaster" : true	
-	}`, nodeUUID)
-	attachEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters/%s/attach", ctx.Fqdn, auth.ProjectID)
-	fmt.Println(attachEndpoint)
-
-	resp, err := http.Post(attachEndpoint, "application/json", strings.NewReader(nodeStruct))
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode != 201 {
-		return fmt.Errorf("Unable to get keystone token, status: %d", resp.StatusCode)
-	}
-
-	return err
 }

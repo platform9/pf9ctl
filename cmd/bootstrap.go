@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os/exec"
 
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -72,14 +73,25 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 		allowWorkloadsOnMaster,
 		privileged,
 	)
+	keystoneAuth, err := pmk.GetKeystoneAuth(
+		ctx.Fqdn,
+		ctx.Username,
+		ctx.Password,
+		ctx.Tenant)
 
-	keystoneAuth, err := pmk.GetKeystoneAuth(ctx.Fqdn, ctx.Username, ctx.Password, ctx.Tenant)
-	clusteruuid, err := cluster.Create(ctx, keystoneAuth)
+	if err != nil {
+		return fmt.Errorf("keystone authentication failed: %s", err.Error())
+	}
+
+	_, err = cluster.Create(ctx, keystoneAuth)
 	if err != nil {
 		return fmt.Errorf("Unable to create cluster: %s", err.Error())
 	}
-	err = pmk.AttachNodeBootStrap(clusteruuid, ctx, keystoneAuth)
-	return err
+
+	c := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
+	nodeUUID, err := exec.Command("bash", "-c", c).Output()
+
+	return cluster.AttachNode(ctx, keystoneAuth, string(nodeUUID))
 }
 
 func init() {
