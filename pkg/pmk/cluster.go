@@ -72,15 +72,24 @@ func (c Cluster) Create(ctx Context, auth KeystoneAuth) error {
 	}
 
 	url := fmt.Sprintf("%s/qbert/v3/%s/clusters", ctx.Fqdn, auth.ProjectID)
-	resp, err := http.Post(url, "application/json", strings.NewReader(string(byt)))
+	client := http.Client{}
+
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(byt)))
+
 	if err != nil {
-		return fmt.Errorf("Unable to POST a call to create cluster: %s", err.Error())
+		fmt.Println(err.Error())
+		return err
 	}
 
+	req.Header.Set("X-Auth-Token", auth.Token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Cluster create failed, statuscode: %d", resp.StatusCode)
+		return fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
 	}
-
 	return nil
 }
 
