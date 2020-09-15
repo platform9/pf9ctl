@@ -54,7 +54,7 @@ func PrepNode(
 	}
 
 	hostID := strings.TrimSuffix(string(byt[:]), "\n")
-        time.Sleep(10 * time.Second)
+        time.Sleep(60 * time.Second)
 	return authorizeHost(
 		hostID,
 		keystoneAuth.Token,
