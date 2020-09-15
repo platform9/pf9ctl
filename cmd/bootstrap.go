@@ -49,7 +49,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	name := args[0]
-	cluster, _ := pmk.NewClusterCreate(
+	_, _ = pmk.NewClusterCreate(
 		name,
 		containersCIDR,
 		servicesCIDR,
@@ -65,11 +65,12 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 	// **TODO**: Take a request from user to prep local node ?
 
 	// **TODO**: prep_node locally
-
-	err = cluster.Create(ctx, pmk.KeystoneAuth{})
+	keystoneAuth, err := pmk.GetKeystoneAuth(ctx.Fqdn, ctx.Username, ctx.Password, ctx.Tenant)
+	uuid, err := pmk.GetNodePoolUUID(ctx, keystoneAuth)
 	if err != nil {
 		return err
 	}
+	fmt.Println(uuid)
 
 	// **TODO**: cluster attach
 

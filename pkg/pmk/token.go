@@ -14,6 +14,10 @@ type KeystoneAuth struct {
 	UserID    string
 }
 
+func GetKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, error) {
+	return getKeystoneAuth(host, username, password, tenant)
+}
+
 func getKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, error) {
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", host)
 
