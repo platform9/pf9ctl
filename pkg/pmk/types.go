@@ -1,9 +1,5 @@
 package pmk
 
-import (
-	"net"
-)
-
 // CloudProviderType specifies the infrastructure where the cluster runs
 type CloudProviderType string
 
@@ -33,20 +29,5 @@ const (
 	// Weave network plugin for k8s networking
 	Weave CNIBackend = "weave"
 )
-
-// Cluster defines Kubernetes cluster
-type Cluster struct {
-	Name                  string
-	ContainerCIDR         net.IPNet
-	ServiceCIDR           net.IPNet
-	MasterVirtualIP       net.IPAddr
-	MasterVirtualIPIface  string
-	AllowWorkloadOnMaster bool
-	CloudProvider         CloudProviderType
-	ExternalDNSName       string
-	NetworkPlugin         CNIBackend
-	MetalLBAddressPool    []string
-	CloudProviderParams   interface{}
-}
 
 // Context specifies information required to connect to the PF9 Controller

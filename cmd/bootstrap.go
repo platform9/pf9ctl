@@ -4,7 +4,9 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 )
 
@@ -15,21 +17,76 @@ var bootstrapCmd = &cobra.Command{
 	Long: `Bootstrap a single node Kubernetes cluster with your current
 	host as the Kubernetes node. Read more at
 	http://pf9.io/cli_clbootstrap.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("bootstrap called")
+
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("Missing required argument: clusterName")
+		}
+		return nil
 	},
+	RunE: bootstrapCmdRun,
+}
+
+var (
+	masterVIP              string
+	masterVIPIf            string
+	metallbIPRange         string
+	containersCIDR         string
+	servicesCIDR           string
+	externalDNSName        string
+	privileged             bool
+	appCatalogEnabled      bool
+	allowWorkloadsOnMaster bool
+	networkPlugin          string
+)
+
+func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
+	log.Println("Received a call to bootstrap the node")
+
+	ctx, err := pmk.LoadContext(pmk.Pf9DBLoc)
+	if err != nil {
+		return err
+	}
+
+	name := args[0]
+	cluster, _ := pmk.NewClusterCreate(
+		name,
+		containersCIDR,
+		servicesCIDR,
+		masterVIP,
+		masterVIPIf,
+		externalDNSName,
+		networkPlugin,
+		metallbIPRange,
+		allowWorkloadsOnMaster,
+		privileged,
+	)
+
+	// **TODO**: Take a request from user to prep local node ?
+
+	// **TODO**: prep_node locally
+
+	err = cluster.Create(ctx, pmk.KeystoneAuth{})
+	if err != nil {
+		return err
+	}
+
+	// **TODO**: cluster attach
+
+	return nil
 }
 
 func init() {
+	bootstrapCmd.Flags().StringVar(&masterVIP, "masterVip", "", "IP Address for VIP for master nodes")
+	bootstrapCmd.Flags().StringVar(&masterVIPIf, "masterVipIf", "", "Interface name for master / worker nodes")
+	bootstrapCmd.Flags().StringVar(&metallbIPRange, "metallbIpRange", "", "Ip range for MetalLB")
+	bootstrapCmd.Flags().StringVar(&containersCIDR, "containersCidr", "10.20.0.0/16", "CIDR for container overlay")
+	bootstrapCmd.Flags().StringVar(&servicesCIDR, "servicesCidr", "10.21.0.0/16", "CIDR for services overlay")
+	bootstrapCmd.Flags().StringVar(&externalDNSName, "externalDnsName", "", "External DNS for master VIP")
+	bootstrapCmd.Flags().BoolVar(&privileged, "privileged", true, "Enable privileged mode for K8's API. Default: true")
+	bootstrapCmd.Flags().BoolVar(&appCatalogEnabled, "appCatalogEnabled", false, "Enable Helm application catalog")
+	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allowWorkloadsOnMaster", true, "Taint master nodes ( to enable workloads )")
+	bootstrapCmd.Flags().StringVar(&networkPlugin, "networkPlugin", "flannel", "Specify network plugin ( Possible values: flannel or calico )")
+
 	rootCmd.AddCommand(bootstrapCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// bootstrapCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// bootstrapCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
