@@ -1,6 +1,7 @@
 package pmk
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -46,6 +47,22 @@ func getKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, err
 		return KeystoneAuth{}, fmt.Errorf("Unable to get keystone token, status: %d", resp.StatusCode)
 	}
 
+	var payload map[string]interface{}
+	decoder := json.NewDecoder(resp.Body)
+
+	err = decoder.Decode(&payload)
+	if err != nil {
+		return KeystoneAuth{}, fmt.Errorf("Unable to decode the payload")
+	}
+
+	t := payload["token"].(map[string]interface{})
+	project := t["project"].(map[string]interface{})
+	user := t["user"].(map[string]interface{})
+
 	token := resp.Header["X-Subject-Token"][0]
-	return KeystoneAuth{Token: token}, nil
+	return KeystoneAuth{
+		Token:     token,
+		UserID:    user["id"].(string),
+		ProjectID: project["id"].(string),
+	}, nil
 }
