@@ -23,7 +23,7 @@ func PrepNode(
 
 	log.Println("Received a call to start preping node(s).")
 
-	info, err := os.Stat("cat /etc/pf9/host_id.conf")
+	info, err := os.Stat("/etc/pf9/host_id.conf")
 
 	if info != nil {
 		fmt.Println("Node is already prepped.")
