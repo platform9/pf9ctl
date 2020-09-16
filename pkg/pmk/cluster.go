@@ -119,7 +119,7 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 		nodeUUID, c.UUID)
 
 	payload := fmt.Sprintf(`[{
-	"uuid": "%s"
+	"uuid": "%s",
 	"isMaster" : true	
 	}]`, nodeUUID)
 
