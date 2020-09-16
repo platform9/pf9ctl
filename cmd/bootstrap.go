@@ -93,7 +93,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 	nodeUUID, err := exec.Command("bash", "-c", c).Output()
 	nodeUUIDStr := strings.TrimSuffix(string(nodeUUID), "\n")
         log.Info.Println("Waiting for the cluster to get created")
-	time.Sleep(15 * time.Second)
+	time.Sleep( 60* time.Second)
 	log.Info.Println("Cluster created successfully")
 	return cluster.AttachNode(ctx, keystoneAuth, nodeUUIDStr)
 }

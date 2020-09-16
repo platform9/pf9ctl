@@ -76,36 +76,29 @@ func PrepNode(
 }
 
 func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
-	log.Info.Println("Downloading Hostagent installer")
-
-	hostagentInstallOptions := fmt.Sprintf(
-		"--insecure --project-name=%s 2>&1 > /tmp/agent_install.log",
-		ctx.Tenant)
+log.Info.Println("Downloading Hostagent installer Certless")
 
 	hostagentInstaller := fmt.Sprintf(
-		"%s/private/platform9-install-%s.sh",
+		"%s/clarity/platform9-install-%s.sh",
 		ctx.Fqdn, hostOS)
 
-	cmd := fmt.Sprintf(`curl --silent --show-error -O -H "X-Auth-Token: %s" extra_opts="%s" %s > /tmp/installer.sh`,
-		keystoneAuth.Token,
-		hostagentInstallOptions,
-		hostagentInstaller)
-
-	c := exec.Command("bash", "-c", cmd)
-	c.Stdout, c.Stderr = os.Stdout, os.Stderr
-
-	err := c.Run()
+	cmd := fmt.Sprintf(`curl --silent --show-error  %s -o  /tmp/installer.sh`, hostagentInstaller)
+        fmt.Println(cmd)
+	_, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
+		return err
 	}
-
 	log.Info.Println("Hostagent download completed successfully")
+
+	cmd = fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, ctx.Password)
+
 	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
 	if err != nil {
 		return err
 	}
 
-	cmd = fmt.Sprintf(`sudo /tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, hostagentInstallOptions)
+	cmd = fmt.Sprintf(`sudo /tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, cmd)
+	fmt.Println(cmd)
 	_, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return err
