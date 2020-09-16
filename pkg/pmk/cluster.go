@@ -118,10 +118,10 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 	log.Printf("Received a call to attachnode: %s to cluster: %s\n",
 		nodeUUID, c.UUID)
 
-	payload := fmt.Sprintf(`{
+	payload := fmt.Sprintf(`[{
 	"uuid": "%s"
 	"isMaster" : true	
-	}`, nodeUUID)
+	}]`, nodeUUID)
 
 	attachEndpoint := fmt.Sprintf(
 		"%s/qbert/v3/%s/clusters/%s/attach",
