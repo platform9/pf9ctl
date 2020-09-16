@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -22,10 +23,21 @@ func PrepNode(
 
 	log.Println("Received a call to start preping node(s).")
 
+	info, err := os.Stat("/etc/pf9/host_id.conf")
+
+	if info != nil {
+		fmt.Println("Node is already prepped.")
+		return err
+	}
+
 	hostOS, err := validatePlatform()
 	if err != nil {
 		return fmt.Errorf("Invalid host os: %s", err.Error())
 	}
+
+	c := `cat /etc/pf9/host_id.conf`
+	_, err = exec.Command("bash", "-c", c).Output()
+
 	err = setupNode(hostOS)
 	if err != nil {
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
