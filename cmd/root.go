@@ -4,10 +4,10 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -28,16 +28,16 @@ var rootCmd = &cobra.Command{
 func Execute() {
 
 	if err := initializeBaseDirs(); err != nil {
-		log.Fatalf("Base directory initialization failed: %s\n", err.Error())
+		log.Error.Fatalf("Base directory initialization failed: %s\n", err.Error())
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatalf(err.Error())
+		log.Error.Fatalf(err.Error())
 	}
 }
 
 func initializeBaseDirs() (err error) {
-	log.Println("Received a call to create base dirs")
+	log.Info.Println("Received a call to create base dirs")
 
 	err = os.MkdirAll(pmk.Pf9Dir, os.ModeDir)
 	err = os.MkdirAll(pmk.Pf9DBDir, os.ModeDir)
@@ -70,6 +70,6 @@ func initConfig() {
 
 	viper.AutomaticEnv() // read in environment variables that match
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Error.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }

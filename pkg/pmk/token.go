@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 // KeystoneAuth represents user authenticated information.
@@ -14,7 +16,11 @@ type KeystoneAuth struct {
 	UserID    string
 }
 
+// GetKeystoneAuth returns the keystone credentials for the
+// host.
 func GetKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, error) {
+	log.Info.Printf("Received a call to get keystone authentication for host: %s\n", host)
+
 	return getKeystoneAuth(host, username, password, tenant)
 }
 

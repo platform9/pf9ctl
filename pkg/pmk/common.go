@@ -2,13 +2,15 @@ package pmk
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"os/user"
+
+	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 func setupNode(hostOS string) (err error) {
+	log.Info.Println("Received a call to setup the node")
 
 	if err := swapOff(); err != nil {
 		return err
@@ -56,7 +58,7 @@ func handlePF9UserGroup() error {
 }
 
 func createPF9User(name string) error {
-	log.Println("Received a call to create PF9User")
+	log.Info.Println("Received a call to create PF9User")
 
 	_, err := user.Lookup(name)
 	if err != nil {
@@ -65,7 +67,7 @@ func createPF9User(name string) error {
 			return err
 		}
 
-		log.Println("User not present, creating it")
+		log.Info.Println("User not present, creating it")
 		if _, err := exec.Command("bash", "-c", "sudo useradd -g pf9group -d '/opt/pf9/home' -s '/bin/bash'  pf9").Output(); err != nil {
 			return err
 		}
@@ -75,7 +77,7 @@ func createPF9User(name string) error {
 }
 
 func createPF9Group(name string) error {
-	log.Println("Received a call to create Pf9 group")
+	log.Info.Println("Received a call to create Pf9 group")
 
 	_, err := user.LookupGroup(name)
 	if err != nil {
@@ -96,7 +98,7 @@ func createPF9Group(name string) error {
 }
 
 func ubuntuPackageInstall() error {
-	log.Println("Received a call to perform ubuntu package install")
+	log.Info.Println("Received a call to perform ubuntu package install")
 
 	_, err := exec.Command("bash", "-c", "sudo apt-get update ").Output()
 	_, err = exec.Command("bash", "-c", "sudo apt-get install curl uuid-runtime software-properties-common logrotate -y").Output()
@@ -104,21 +106,21 @@ func ubuntuPackageInstall() error {
 }
 
 func redhatCentosPackageInstall() error {
-	log.Println("Received a call to perform redhat package install")
+	log.Info.Println("Received a call to perform redhat package install")
 
 	_, err := exec.Command("bash", "-c", "sudo yum install libselinux-python -y").Output()
 	return err
 }
 
 func ntpInstallActivateUbuntu() error {
-	log.Println("Received a call to install ntp")
+	log.Info.Println("Received a call to install ntp")
 
 	_, err := exec.Command("bash", "-c", "sudo apt-get install ntp -y").Output()
 	if err != nil {
 		fmt.Errorf("ntp package installation failed: %s", err.Error())
 	}
 
-	log.Println("ntpd installation completed successfully")
+	log.Debug.Println("ntpd installation completed successfully")
 	_, err = exec.Command("bash", "-c", "sudo systemctl enable --now ntp").Output()
 	if err != nil {
 		fmt.Errorf("ntp startup failed: %s", err.Error())
@@ -132,7 +134,7 @@ func ntpInstallActivateRedhatCentos() error {
 		fmt.Errorf("ntp package installation failed: %s", err.Error())
 	}
 
-	fmt.Println("ntpd installation completed successfully")
+	log.Debug.Println("ntpd installation completed successfully")
 	_, err = exec.Command("bash", "-c", "sudo systemctl enable --now ntpd").Output()
 	if err != nil {
 		fmt.Errorf("ntp startup failed: %s", err.Error())
@@ -142,7 +144,7 @@ func ntpInstallActivateRedhatCentos() error {
 }
 
 func swapOff() error {
-	fmt.Println("Received call to Disabling swap")
+	log.Info.Println("Received call to Disabling swap")
 
 	_, err := exec.Command("bash", "-c", "swapoff -a").Output()
 	return err

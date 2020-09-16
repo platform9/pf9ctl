@@ -4,13 +4,13 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
+	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 // bootstrapCmd represents the bootstrap command
@@ -44,7 +44,7 @@ var (
 )
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
-	log.Println("Received a call to bootstrap the node")
+	log.Info.Println("Received a call to bootstrap the node")
 
 	ctx, err := pmk.LoadContext(pmk.Pf9DBLoc)
 	if err != nil {

@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
-	"github.com/prometheus/common/log"
 	"github.com/spf13/cobra"
 )
 
@@ -61,7 +61,7 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	}
 
 	if err := pmk.StoreContext(ctx, pmk.Pf9DBLoc); err != nil {
-		log.Errorf("Failed: %s", err.Error())
+		log.Error.Printf("Failed: %s", err.Error())
 	}
 }
 

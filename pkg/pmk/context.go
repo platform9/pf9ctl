@@ -5,7 +5,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/prometheus/common/log"
+	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 //Context stores information to contact with the
@@ -20,7 +20,7 @@ type Context struct {
 
 // StoreContext simply updates the in-memory object
 func StoreContext(ctx Context, loc string) error {
-	log.Infof("Received a call to store context")
+	log.Info.Println("Received a call to store context")
 
 	f, err := os.Create(loc)
 	if err != nil {
@@ -36,7 +36,7 @@ func StoreContext(ctx Context, loc string) error {
 // LoadContext returns the information for communication
 // with PF9 controller.
 func LoadContext(loc string) (Context, error) {
-	log.Infof("Received a call to load context")
+	log.Info.Println("Received a call to load context")
 
 	f, err := os.Open(loc)
 	if err != nil {
@@ -53,9 +53,3 @@ func LoadContext(loc string) (Context, error) {
 	err = json.NewDecoder(f).Decode(&ctx)
 	return ctx, err
 }
-
-// DEMO
-// fetch the cli + ( chmod  +x )
-// 1. pf9ctl context create --region --dufqdn --tenant ( entry location )
-// 2. pf9ctl prepnode ( context )
-// 3.

@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
+
+	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 // Cluster defines Kubernetes cluster
@@ -42,6 +43,8 @@ func NewClusterCreate(
 	privileged bool,
 ) (*Cluster, error) {
 
+	log.Info.Println("Received a call to create cluster")
+
 	return &Cluster{
 		Name:                  name,
 		ContainerCIDR:         containerCidr,
@@ -59,7 +62,8 @@ func NewClusterCreate(
 
 // Create a cluster in the management plan.
 func (c *Cluster) Create(ctx Context, auth KeystoneAuth) (string, error) {
-	log.Println("Received a call to create a cluster in management plane")
+	log.Info.Println(
+		"Received a call to create a cluster in management plane")
 
 	np, err := c.getNodePoolUUID(ctx, auth)
 	if err != nil {
@@ -115,7 +119,7 @@ func (c Cluster) Exists(name string) (bool, string) {
 
 // AttachNode attaches a node onto the cluster/
 func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) error {
-	log.Printf("Received a call to attachnode: %s to cluster: %s\n",
+	log.Info.Printf("Received a call to attachnode: %s to cluster: %s\n",
 		nodeUUID, c.UUID)
 
 	var p []map[string]interface{}
