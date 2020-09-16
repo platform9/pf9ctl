@@ -118,10 +118,16 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 	log.Printf("Received a call to attachnode: %s to cluster: %s\n",
 		nodeUUID, c.UUID)
 
-	payload := fmt.Sprintf(`[{
-	"uuid": "%s",
-	"isMaster" : true	
-	}]`, nodeUUID)
+	var p []map[string]interface{}
+	p = append(p, map[string]interface{}{
+		"uuid":     nodeUUID,
+		"isMaster": true,
+	})
+
+	byt, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal payload: %s", err.Error())
+	}
 
 	attachEndpoint := fmt.Sprintf(
 		"%s/qbert/v3/%s/clusters/%s/attach",
@@ -129,13 +135,15 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 
 	client := http.Client{}
 
-	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(payload))
+	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
 	req.Header.Set("X-Auth-Token", auth.Token)
 	req.Header.Set("Content-Type", "application/json")
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
+
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("Unable to attach node, respCode: %d", resp.StatusCode)
 	}
