@@ -3,7 +3,6 @@ package pmk
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 // PrepNode sets up prerequisites for k8s stack
@@ -21,7 +22,7 @@ func PrepNode(
 	sshkey string,
 	ips []string) error {
 
-	log.Println("Received a call to start preping node(s).")
+	log.Info.Println("Received a call to start preping node(s).")
 
 	info, err := os.Stat("/etc/pf9/host_id.conf")
 
@@ -59,7 +60,7 @@ func PrepNode(
 		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
 	}
 
-	log.Println("Identifying the hostID from conf")
+	log.Info.Println("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	byt, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
@@ -75,7 +76,7 @@ func PrepNode(
 }
 
 func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
-	log.Println("Downloading Hostagent installer")
+	log.Info.Println("Downloading Hostagent installer")
 
 	hostagentInstallOptions := fmt.Sprintf(
 		"--insecure --project-name=%s 2>&1 > /tmp/agent_install.log",
@@ -89,13 +90,16 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 		keystoneAuth.Token,
 		hostagentInstallOptions,
 		hostagentInstaller)
-	fmt.Println(cmd)
 
-	_, err := exec.Command("bash", "-c", cmd).Output()
+	c := exec.Command("bash", "-c", cmd)
+	c.Stdout, c.Stderr = os.Stdout, os.Stderr
+
+	err := c.Run()
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
 	}
-	log.Println("Hostagent download completed successfully")
+
+	log.Info.Println("Hostagent download completed successfully")
 	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
 	if err != nil {
 		return err
@@ -108,12 +112,12 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	log.Println("hostagent installed successfully")
+	log.Info.Println("hostagent installed successfully")
 	return nil
 }
 
 func authorizeHost(hostID, token, fqdn string) error {
-	log.Printf("Received a call to authorize host: %s to fqdn: %s\n", hostID, fqdn)
+	log.Info.Printf("Received a call to authorize host: %s to fqdn: %s\n", hostID, fqdn)
 
 	client := http.Client{}
 
@@ -135,13 +139,12 @@ func authorizeHost(hostID, token, fqdn string) error {
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("unable to add a new host to resmgr: %d", resp.StatusCode)
 	}
-	fmt.Println("Node added to resmgr successfully")
 
 	return nil
 }
 
 func validatePlatform() (string, error) {
-	log.Println("Received a call to validate platform")
+	log.Info.Println("Received a call to validate platform")
 
 	OS := runtime.GOOS
 	if OS != "linux" {
@@ -186,11 +189,10 @@ func validatePlatform() (string, error) {
 func GetOutboundIP() net.IP {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		log.Fatal(err)
+		log.Error.Fatal(err)
 	}
 	defer conn.Close()
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
-
 	return localAddr.IP
 }
