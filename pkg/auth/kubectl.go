@@ -22,7 +22,6 @@ func tokenInfoToExecCredential(tokenInfo TokenInfo) *clientauthenticationv1beta1
 	}
 }
 
-// TODO prettify output
 func PrintTokenForKubectl(tokenInfo TokenInfo) error {
 	ec := tokenInfoToExecCredential(tokenInfo)
 	e := json.NewEncoder(os.Stdout)

@@ -38,9 +38,7 @@ func NewCmdLogin() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "login",
-		Short:   ".",
-		Long:    "",
-		Example: "",
+		Short:   "Generate a .",
 		Run:     cobras.Run(opts),
 	}
 
@@ -116,7 +114,9 @@ func (o *LoginOptions) Run(ctx context.Context) error {
 			return err
 		}
 
-		// TODO validate simple (for empty)
+		if credentials.Password == "" || credentials.Username == "" {
+			return errors.New("invalid username or password")
+		}
 
 		fmt.Fprintf(os.Stderr, "%+v\n", credentials)
 		tokenInfo, err = keystoneClient.Auth(credentials)

@@ -25,7 +25,6 @@ func NewCmdRoot() *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdLogin())
-	// TODO version cmd
 
 	return cmd
 }

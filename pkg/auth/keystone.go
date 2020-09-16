@@ -72,7 +72,7 @@ func (k *KeystoneClient) Auth(credentials Credentials) (TokenInfo, error) {
 	}
 
 	// TODO(erwin) use certificate data from kubeconfig (might need upstream work)
-	// TODO(erwin) handle invalid login error: failed to authenticate: received a 401 from keystone: {"error": {"message": "The request you have made requires authentication.", "code": 401, "title": "Unauthorized"}}
+	// TODO(erwin) give a better error for invalid login error: failed to authenticate: received a 401 from keystone: {"error": {"message": "The request you have made requires authentication.", "code": 401, "title": "Unauthorized"}}
 	resp, err := k.httpClient.Post(k.endpoint+"/auth/tokens", "application/json", bytes.NewReader(reqBody))
 	if err != nil {
 		return TokenInfo{}, err
