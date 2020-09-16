@@ -127,12 +127,16 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 		"%s/qbert/v3/%s/clusters/%s/attach",
 		ctx.Fqdn, auth.ProjectID, c.UUID)
 
-	resp, err := http.Post(attachEndpoint, "application/json", strings.NewReader(payload))
+	client := http.Client{}
+
+	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(payload))
+	req.Header.Set("X-Auth-Token", auth.Token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
-
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != 200 {
 		return fmt.Errorf("Unable to attach node, respCode: %d", resp.StatusCode)
 	}
 
