@@ -54,8 +54,6 @@ func PrepNode(
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
-	// TODO: Common Functionality
-
 	if err := installHostAgent(ctx, keystoneAuth, hostOS); err != nil {
 		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
 	}
@@ -68,7 +66,7 @@ func PrepNode(
 	}
 
 	hostID := strings.TrimSuffix(string(byt[:]), "\n")
-	time.Sleep(60 * time.Second)
+	time.Sleep(WaitPeriod * time.Second)
 	return authorizeHost(
 		hostID,
 		keystoneAuth.Token,
@@ -76,14 +74,14 @@ func PrepNode(
 }
 
 func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
-log.Info.Println("Downloading Hostagent installer Certless")
+	log.Info.Println("Downloading Hostagent installer Certless")
 
 	hostagentInstaller := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
 		ctx.Fqdn, hostOS)
 
 	cmd := fmt.Sprintf(`curl --silent --show-error  %s -o  /tmp/installer.sh`, hostagentInstaller)
-        fmt.Println(cmd)
+	fmt.Println(cmd)
 	_, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return err

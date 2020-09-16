@@ -3,6 +3,7 @@ package pmk
 import (
 	"os"
 	"path/filepath"
+	"time"
 )
 
 var (
@@ -17,4 +18,7 @@ var (
 	Pf9DBLoc = filepath.Join(Pf9DBDir, "express.json")
 	// Pf9Log represents location of the log.
 	Pf9Log = filepath.Join(Pf9LogDir, "pf9ctl.log")
+	// WaitPeriod is the sleep period for the cli
+	// before it starts with the operations.
+	WaitPeriod = time.Duration(60)
 )

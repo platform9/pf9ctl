@@ -1,6 +1,5 @@
 // Copyright © 2020 The pf9ctl authors
 
-
 package cmd
 
 import (
