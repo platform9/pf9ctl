@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-
+	"time"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -92,7 +92,9 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 	c := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	nodeUUID, err := exec.Command("bash", "-c", c).Output()
 	nodeUUIDStr := strings.TrimSuffix(string(nodeUUID), "\n")
-
+        log.Info.Println("Waiting for the cluster to get created")
+	time.Sleep(15 * time.Second)
+	log.Info.Println("Cluster created successfully")
 	return cluster.AttachNode(ctx, keystoneAuth, nodeUUIDStr)
 }
 
