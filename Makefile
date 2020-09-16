@@ -40,5 +40,8 @@ clean-all: clean
 clean:
 	rm -rf $(BIN)
 
+build:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o pf9ctl main.go
+
 test:
 	go test -v ./...
