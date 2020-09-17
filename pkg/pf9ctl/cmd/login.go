@@ -118,7 +118,6 @@ func (o *LoginOptions) Run(ctx context.Context) error {
 			return errors.New("invalid username or password")
 		}
 
-		fmt.Fprintf(os.Stderr, "%+v\n", credentials)
 		tokenInfo, err = keystoneClient.Auth(credentials)
 		if err != nil {
 			return err
