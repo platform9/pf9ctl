@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
 	"time"
 
+	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 // PrepNode sets up prerequisites for k8s stack
@@ -110,25 +111,27 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 func authorizeHost(hostID, token, fqdn string) error {
 	log.Info.Printf("Received a call to authorize host: %s to fqdn: %s\n", hostID, fqdn)
 
-	client := http.Client{}
+	client := rhttp.NewClient()
+	client.RetryMax = HTTPMaxRetry
+	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
 
 	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s/roles/pf9-kube", fqdn, hostID)
-	fmt.Println(url)
-	req, err := http.NewRequest("PUT", url, nil)
+	req, err := rhttp.NewRequest("PUT", url, nil)
 	if err != nil {
-		fmt.Println(err.Error())
-		return err
+		return fmt.Errorf("Unable to create a new request: %w", err)
 	}
 
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("unable to add a new host to resmgr: %d", resp.StatusCode)
+		return fmt.Errorf("Unable to authorize host, code: %d", resp.StatusCode)
 	}
 
 	return nil

@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"strings"
 
+	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 // Cluster defines Kubernetes cluster
@@ -137,21 +139,27 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 		"%s/qbert/v3/%s/clusters/%s/attach",
 		ctx.Fqdn, auth.ProjectID, c.UUID)
 
-	client := http.Client{}
+	client := rhttp.Client{}
+	client.RetryMax = HTTPMaxRetry
+	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
 
-	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	req, err := rhttp.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	if err != nil {
+		return fmt.Errorf("Unable to create a request: %w", err)
+	}
 	req.Header.Set("X-Auth-Token", auth.Token)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to POST request through client: %w", err)
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unable to attach node, respCode: %d", resp.StatusCode)
+		return fmt.Errorf("Unable to attach node to cluster, code: %d", resp.StatusCode)
 	}
-
 	return nil
 }
 
