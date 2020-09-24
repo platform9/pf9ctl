@@ -9,6 +9,7 @@ import (
 
 	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 // Cluster defines Kubernetes cluster
@@ -139,8 +140,8 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 		ctx.Fqdn, auth.ProjectID, c.UUID)
 
 	client := rhttp.Client{}
-	client.RetryMax = 5
-	client.CheckRetry = rhttp.CheckRetry(retryPolicyOn404)
+	client.RetryMax = HTTPMaxRetry
+	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
 
 	req, err := rhttp.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {
