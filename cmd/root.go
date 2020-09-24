@@ -7,6 +7,8 @@ import (
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -19,55 +21,55 @@ var rootCmd = &cobra.Command{
 	Long: `CLI tool for Platform9 management.
 	Platform9 Managed Kubernetes cluster operations. Read more at
 	http://pf9.io/cli_clhelp.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+
+	if err := initializeBaseDirs(); err != nil {
+		log.Error.Fatalf("Base directory initialization failed: %s\n", err.Error())
 	}
+
+	if err := rootCmd.Execute(); err != nil {
+		log.Error.Fatalf(err.Error())
+	}
+}
+
+func initializeBaseDirs() (err error) {
+	log.Info.Println("Received a call to create base dirs")
+
+	err = os.MkdirAll(pmk.Pf9Dir, os.ModeDir)
+	err = os.MkdirAll(pmk.Pf9DBDir, os.ModeDir)
+	err = os.MkdirAll(pmk.Pf9LogDir, os.ModeDir)
+
+	return
 }
 
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pf9ctl.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
+
 	if cfgFile != "" {
-		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-
-		// Search config in home directory with name ".pf9ctl" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".pf9ctl")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		log.Error.Println("Using config file:", viper.ConfigFileUsed())
 	}
 }

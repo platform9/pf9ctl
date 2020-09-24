@@ -3,8 +3,8 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 )
 
@@ -14,21 +14,36 @@ var prepNodeCmd = &cobra.Command{
 	Short: "set up prerequisites & prep the node for k8s",
 	Long: `Prepare a node to be ready to be added to a Kubernetes cluster. Read more
 	at http://pf9.io/cli_clprep.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("prepNode called")
-	},
+	Run: prepNodeRun,
 }
 
+var (
+	user       string
+	password   string
+	sshKey     string
+	ips        []string
+	floatingIP bool
+)
+
 func init() {
+	prepNodeCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
+	prepNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes")
+	prepNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key for connecting to the nodes")
+	prepNodeCmd.Flags().StringSliceVarP(&ips, "ips", "i", []string{}, "ips of host to be prepared")
+	prepNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "")
+
 	rootCmd.AddCommand(prepNodeCmd)
+}
 
-	// Here you will define your flags and configuration settings.
+func prepNodeRun(cmd *cobra.Command, args []string) {
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// prepNodeCmd.PersistentFlags().String("foo", "", "A help for foo")
+	ctx, err := pmk.LoadContext(pmk.Pf9DBLoc)
+	if err != nil {
+		log.Error.Fatalf("Unable to load the context: %s\n", err.Error())
+	}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// prepNodeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	err = pmk.PrepNode(ctx, user, password, sshKey, ips)
+	if err != nil {
+		log.Error.Fatalf("Unable to prep node: %s\n", err.Error())
+	}
 }
