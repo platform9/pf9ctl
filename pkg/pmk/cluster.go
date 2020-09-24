@@ -155,6 +155,10 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Unable to attach node to cluster, code: %d", resp.StatusCode)
+	}
 	return nil
 }
 

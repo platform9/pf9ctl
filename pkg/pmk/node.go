@@ -194,6 +194,11 @@ func authorizeHost(hostID, token, fqdn string) error {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Unable to authorize host, code: %d", resp.StatusCode)
+	}
+
 	return nil
 }
 
