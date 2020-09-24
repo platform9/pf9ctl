@@ -1,17 +1,35 @@
 package pmk
 
 import (
+	"context"
+	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
 
+	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
+)
+
+var (
+
+	// A regular expression to match the error returned by net/http when the
+	// configured number of redirects is exhausted. This error isn't typed
+	// specifically so we resort to matching on the error string.
+	redirectsErrorRe = regexp.MustCompile(`stopped after \d+ redirects\z`)
+
+	// A regular expression to match the error returned by net/http when the
+	// scheme specified in the URL is invalid. This error isn't typed
+	// specifically so we resort to matching on the error string.
+	schemeErrorRe = regexp.MustCompile(`unsupported protocol scheme`)
 )
 
 // PrepNode sets up prerequisites for k8s stack
@@ -107,30 +125,75 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 	return nil
 }
 
+// retryPolicyOn404 is similar to the defaulRetryPolicy but
+// which an additional check for 404 status.
+func retryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	// do not retry on context.Canceled or context.DeadlineExceeded
+	if ctx.Err() != nil {
+		return false, ctx.Err()
+	}
+
+	if err != nil {
+		if v, ok := err.(*url.Error); ok {
+			// Don't retry if the error was due to too many redirects.
+			if redirectsErrorRe.MatchString(v.Error()) {
+				return false, nil
+			}
+
+			// Don't retry if the error was due to an invalid protocol scheme.
+			if schemeErrorRe.MatchString(v.Error()) {
+				return false, nil
+			}
+
+			// Don't retry if the error was due to TLS cert verification failure.
+			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+				return false, nil
+			}
+		}
+
+		// The error is likely recoverable so retry.
+		return true, nil
+	}
+
+	// 429 Too Many Requests is recoverable. Sometimes the server puts
+	// a Retry-After response header to indicate when the server is
+	// available to start processing request from client.
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return true, nil
+	}
+
+	// Check the response code. We retry on 500-range responses to allow
+	// the server time to recover, as 500's are typically not permanent
+	// errors and may relate to outages on the server side. This will catch
+	// invalid response codes as well, like 0 and 999.
+	if resp.StatusCode == 0 || resp.StatusCode == 404 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func authorizeHost(hostID, token, fqdn string) error {
 	log.Info.Printf("Received a call to authorize host: %s to fqdn: %s\n", hostID, fqdn)
 
-	client := http.Client{}
+	client := rhttp.NewClient()
+	client.RetryMax = 5
+	client.CheckRetry = rhttp.CheckRetry(retryPolicyOn404)
 
 	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s/roles/pf9-kube", fqdn, hostID)
-	fmt.Println(url)
-	req, err := http.NewRequest("PUT", url, nil)
+	req, err := rhttp.NewRequest("PUT", url, nil)
 	if err != nil {
-		fmt.Println(err.Error())
-		return err
+		return fmt.Errorf("Unable to create a new request: %w", err)
 	}
 
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("unable to add a new host to resmgr: %d", resp.StatusCode)
-	}
-
+	defer resp.Body.Close()
 	return nil
 }
 
