@@ -3,7 +3,6 @@ package pmk
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -21,23 +20,20 @@ func PrepNode(
 	password string,
 	sshkey string,
 	ips []string) error {
-
 	log.Info.Println("Received a call to start preping node(s).")
 
-	info, err := os.Stat("/etc/pf9/host_id.conf")
 
-	if info != nil {
-		fmt.Println("Node is already prepped.")
-		return err
-	}
 
 	hostOS, err := validatePlatform()
 	if err != nil {
 		return fmt.Errorf("Invalid host os: %s", err.Error())
 	}
+	cmd, err := checkPF9Packages(hostOS)
+        
+    if cmd {
+        return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
+    }
 
-	c := `cat /etc/pf9/host_id.conf`
-	_, err = exec.Command("bash", "-c", c).Output()
 
 	err = setupNode(hostOS)
 	if err != nil {
@@ -52,11 +48,6 @@ func PrepNode(
 
 	if err != nil {
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
-	}
-
-	cmd, err := checkPF9Packages(hostOS)
-	if err != nil {
-		return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
 	}
 
 	if err := installHostAgent(ctx, keystoneAuth, hostOS); err != nil {
@@ -184,12 +175,24 @@ func validatePlatform() (string, error) {
 	return "", nil
 }
 
-func checkPF9Packages(hostOS string) (string, error) {
+func checkPF9Packages(hostOS string) (bool, error) {
+	var err error
 	if hostOS == "debian" {
-		cmd, err := exec.Command("bash", "-c", "dpkg -l | grep -i pf9").Output()
+		_, err = exec.Command("bash", 
+		"-c", 
+		"dpkg -l | grep -i pf9").Output()
+		if err == nil {
+			return true,err
+		}	
 	} else { // not checking for redhat because if it has already passed validation it must be either debian or redhat based
-		cmd, err := exec.Command("bash", "-c", "yum list | grep -i pf9").Output()
+		_, err = exec.Command("bash", 
+		"-c",
+		 "yum list | grep -i pf9").Output()
+		
+		 if err == nil {
+			return true,err
+		}	
 	}
 
-	return "", err
+	return false, err
 }
