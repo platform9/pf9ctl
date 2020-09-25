@@ -31,8 +31,8 @@ type Cluster struct {
 	Masterless            bool              `json:"masterless"`
 }
 
-// NewClusterCreate returns an instance of new cluster.
-func NewClusterCreate(
+// NewCluster returns an instance of new cluster.
+func NewCluster(
 	name,
 	containerCidr,
 	serviceCidr,
@@ -203,4 +203,44 @@ func (c Cluster) getNodePoolUUID(ctx Context, keystoneAuth KeystoneAuth) (string
 	}
 	return "", errors.New("Unable to locate local Node Pool")
 
+}
+
+//Converged checks if the cluster status == "ok"
+func (c *Cluster) Converged(ctx Context, auth KeystoneAuth) (bool, error) {
+	status, err := c.ConvergenceStatus(ctx, auth)
+	return status == "ok", err
+}
+
+//ConvergenceStatus replies with the task status on the cluster
+func (c *Cluster) ConvergenceStatus(ctx Context, auth KeystoneAuth) (string, error) {
+	url := fmt.Sprintf("%s/qbert/v3/%s/clusters/%s",
+		ctx.Fqdn, auth.ProjectID, c.UUID)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return "", fmt.Errorf("Unable to create cluster converge request: %w", err)
+	}
+
+	req.Header.Add("content-type", "application/json")
+	req.Header.Add("X-Auth-Token", auth.Token)
+
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("Unable to get clusterInfo: %w", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("Call to fetch cluster failed with: %d", resp.StatusCode)
+	}
+
+	var payload map[string]interface{}
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&payload)
+
+	if err != nil {
+		return "", fmt.Errorf("Unable to decode payload, error: %w", err)
+	}
+
+	return payload["status"].(string), nil
 }

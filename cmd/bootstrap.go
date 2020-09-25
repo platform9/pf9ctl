@@ -63,7 +63,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Unable to prepnode: %s", err.Error())
 	}
 
-	cluster, _ := pmk.NewClusterCreate(
+	cluster, _ := pmk.NewCluster(
 		name,
 		containersCIDR,
 		servicesCIDR,
