@@ -3,7 +3,6 @@ package pmk
 import (
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/exec"
 	"runtime"
@@ -55,12 +54,17 @@ func PrepNode(
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
+	cmd, err := checkPF9Packages(hostOS)
+	if err != nil {
+		return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
+	}
+
 	if err := installHostAgent(ctx, keystoneAuth, hostOS); err != nil {
 		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
 	}
 
 	log.Info.Println("Identifying the hostID from conf")
-	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
+	cmd = `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	byt, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return fmt.Errorf("Unable to fetch host ID for host authorization: %s", err.Error())
@@ -180,13 +184,12 @@ func validatePlatform() (string, error) {
 	return "", nil
 }
 
-func GetOutboundIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Error.Fatal(err)
+func checkPF9Packages(hostOS string) (string, error) {
+	if hostOS == "debian" {
+		cmd, err := exec.Command("bash", "-c", "dpkg -l | grep -i pf9").Output()
+	} else { // not checking for redhat because if it has already passed validation it must be either debian or redhat based
+		cmd, err := exec.Command("bash", "-c", "yum list | grep -i pf9").Output()
 	}
-	defer conn.Close()
 
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP
+	return "", err
 }
