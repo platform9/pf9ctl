@@ -1,6 +1,7 @@
 package pmk
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -89,7 +90,12 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 	}
 	log.Info.Println("Hostagent download completed successfully")
 
-	cmd = fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, ctx.Password)
+	// Decoding base64 encoded password
+	decodedPassword, err := base64.StdEncoding.DecodeString(ctx.Password)
+	if err != nil {
+		return err
+	}
+	cmd = fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, decodedPassword)
 
 	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
 	if err != nil {
