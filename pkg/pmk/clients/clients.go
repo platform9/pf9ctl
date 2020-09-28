@@ -7,6 +7,6 @@ type Clients struct {
 
 // NewClients creates the clients needed by the CLI
 // to interact with the external services.
-func NewClients() (Clients, error) {
+func NewClients(ctx Context) (Clients, error) {
 	return Clients{}, nil
 }
