@@ -2,7 +2,6 @@ package pmk
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -45,7 +44,10 @@ func Bootstrap(ctx Context, c clients.Clients, req clients.ClusterCreateRequest)
 	}
 
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	output, err := exec.Command("bash", "-c", cmd).Output()
+	output, err := c.Executor.RunWithStdout("bash", "-c", cmd)
+	if err != nil {
+		return fmt.Errorf("Unable to execute command: %w", err)
+	}
 	nodeID := strings.TrimSuffix(string(output), "\n")
 
 	log.Info.Println("Waiting for the cluster to get created")

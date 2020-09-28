@@ -18,7 +18,7 @@ import (
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(
 	ctx Context,
-	clients clients.Clients,
+	c clients.Clients,
 	user string,
 	password string,
 	sshkey string,
@@ -38,15 +38,15 @@ func PrepNode(
 		return fmt.Errorf("Invalid host os: %s", err.Error())
 	}
 
-	c := `cat /etc/pf9/host_id.conf`
-	_, err = exec.Command("bash", "-c", c).Output()
+	cmd := `cat /etc/pf9/host_id.conf`
+	_, err = c.Executor.RunWithStdout("bash", "-c", cmd)
 
 	err = setupNode(hostOS)
 	if err != nil {
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
 
-	keystoneAuth, err := clients.Keystone.GetKeyStoneAuth(
+	keystoneAuth, err := c.Keystone.GetKeyStoneAuth(
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant)
@@ -60,16 +60,16 @@ func PrepNode(
 	}
 
 	log.Info.Println("Identifying the hostID from conf")
-	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	byt, err := exec.Command("bash", "-c", cmd).Output()
+	cmd = `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
+	output, err := c.Executor.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return fmt.Errorf("Unable to fetch host ID for host authorization: %s", err.Error())
 	}
 
-	hostID := strings.TrimSuffix(string(byt[:]), "\n")
+	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(WaitPeriod * time.Second)
 
-	return clients.Resmgr.AuthorizeHost(hostID, keystoneAuth.Token)
+	return c.Resmgr.AuthorizeHost(hostID, keystoneAuth.Token)
 }
 
 func installHostAgent(ctx Context, keystoneAuth clients.KeystoneAuth, hostOS string) error {

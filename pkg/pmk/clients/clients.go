@@ -8,6 +8,7 @@ type Clients struct {
 	Resmgr   Resmgr
 	Keystone Keystone
 	Qbert    Qbert
+	Executor Executor
 }
 
 // New creates the clients needed by the CLI
@@ -22,5 +23,6 @@ func New(fqdn string) (Clients, error) {
 		Resmgr:   resmgr,
 		Keystone: keystone,
 		Qbert:    qbert,
+		Executor: ExecutorImpl{},
 	}, nil
 }
