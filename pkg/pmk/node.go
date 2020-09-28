@@ -22,20 +22,17 @@ func PrepNode(
 	ips []string) error {
 	log.Info.Println("Received a call to start preping node(s).")
 
-
-
 	hostOS, err := validatePlatform()
 	if err != nil {
 		return fmt.Errorf("Invalid host os: %s", err.Error())
 	}
-	cmd:= checkPF9Packages(hostOS)
-        
-    if cmd {
-        return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
-    }
+	cmd := checkPF9Packages(hostOS)
 
+	if cmd {
+		return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
+	}
 
-    err = setupNode(hostOS)
+	err = setupNode(hostOS)
 	if err != nil {
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
@@ -175,23 +172,24 @@ func validatePlatform() (string, error) {
 	return "", nil
 }
 
-func checkPF9Packages(hostOS string) (bool) {
+func checkPF9Packages(hostOS string) bool {
 	var err error
 	if hostOS == "debian" {
-		_, err = exec.Command("bash", 
-		"-c", 
-		"dpkg -l | grep -i pf9").Output()
+		_, err = exec.Command("bash",
+			"-c",
+			"dpkg -l | grep -i pf9").Output()
 		if err == nil {
 			return true
-		}	
-	} else { // not checking for redhat because if it has already passed validation it must be either debian or redhat based
-		_, err = exec.Command("bash", 
-		"-c",
-		 "yum list | grep -i pf9").Output()
-		
-		 if err == nil {
+		}
+	} else {
+		// not checking for redhat because if it has already passed validation it must be either debian or redhat based
+		_, err = exec.Command("bash",
+			"-c",
+			"yum list | grep -i pf9").Output()
+
+		if err == nil {
 			return true
-		}	
+		}
 	}
 
 	return false
