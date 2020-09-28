@@ -140,7 +140,7 @@ func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) er
 		ctx.Fqdn, auth.ProjectID, c.UUID)
 
 	client := rhttp.Client{}
-	client.RetryMax = HTTPMaxRetry
+	client.RetryMax = 5
 	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
 
 	req, err := rhttp.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))

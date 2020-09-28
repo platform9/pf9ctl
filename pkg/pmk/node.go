@@ -11,14 +11,14 @@ import (
 	"strings"
 	"time"
 
-	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/util"
+	"github.com/platform9/pf9ctl/pkg/pmk/clients"
 )
 
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(
 	ctx Context,
+	clients clients.Clients,
 	user string,
 	password string,
 	sshkey string,
@@ -46,8 +46,7 @@ func PrepNode(
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
 
-	keystoneAuth, err := getKeystoneAuth(
-		ctx.Fqdn,
+	keystoneAuth, err := clients.Keystone.GetKeyStoneAuth(
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant)
@@ -69,13 +68,11 @@ func PrepNode(
 
 	hostID := strings.TrimSuffix(string(byt[:]), "\n")
 	time.Sleep(WaitPeriod * time.Second)
-	return authorizeHost(
-		hostID,
-		keystoneAuth.Token,
-		ctx.Fqdn)
+
+	return clients.Resmgr.AuthorizeHost(hostID, keystoneAuth.Token)
 }
 
-func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
+func installHostAgent(ctx Context, keystoneAuth clients.KeystoneAuth, hostOS string) error {
 	log.Info.Println("Downloading Hostagent installer Certless")
 
 	hostagentInstaller := fmt.Sprintf(
@@ -111,35 +108,6 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
 	log.Info.Println("hostagent installed successfully")
-	return nil
-}
-
-func authorizeHost(hostID, token, fqdn string) error {
-	log.Info.Printf("Received a call to authorize host: %s to fqdn: %s\n", hostID, fqdn)
-
-	client := rhttp.NewClient()
-	client.RetryMax = HTTPMaxRetry
-	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
-
-	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s/roles/pf9-kube", fqdn, hostID)
-	req, err := rhttp.NewRequest("PUT", url, nil)
-	if err != nil {
-		return fmt.Errorf("Unable to create a new request: %w", err)
-	}
-
-	req.Header.Set("X-Auth-Token", token)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unable to authorize host, code: %d", resp.StatusCode)
-	}
-
 	return nil
 }
 

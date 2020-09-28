@@ -21,7 +21,4 @@ var (
 	// WaitPeriod is the sleep period for the cli
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
-	// HTTPMaxRetry tells us about the number of
-	// retries that should happen before we give up on the operation.
-	HTTPMaxRetry = 5
 )

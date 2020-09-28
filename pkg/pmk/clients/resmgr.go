@@ -9,7 +9,7 @@ import (
 )
 
 type Resmgr interface {
-	AuthorizeHost(hostUUID string) error
+	AuthorizeHost(hostID, token string) error
 }
 
 type ResmgrImpl struct {
