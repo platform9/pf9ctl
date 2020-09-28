@@ -38,7 +38,7 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	password, _ := terminal.ReadPassword(0)
 	encodedPasswd := base64.StdEncoding.EncodeToString(password)
 
-	fmt.Printf("Region [RegionOne]: ")
+	fmt.Printf("\nRegion [RegionOne]: ")
 	region, _ := reader.ReadString('\n')
 	region = strings.TrimSuffix(region, "\n")
 
