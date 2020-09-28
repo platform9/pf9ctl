@@ -9,6 +9,7 @@ import (
 
 	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/pmk/clients"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
@@ -63,9 +64,12 @@ func NewClusterCreate(
 }
 
 // Create a cluster in the management plan.
-func (c *Cluster) Create(ctx Context, auth KeystoneAuth) (string, error) {
-	log.Info.Println(
-		"Received a call to create a cluster in management plane")
+func (c *Cluster) Create(
+	ctx Context,
+	clients clients.Clients,
+	auth KeystoneAuth) (string, error) {
+
+	log.Info.Println("Received a call to create a cluster in management plane")
 
 	np, err := c.getNodePoolUUID(ctx, auth)
 	if err != nil {
@@ -120,7 +124,12 @@ func (c Cluster) Exists(name string) (bool, string) {
 }
 
 // AttachNode attaches a node onto the cluster/
-func (c *Cluster) AttachNode(ctx Context, auth KeystoneAuth, nodeUUID string) error {
+func (c *Cluster) AttachNode(
+	ctx Context,
+	clients clients.Clients,
+	auth KeystoneAuth,
+	nodeUUID string) error {
+
 	log.Info.Printf("Received a call to attachnode: %s to cluster: %s\n",
 		nodeUUID, c.UUID)
 

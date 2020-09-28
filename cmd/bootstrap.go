@@ -10,6 +10,7 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/pmk/clients"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +29,7 @@ var bootstrapCmd = &cobra.Command{
 		}
 		return nil
 	},
-	RunE: bootstrapCmdRun,
+	Run: bootstrapCmdRun,
 }
 
 var (
@@ -44,23 +45,29 @@ var (
 	networkPlugin          string
 )
 
-func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
+func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	log.Info.Println("Received a call to bootstrap the node")
 
 	ctx, err := pmk.LoadContext(pmk.Pf9DBLoc)
 	if err != nil {
-		return err
+		log.Error.Fatalf("Unable to load context: %s", err.Error())
 	}
+
+	clients, err := clients.New(ctx.Fqdn)
+	if err != nil {
+		log.Error.Fatalf("Unable to load clients: %s", err.Error())
+	}
+
 	name := args[0]
 
 	resp, err := util.AskBool("PrepLocal node for kubernetes cluster")
 	if err != nil || !resp {
-		return fmt.Errorf("Couldn't fetch user content")
+		log.Error.Fatalf("Couldn't fetch user content")
 	}
 
-	err = pmk.PrepNode(ctx, "", "", "", []string{})
+	err = pmk.PrepNode(ctx, clients, "", "", "", []string{})
 	if err != nil {
-		return fmt.Errorf("Unable to prepnode: %s", err.Error())
+		log.Error.Fatalf("Unable to prepnode: %s", err.Error())
 	}
 
 	cluster, _ := pmk.NewClusterCreate(
@@ -82,12 +89,12 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 		ctx.Tenant)
 
 	if err != nil {
-		return fmt.Errorf("keystone authentication failed: %s", err.Error())
+		log.Error.Fatalf("keystone authentication failed: %s", err.Error())
 	}
 
-	_, err = cluster.Create(ctx, keystoneAuth)
+	_, err = cluster.Create(ctx, clients, keystoneAuth)
 	if err != nil {
-		return fmt.Errorf("Unable to create cluster: %s", err.Error())
+		log.Error.Fatalf("Unable to create cluster: %s", err.Error())
 	}
 
 	c := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
@@ -98,13 +105,12 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) error {
 	time.Sleep(pmk.WaitPeriod * time.Second)
 
 	log.Info.Println("Cluster created successfully")
-	err = cluster.AttachNode(ctx, keystoneAuth, nodeUUIDStr)
+	err = cluster.AttachNode(ctx, clients, keystoneAuth, nodeUUIDStr)
 	if err != nil {
-		return fmt.Errorf("Unable to attach node: %s", err.Error())
+		log.Error.Fatalf("Unable to attach node: %s", err.Error())
 	}
 
 	log.Info.Printf("\nBootstrap successfully Finished\n")
-	return nil
 }
 
 func init() {
