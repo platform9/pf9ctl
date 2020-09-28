@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // contextCmdCreate represents the context command
@@ -33,10 +35,10 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	username = strings.TrimSuffix(username, "\n")
 
 	fmt.Printf("Password: ")
-	password, _ := reader.ReadString('\n')
-	password = strings.TrimSuffix(password, "\n")
+	password, _ := terminal.ReadPassword(0)
+	encodedPasswd := base64.StdEncoding.EncodeToString(password)
 
-	fmt.Printf("Region [RegionOne]: ")
+	fmt.Printf("\nRegion [RegionOne]: ")
 	region, _ := reader.ReadString('\n')
 	region = strings.TrimSuffix(region, "\n")
 
@@ -55,7 +57,7 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	ctx := pmk.Context{
 		Fqdn:     fqdn,
 		Username: username,
-		Password: password,
+		Password: encodedPasswd,
 		Region:   region,
 		Tenant:   service,
 	}

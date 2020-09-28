@@ -1,6 +1,7 @@
 package pmk
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -25,7 +26,14 @@ func GetKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, err
 }
 
 func getKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, error) {
+	auth := KeystoneAuth{}
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", host)
+
+	// Decoding base64 encoded password
+	decodedPassword, err := base64.StdEncoding.DecodeString(password)
+	if err != nil {
+		return auth, err
+	}
 
 	body := fmt.Sprintf(`{
 		"auth": {
@@ -46,15 +54,15 @@ func getKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, err
 				}
 			}
 		}
-	}`, username, password, tenant)
+	}`, username, decodedPassword, tenant)
 
 	resp, err := http.Post(url, "application/json", strings.NewReader(body))
 	if err != nil {
-		return KeystoneAuth{}, err
+		return auth, err
 	}
 
 	if resp.StatusCode != 201 {
-		return KeystoneAuth{}, fmt.Errorf("Unable to get keystone token, status: %d", resp.StatusCode)
+		return auth, fmt.Errorf("Unable to get keystone token, status: %d", resp.StatusCode)
 	}
 
 	var payload map[string]interface{}
@@ -62,17 +70,19 @@ func getKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, err
 
 	err = decoder.Decode(&payload)
 	if err != nil {
-		return KeystoneAuth{}, fmt.Errorf("Unable to decode the payload")
+		return auth, fmt.Errorf("Unable to decode the payload")
 	}
 
 	t := payload["token"].(map[string]interface{})
 	project := t["project"].(map[string]interface{})
 	user := t["user"].(map[string]interface{})
-
 	token := resp.Header["X-Subject-Token"][0]
-	return KeystoneAuth{
+
+	auth = KeystoneAuth{
 		Token:     token,
 		UserID:    user["id"].(string),
 		ProjectID: project["id"].(string),
-	}, nil
+	}
+
+	return auth, nil
 }
