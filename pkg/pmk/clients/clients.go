@@ -7,6 +7,7 @@ const HTTPMaxRetry = 5
 type Clients struct {
 	Resmgr   Resmgr
 	Keystone Keystone
+	Qbert    Qbert
 }
 
 // New creates the clients needed by the CLI
@@ -15,9 +16,11 @@ func New(fqdn string) (Clients, error) {
 
 	resmgr, _ := NewResmgr(fqdn)
 	keystone, _ := NewKeystone(fqdn)
+	qbert, _ := NewQbert(fqdn)
 
 	return Clients{
 		Resmgr:   resmgr,
 		Keystone: keystone,
+		Qbert:    qbert,
 	}, nil
 }

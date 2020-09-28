@@ -4,14 +4,10 @@ package cmd
 
 import (
 	"fmt"
-	"os/exec"
-	"strings"
-	"time"
 
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/pmk/clients"
-	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -53,64 +49,31 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		log.Error.Fatalf("Unable to load context: %s", err.Error())
 	}
 
-	clients, err := clients.New(ctx.Fqdn)
+	c, err := clients.New(ctx.Fqdn)
 	if err != nil {
 		log.Error.Fatalf("Unable to load clients: %s", err.Error())
 	}
 
 	name := args[0]
 
-	resp, err := util.AskBool("PrepLocal node for kubernetes cluster")
-	if err != nil || !resp {
-		log.Error.Fatalf("Couldn't fetch user content")
+	payload := clients.ClusterCreateRequest{
+		Name:                  name,
+		ContainerCIDR:         containersCIDR,
+		ServiceCIDR:           servicesCIDR,
+		MasterVirtualIP:       masterVIP,
+		MasterVirtualIPIface:  masterVIPIf,
+		ExternalDNSName:       externalDNSName,
+		NetworkPlugin:         clients.CNIBackend(networkPlugin),
+		MetalLBAddressPool:    metallbIPRange,
+		AllowWorkloadOnMaster: allowWorkloadsOnMaster,
+		Privileged:            privileged,
 	}
 
-	err = pmk.PrepNode(ctx, clients, "", "", "", []string{})
+	err = pmk.Bootstrap(ctx, c, payload)
 	if err != nil {
-		log.Error.Fatalf("Unable to prepnode: %s", err.Error())
+		log.Error.Fatalf("Unable to bootstrap the cluster")
 	}
 
-	cluster, _ := pmk.NewClusterCreate(
-		name,
-		containersCIDR,
-		servicesCIDR,
-		masterVIP,
-		masterVIPIf,
-		externalDNSName,
-		networkPlugin,
-		metallbIPRange,
-		allowWorkloadsOnMaster,
-		privileged,
-	)
-	keystoneAuth, err := pmk.GetKeystoneAuth(
-		ctx.Fqdn,
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant)
-
-	if err != nil {
-		log.Error.Fatalf("keystone authentication failed: %s", err.Error())
-	}
-
-	_, err = cluster.Create(ctx, clients, keystoneAuth)
-	if err != nil {
-		log.Error.Fatalf("Unable to create cluster: %s", err.Error())
-	}
-
-	c := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	nodeUUID, err := exec.Command("bash", "-c", c).Output()
-	nodeUUIDStr := strings.TrimSuffix(string(nodeUUID), "\n")
-
-	log.Info.Println("Waiting for the cluster to get created")
-	time.Sleep(pmk.WaitPeriod * time.Second)
-
-	log.Info.Println("Cluster created successfully")
-	err = cluster.AttachNode(ctx, clients, keystoneAuth, nodeUUIDStr)
-	if err != nil {
-		log.Error.Fatalf("Unable to attach node: %s", err.Error())
-	}
-
-	log.Info.Printf("\nBootstrap successfully Finished\n")
 }
 
 func init() {
