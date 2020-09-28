@@ -28,14 +28,14 @@ func PrepNode(
 	if err != nil {
 		return fmt.Errorf("Invalid host os: %s", err.Error())
 	}
-	cmd, err := checkPF9Packages(hostOS)
+	cmd:= checkPF9Packages(hostOS)
         
     if cmd {
         return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
     }
 
 
-	err = setupNode(hostOS)
+    err = setupNode(hostOS)
 	if err != nil {
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
@@ -55,8 +55,8 @@ func PrepNode(
 	}
 
 	log.Info.Println("Identifying the hostID from conf")
-	cmd = `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	byt, err := exec.Command("bash", "-c", cmd).Output()
+	cmd1 := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
+	byt, err := exec.Command("bash", "-c", cmd1).Output()
 	if err != nil {
 		return fmt.Errorf("Unable to fetch host ID for host authorization: %s", err.Error())
 	}
@@ -175,14 +175,14 @@ func validatePlatform() (string, error) {
 	return "", nil
 }
 
-func checkPF9Packages(hostOS string) (bool, error) {
+func checkPF9Packages(hostOS string) (bool) {
 	var err error
 	if hostOS == "debian" {
 		_, err = exec.Command("bash", 
 		"-c", 
 		"dpkg -l | grep -i pf9").Output()
 		if err == nil {
-			return true,err
+			return true
 		}	
 	} else { // not checking for redhat because if it has already passed validation it must be either debian or redhat based
 		_, err = exec.Command("bash", 
@@ -190,9 +190,9 @@ func checkPF9Packages(hostOS string) (bool, error) {
 		 "yum list | grep -i pf9").Output()
 		
 		 if err == nil {
-			return true,err
+			return true
 		}	
 	}
 
-	return false, err
+	return false
 }
