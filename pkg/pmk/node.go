@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"net"
-	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -23,23 +21,17 @@ func PrepNode(
 	password string,
 	sshkey string,
 	ips []string) error {
-
 	log.Info.Println("Received a call to start preping node(s).")
-
-	info, err := os.Stat("/etc/pf9/host_id.conf")
-
-	if info != nil {
-		fmt.Println("Node is already prepped.")
-		return err
-	}
 
 	hostOS, err := validatePlatform()
 	if err != nil {
 		return fmt.Errorf("Invalid host os: %s", err.Error())
 	}
+	cmd := checkPF9Packages(hostOS)
 
-	c := `cat /etc/pf9/host_id.conf`
-	_, err = exec.Command("bash", "-c", c).Output()
+	if cmd {
+		return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
+	}
 
 	err = setupNode(hostOS)
 	if err != nil {
@@ -61,8 +53,8 @@ func PrepNode(
 	}
 
 	log.Info.Println("Identifying the hostID from conf")
-	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	byt, err := exec.Command("bash", "-c", cmd).Output()
+	cmd1 := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
+	byt, err := exec.Command("bash", "-c", cmd1).Output()
 	if err != nil {
 		return fmt.Errorf("Unable to fetch host ID for host authorization: %s", err.Error())
 	}
@@ -186,13 +178,25 @@ func validatePlatform() (string, error) {
 	return "", nil
 }
 
-func GetOutboundIP() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Error.Fatal(err)
-	}
-	defer conn.Close()
+func checkPF9Packages(hostOS string) bool {
+	var err error
+	if hostOS == "debian" {
+		_, err = exec.Command("bash",
+			"-c",
+			"dpkg -l | grep -i pf9").Output()
+		if err == nil {
+			return true
+		}
+	} else {
+		// not checking for redhat because if it has already passed validation it must be either debian or redhat based
+		_, err = exec.Command("bash",
+			"-c",
+			"yum list | grep -i pf9").Output()
 
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP
+		if err == nil {
+			return true
+		}
+	}
+
+	return false
 }
