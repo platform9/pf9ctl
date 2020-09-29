@@ -47,10 +47,15 @@ func PrepNode(
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
 
+	decodedPassword, err := base64.StdEncoding.DecodeString(ctx.Password)
+	if err != nil {
+		return err
+	}
+
 	keystoneAuth, err := getKeystoneAuth(
 		ctx.Fqdn,
 		ctx.Username,
-		ctx.Password,
+		string(decodedPassword),
 		ctx.Tenant)
 
 	if err != nil {
@@ -96,6 +101,7 @@ func installHostAgentCertless(ctx Context, keystoneAuth KeystoneAuth, hostOS str
 	if err != nil {
 		return err
 	}
+
 	cmd = fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, decodedPassword)
 
 	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
@@ -247,7 +253,6 @@ func installHostAgentLegacy(ctx Context, keystoneAuth KeystoneAuth, hostOS strin
 	if err != nil {
 		return err
 
-		return err
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
