@@ -10,10 +10,10 @@
 SHELL := /usr/bin/env bash
 BUILD_NUMBER ?= 10
 GITHASH := $(shell git rev-parse --short HEAD)
-CWD := $(shell pwd)
 PF9_VERSION ?= 1.0.0
 VERSION := $(PF9_VERSION)-$(BUILD_NUMBER)
 DETECTED_OS := $(shell uname -s)
+BIN_DIR := $(shell pwd)/bin
 BIN := pf9ctl
 REPO := pf9ctl
 PACKAGE_GOPATH := /go/src/github.com/platform9/$(REPO)
@@ -28,20 +28,17 @@ container-build:
 	docker run --rm -e VERSION_OVERRIDE=${VERSION_OVERRIDE} -v $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) -w $(PACKAGE_GOPATH) golang:1.14.1 make
 
 $(BIN): test
-	go build -o $(BIN) -ldflags "$(LDFLAGS)"
+	go build -o $(BIN_DIR)/$(BIN) -ldflags "$(LDFLAGS)"
 
 format:
 	gofmt -w -s *.go
 	gofmt -w -s */*.go
 
-clean-all: clean
-	rm -rf bin
-
 clean:
-	rm -rf $(BIN)
+	rm -rf $(BIN_DIR)
 
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o pf9ctl main.go
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o $(BIN_DIR)/$(BIN) main.go
 
 test:
 	go test -v ./...
