@@ -65,7 +65,7 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 	// the server time to recover, as 500's are typically not permanent
 	// errors and may relate to outages on the server side. This will catch
 	// invalid response codes as well, like 0 and 999.
-	if resp.StatusCode == 0 || resp.StatusCode == 404 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
+	if resp.StatusCode == 0 || resp.StatusCode == 400 || resp.StatusCode == 404 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
 		return true, nil
 	}
 
