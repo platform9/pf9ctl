@@ -30,10 +30,11 @@ func getKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, err
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", host)
 
 	// Decoding base64 encoded password
-	decodedPassword, err := base64.StdEncoding.DecodeString(password)
+	decodedBytePassword, err := base64.StdEncoding.DecodeString(password)
 	if err != nil {
 		return auth, err
 	}
+	decodedPassword := string(decodedBytePassword)
 
 	body := fmt.Sprintf(`{
 		"auth": {

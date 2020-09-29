@@ -83,10 +83,11 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 	log.Info.Println("Hostagent download completed successfully")
 
 	// Decoding base64 encoded password
-	decodedPassword, err := base64.StdEncoding.DecodeString(ctx.Password)
+	decodedBytePassword, err := base64.StdEncoding.DecodeString(ctx.Password)
 	if err != nil {
 		return err
 	}
+	decodedPassword := string(decodedBytePassword)
 	cmd = fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, decodedPassword)
 
 	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
