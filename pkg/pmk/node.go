@@ -95,8 +95,7 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 		return err
 	}
 
-	cmd = fmt.Sprintf(`sudo /tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, cmd)
-	fmt.Println(cmd)
+	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, cmd)
 	_, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return err
@@ -155,7 +154,7 @@ func validatePlatform() (string, error) {
 		out, err := exec.Command(
 			"bash",
 			"-c",
-			"sudo cat /etc/*release | grep '(Core)' | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '").Output()
+			"cat /etc/*release | grep '(Core)' | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '").Output()
 		if err != nil {
 			return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 		}
@@ -167,7 +166,7 @@ func validatePlatform() (string, error) {
 		out, err := exec.Command(
 			"bash",
 			"-c",
-			"sudo cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2").Output()
+			"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2").Output()
 		if err != nil {
 			return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 		}
