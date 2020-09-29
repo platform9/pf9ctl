@@ -4,7 +4,7 @@ const HTTPMaxRetry = 5
 
 // Clients struct encapsulate the collection of
 // external services
-type Clients struct {
+type Client struct {
 	Resmgr   Resmgr
 	Keystone Keystone
 	Qbert    Qbert
@@ -13,16 +13,12 @@ type Clients struct {
 
 // New creates the clients needed by the CLI
 // to interact with the external services.
-func New(fqdn string) (Clients, error) {
+func New(fqdn string) (Client, error) {
 
-	resmgr, _ := NewResmgr(fqdn)
-	keystone, _ := NewKeystone(fqdn)
-	qbert, _ := NewQbert(fqdn)
-
-	return Clients{
-		Resmgr:   resmgr,
-		Keystone: keystone,
-		Qbert:    qbert,
+	return Client{
+		Resmgr:   NewResmgr(fqdn),
+		Keystone: NewKeystone(fqdn),
+		Qbert:    NewQbert(fqdn),
 		Executor: ExecutorImpl{},
 	}, nil
 }

@@ -16,8 +16,8 @@ type ResmgrImpl struct {
 	fqdn string
 }
 
-func NewResmgr(fqdn string) (Resmgr, error) {
-	return &ResmgrImpl{fqdn: fqdn}, nil
+func NewResmgr(fqdn string) Resmgr {
+	return &ResmgrImpl{fqdn}
 }
 
 // AuthorizeHost registers the host with hostID to the resmgr.

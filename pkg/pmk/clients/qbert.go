@@ -24,8 +24,8 @@ type Qbert interface {
 	GetNodePoolID(projectID, token string) (string, error)
 }
 
-func NewQbert(fqdn string) (Qbert, error) {
-	return QbertImpl{fqdn}, nil
+func NewQbert(fqdn string) Qbert {
+	return QbertImpl{fqdn}
 }
 
 type QbertImpl struct {

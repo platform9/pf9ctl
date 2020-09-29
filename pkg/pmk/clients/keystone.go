@@ -17,23 +17,23 @@ type KeystoneAuth struct {
 }
 
 type Keystone interface {
-	GetKeyStoneAuth(username, password, tenant string) (KeystoneAuth, error)
+	GetAuth(username, password, tenant string) (KeystoneAuth, error)
 }
 
 type KeystoneImpl struct {
 	fqdn string
 }
 
-func NewKeystone(fqdn string) (Keystone, error) {
-	return KeystoneImpl{fqdn}, nil
+func NewKeystone(fqdn string) Keystone {
+	return KeystoneImpl{fqdn}
 }
 
-func (k KeystoneImpl) GetKeyStoneAuth(
+func (k KeystoneImpl) GetAuth(
 	username,
 	password,
 	tenant string) (auth KeystoneAuth, err error) {
 
-	log.Info.Println("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s",
+	log.Info.Printf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n",
 		k.fqdn, username, tenant)
 
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", k.fqdn)

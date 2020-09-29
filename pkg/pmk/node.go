@@ -18,7 +18,7 @@ import (
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(
 	ctx Context,
-	c clients.Clients,
+	c clients.Client,
 	user string,
 	password string,
 	sshkey string,
@@ -46,7 +46,7 @@ func PrepNode(
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
 
-	keystoneAuth, err := c.Keystone.GetKeyStoneAuth(
+	keystoneAuth, err := c.Keystone.GetAuth(
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant)
