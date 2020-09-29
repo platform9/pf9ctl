@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -48,7 +49,7 @@ func PrepNode(
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
-	if err := installHostAgent(ctx, keystoneAuth, hostOS); err != nil {
+	if err := installHostAgentMain(ctx, keystoneAuth, hostOS); err != nil {
 		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
 	}
 
@@ -67,7 +68,7 @@ func PrepNode(
 		ctx.Fqdn)
 }
 
-func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
+func installHostAgentCertless(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
 	log.Info.Println("Downloading Hostagent installer Certless")
 
 	hostagentInstaller := fmt.Sprintf(
@@ -200,4 +201,59 @@ func checkPF9Packages(hostOS string) bool {
 	}
 
 	return false
+}
+
+func installHostAgentMain(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
+
+	hostagentInstaller := fmt.Sprintf(
+		"https://%s/clarity/platform9-install-%s.sh",
+		ctx.Fqdn, hostOS)
+
+	req, err := http.NewRequest("GET", hostagentInstaller, nil)
+
+	if req.Response.StatusCode == 200 {
+		installHostAgentCertless(ctx, keystoneAuth, hostOS)
+		return err
+	} else if req.Response.StatusCode == 404 {
+		installHostAgentLegacy(ctx, keystoneAuth, hostOS)
+		return err
+	} else {
+		log.Error.Fatal(err)
+	}
+	return err
+}
+
+func installHostAgentLegacy(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
+	log.Info.Println("Downloading Hostagent installer")
+
+	hostagentInstaller := fmt.Sprintf(
+		"https://%s/private/platform9-install-%s.sh",
+		ctx.Fqdn, hostOS)
+
+	hostagent_install_options := fmt.Sprintf("--insecure --project-name=%s 2>&1 > /tmp/agent_install.log", keystoneAuth.ProjectID)
+
+	cmd := fmt.Sprintf(`curl --silent --show-error -H "X-Auth-Token: %s" %s -o  /tmp/installer.sh %s`, keystoneAuth.Token, hostagentInstaller, hostagent_install_options)
+	fmt.Println(cmd)
+	_, err := exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		return err
+	}
+	log.Info.Println("Hostagent download completed successfully")
+
+	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
+	if err != nil {
+		return err
+	}
+
+	cmd = fmt.Sprintf(`sudo /tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, hostagent_install_options)
+	fmt.Println(cmd)
+	_, err = exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		return err
+
+	}
+
+	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
+	log.Info.Println("hostagent installed successfully")
+	return nil
 }
