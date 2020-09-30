@@ -71,7 +71,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	err = pmk.Bootstrap(ctx, c, payload)
 	if err != nil {
-		log.Error.Fatalf("Unable to bootstrap the cluster")
+		log.Error.Fatalf("Unable to bootstrap the cluster: %s", err.Error())
 	}
 
 }

@@ -68,7 +68,7 @@ func PrepNode(
 func installHostAgent(ctx Context, auth clients.KeystoneAuth, hostOS string) error {
 	log.Info.Println("Download Hostagent")
 
-	url := fmt.Sprintf("https://%s/clarity/platform9-install-%s.sh", ctx.Fqdn, hostOS)
+	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", ctx.Fqdn, hostOS)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("Unable to create a http request: %w", err)
@@ -193,7 +193,7 @@ func pf9PackagesPresent(hostOS string, exec clients.Executor) bool {
 func installHostAgentLegacy(ctx Context, auth clients.KeystoneAuth, hostOS string) error {
 	log.Info.Println("Downloading Hostagent Installer Legacy")
 
-	url := fmt.Sprintf("https://%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)
+	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install.log", auth.ProjectID)
 
 	cmd := fmt.Sprintf(`curl --silent --show-error -H "X-Auth-Token: %s" %s -o  /tmp/installer.sh`, auth.Token, url)
