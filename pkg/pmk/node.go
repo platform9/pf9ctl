@@ -9,14 +9,14 @@ import (
 	"strings"
 	"time"
 
-	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/util"
+	"github.com/platform9/pf9ctl/pkg/pmk/clients"
 )
 
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(
 	ctx Context,
+	c clients.Client,
 	user string,
 	password string,
 	sshkey string,
@@ -27,9 +27,9 @@ func PrepNode(
 	if err != nil {
 		return fmt.Errorf("Invalid host os: %s", err.Error())
 	}
-	cmd := checkPF9Packages(hostOS)
 
-	if cmd {
+	present := pf9PackagesPresent(hostOS, c.Executor)
+	if present {
 		return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
 	}
 
@@ -38,11 +38,9 @@ func PrepNode(
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
 
-	keystoneAuth, err := getKeystoneAuth(
-		ctx.Fqdn,
+	keystoneAuth, err := c.Keystone.GetAuth(
 		ctx.Username,
-		ctx.Password,
-		ctx.Tenant)
+		ctx.Password, ctx.Tenant)
 
 	if err != nil {
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
@@ -53,21 +51,20 @@ func PrepNode(
 	}
 
 	log.Info.Println("Identifying the hostID from conf")
-	cmd1 := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	byt, err := exec.Command("bash", "-c", cmd1).Output()
+	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
+	output, err := c.Executor.RunWithStdout("bash", "-c", cmd)
+
 	if err != nil {
 		return fmt.Errorf("Unable to fetch host ID for host authorization: %s", err.Error())
 	}
 
-	hostID := strings.TrimSuffix(string(byt[:]), "\n")
+	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(WaitPeriod * time.Second)
-	return authorizeHost(
-		hostID,
-		keystoneAuth.Token,
-		ctx.Fqdn)
+
+	return c.Resmgr.AuthorizeHost(hostID, keystoneAuth.Token)
 }
 
-func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
+func installHostAgent(ctx Context, keystoneAuth clients.KeystoneAuth, hostOS string) error {
 	log.Info.Println("Downloading Hostagent installer Certless")
 
 	hostagentInstaller := fmt.Sprintf(
@@ -103,35 +100,6 @@ func installHostAgent(ctx Context, keystoneAuth KeystoneAuth, hostOS string) err
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
 	log.Info.Println("hostagent installed successfully")
-	return nil
-}
-
-func authorizeHost(hostID, token, fqdn string) error {
-	log.Info.Printf("Received a call to authorize host: %s to fqdn: %s\n", hostID, fqdn)
-
-	client := rhttp.NewClient()
-	client.RetryMax = HTTPMaxRetry
-	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
-
-	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s/roles/pf9-kube", fqdn, hostID)
-	req, err := rhttp.NewRequest("PUT", url, nil)
-	if err != nil {
-		return fmt.Errorf("Unable to create a new request: %w", err)
-	}
-
-	req.Header.Set("X-Auth-Token", token)
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unable to authorize host, code: %d", resp.StatusCode)
-	}
-
 	return nil
 }
 
@@ -178,25 +146,21 @@ func validatePlatform() (string, error) {
 	return "", nil
 }
 
-func checkPF9Packages(hostOS string) bool {
+func pf9PackagesPresent(hostOS string, exec clients.Executor) bool {
+
 	var err error
 	if hostOS == "debian" {
-		_, err = exec.Command("bash",
+		err = exec.Run("bash",
 			"-c",
-			"dpkg -l | grep -i pf9").Output()
-		if err == nil {
-			return true
-		}
+			"dpkg -l | grep -i pf9")
 	} else {
-		// not checking for redhat because if it has already passed validation it must be either debian or redhat based
-		_, err = exec.Command("bash",
+		// not checking for redhat because if it has already passed validation
+		// it must be either debian or redhat based
+		err = exec.Run("bash",
 			"-c",
-			"yum list | grep -i pf9").Output()
+			"yum list | grep -i pf9")
 
-		if err == nil {
-			return true
-		}
 	}
 
-	return false
+	return err == nil
 }

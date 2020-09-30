@@ -1,4 +1,4 @@
-package pmk
+package clients
 
 import (
 	"encoding/base64"
@@ -10,24 +10,33 @@ import (
 	"github.com/platform9/pf9ctl/pkg/log"
 )
 
-// KeystoneAuth represents user authenticated information.
 type KeystoneAuth struct {
 	Token     string
-	ProjectID string
 	UserID    string
+	ProjectID string
 }
 
-// GetKeystoneAuth returns the keystone credentials for the
-// host.
-func GetKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, error) {
-	log.Info.Printf("Received a call to get keystone authentication for host: %s\n", host)
-
-	return getKeystoneAuth(host, username, password, tenant)
+type Keystone interface {
+	GetAuth(username, password, tenant string) (KeystoneAuth, error)
 }
 
-func getKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, error) {
-	auth := KeystoneAuth{}
-	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", host)
+type KeystoneImpl struct {
+	fqdn string
+}
+
+func NewKeystone(fqdn string) Keystone {
+	return KeystoneImpl{fqdn}
+}
+
+func (k KeystoneImpl) GetAuth(
+	username,
+	password,
+	tenant string) (auth KeystoneAuth, err error) {
+
+	log.Info.Printf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n",
+		k.fqdn, username, tenant)
+
+	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", k.fqdn)
 
 	// Decoding base64 encoded password
 	decodedBytePassword, err := base64.StdEncoding.DecodeString(password)
@@ -79,11 +88,9 @@ func getKeystoneAuth(host, username, password, tenant string) (KeystoneAuth, err
 	user := t["user"].(map[string]interface{})
 	token := resp.Header["X-Subject-Token"][0]
 
-	auth = KeystoneAuth{
+	return KeystoneAuth{
 		Token:     token,
 		UserID:    user["id"].(string),
 		ProjectID: project["id"].(string),
-	}
-
-	return auth, nil
+	}, nil
 }
