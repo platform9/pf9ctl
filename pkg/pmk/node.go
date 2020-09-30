@@ -38,11 +38,11 @@ func PrepNode(
 	if err != nil {
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
-	fmt.Println(ctx.Fqdn,ctx.Username,ctx.Password,ctx.Tenant)
+
 	keystoneAuth, err := getKeystoneAuth(
 		ctx.Fqdn,
 		ctx.Username,
-	 	ctx.Password,
+		ctx.Password,
 		ctx.Tenant)
 
 	if err != nil {
@@ -50,7 +50,6 @@ func PrepNode(
 	}
 
 	if err := installHostAgentMain(ctx, keystoneAuth, hostOS); err != nil {
-
 		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
 	}
 
@@ -205,25 +204,27 @@ func checkPF9Packages(hostOS string) bool {
 }
 
 func installHostAgentMain(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
-
 	hostagentInstaller := fmt.Sprintf(
-		"https://%s/clarity/platform9-install-%s.sh",
+		"%s/clarity/platform9-install-%s.sh",
 		ctx.Fqdn, hostOS)
-
+	client := http.Client{}
 	req, err := http.NewRequest("GET", hostagentInstaller, nil)
-
-	if req.Response.StatusCode == 200 {
-		installHostAgentCertless(ctx, keystoneAuth, hostOS)
+	if err != nil {
 		return err
-	} else if req.Response.StatusCode == 404 {
-		installHostAgentLegacy(ctx, keystoneAuth, hostOS)
-		return err
-	} else {
-		log.Error.Fatal(err)
 	}
-	return err
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == 200 {
+		installHostAgentCertless(ctx, keystoneAuth, hostOS)
+	} else if resp.StatusCode == 404 {
+		installHostAgentLegacy(ctx, keystoneAuth, hostOS)
+	} else {
+		return fmt.Errorf("Request could not be handled. Response code returned is: ", resp.StatusCode)
+	}
+	return nil
 }
-
 func installHostAgentLegacy(ctx Context, keystoneAuth KeystoneAuth, hostOS string) error {
 	log.Info.Println("Downloading Hostagent installer")
 
