@@ -38,11 +38,11 @@ func PrepNode(
 	if err != nil {
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
-
+	fmt.Println(ctx.Fqdn,ctx.Username,ctx.Password,ctx.Tenant)
 	keystoneAuth, err := getKeystoneAuth(
 		ctx.Fqdn,
 		ctx.Username,
-		ctx.Password,
+	 	ctx.Password,
 		ctx.Tenant)
 
 	if err != nil {
@@ -50,6 +50,7 @@ func PrepNode(
 	}
 
 	if err := installHostAgentMain(ctx, keystoneAuth, hostOS); err != nil {
+
 		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
 	}
 
