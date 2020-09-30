@@ -229,12 +229,12 @@ func installHostAgentLegacy(ctx Context, keystoneAuth KeystoneAuth, hostOS strin
 	log.Info.Println("Downloading Hostagent installer")
 
 	hostagentInstaller := fmt.Sprintf(
-		"https://%s/private/platform9-install-%s.sh",
+		"%s/private/platform9-install-%s.sh",
 		ctx.Fqdn, hostOS)
 
 	hostagent_install_options := fmt.Sprintf("--insecure --project-name=%s 2>&1 > /tmp/agent_install.log", keystoneAuth.ProjectID)
 
-	cmd := fmt.Sprintf(`curl --silent --show-error -H "X-Auth-Token: %s" %s -o  /tmp/installer.sh %s`, keystoneAuth.Token, hostagentInstaller, hostagent_install_options)
+	cmd := fmt.Sprintf(`curl --silent --show-error -H "X-Auth-Token: %s" %s -o  /tmp/installer.sh`, keystoneAuth.Token, hostagentInstaller)
 	fmt.Println(cmd)
 	_, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
