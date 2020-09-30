@@ -53,6 +53,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Error.Fatalf("Unable to load clients: %s", err.Error())
 	}
+	defer c.Segment.Close()
 
 	name := args[0]
 
@@ -71,9 +72,13 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	err = pmk.Bootstrap(ctx, c, payload)
 	if err != nil {
-		log.Error.Fatalf("Unable to bootstrap the cluster: %s", err.Error())
+		c.Segment.SendEvent("Bootstrap - Cluster creation failed", err)
+		log.Error.Fatalf("Unable to bootstrap the cluster. Error: %s", err.Error())
 	}
 
+	if err := c.Segment.SendEvent("Bootstrap - Cluster creation succeeded", payload); err != nil {
+		log.Error.Printf("Unable to send Segment event for Bootstrap. Error: %s", err.Error())
+	}
 }
 
 func init() {

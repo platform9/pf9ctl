@@ -9,6 +9,7 @@ type Client struct {
 	Keystone Keystone
 	Qbert    Qbert
 	Executor Executor
+	Segment  Segment
 }
 
 // New creates the clients needed by the CLI
@@ -20,5 +21,6 @@ func New(fqdn string) (Client, error) {
 		Keystone: NewKeystone(fqdn),
 		Qbert:    NewQbert(fqdn),
 		Executor: ExecutorImpl{},
+		Segment:  NewSegment(fqdn),
 	}, nil
 }

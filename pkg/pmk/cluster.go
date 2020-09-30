@@ -20,16 +20,15 @@ func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) 
 		log.Error.Fatalf("Couldn't fetch user content")
 	}
 
-	err = PrepNode(ctx, c, "", "", "", []string{})
-	if err != nil {
+	if err := PrepNode(ctx, c, "", "", "", []string{}); err != nil {
 		return fmt.Errorf("Unable to prepnode: %w", err)
 	}
 
 	keystoneAuth, err := c.Keystone.GetAuth(
 		ctx.Username,
 		ctx.Password,
-		ctx.Tenant)
-
+		ctx.Tenant,
+	)
 	if err != nil {
 		log.Error.Fatalf("keystone authentication failed: %s", err.Error())
 	}
@@ -63,6 +62,6 @@ func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) 
 		return fmt.Errorf("Unable to attach node: %w", err)
 	}
 
-	log.Info.Printf("\nBootstrap successfully Finished\n")
+	log.Info.Printf("Bootstrap successfully Finished\n")
 	return nil
 }
