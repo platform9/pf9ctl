@@ -53,6 +53,16 @@ func (c QbertImpl) CreateCluster(
 	projectID, token string) (string, error) {
 	log.Info.Println("Received a call to create a cluster in management plane")
 
+	exists, err := c.checkClusterExists(r.Name, projectID, token)
+
+	if err != nil {
+		return "", fmt.Errorf("Unable to check existing cluster: %s", err.Error())
+	}
+
+	if exists {
+		return "", fmt.Errorf("Cluster name already exists, please select a different name while cluster creation")
+	}
+
 	np, err := c.GetNodePoolID(projectID, token)
 	if err != nil {
 		return "", fmt.Errorf("Unable to fetch nodepoolUuid: %s", err.Error())
@@ -175,4 +185,40 @@ func (c QbertImpl) GetNodePoolID(projectID, token string) (string, error) {
 	}
 
 	return "", errors.New("Unable to locate local Node Pool")
+}
+
+func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, error) {
+
+	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
+	client := http.Client{}
+	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
+
+	if err != nil {
+		return false, fmt.Errorf("Unable to create request to check cluster name: %w", err)
+	}
+
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, err
+	}
+	if resp.StatusCode != 200 {
+		return false, fmt.Errorf("Couldn't query the qbert Endpoint: %s", resp.StatusCode)
+	}
+	var payload []map[string]interface{}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&payload)
+	if err != nil {
+		return false, err
+	}
+
+	for _, val := range payload {
+		if val["name"] == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
