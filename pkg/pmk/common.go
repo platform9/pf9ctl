@@ -12,34 +12,23 @@ import (
 func setupNode(hostOS string) (err error) {
 	log.Debug("Received a call to setup the node")
 
-	if err := swapOff(); err != nil {
-		return err
+	if err := host.SwapOff(); err != nil {
+		return fmt.Errorf("Unable to disable swap: %w", err)
 	}
 
 	if err := handlePF9UserGroup(); err != nil {
 		return err
 	}
 
-	switch hostOS {
-	case "redhat":
-		err = redhatCentosPackageInstall()
-		if err != nil {
-			return
-		}
-		err = ntpInstallActivateRedhatCentos()
-
-	case "debian":
-		err = ubuntuPackageInstall()
-		if err != nil {
-			return
-		}
-		err = ntpInstallActivateUbuntu()
-
-	default:
-		err = fmt.Errorf("Invalid Host: %s", hostOS)
+	if err := host.Setup(); err != nil {
+		return fmt.Errorf("Unable to setup the host: %w", err)
 	}
 
-	return
+	if err := host.EnableNTP(); err != nil {
+		return fmt.Errorf("Unable to enable NTP for host: %w", err)
+	}
+
+	return nil
 }
 
 func handlePF9UserGroup() error {
@@ -95,6 +84,7 @@ func createPF9Group(name string) error {
 
 	return nil
 }
+<<<<<<< HEAD
 
 func ubuntuPackageInstall() error {
 	log.Info("Installing required ubuntu packages")
@@ -148,3 +138,5 @@ func swapOff() error {
 	_, err := exec.Command("bash", "-c", "swapoff -a").Output()
 	return err
 }
+=======
+>>>>>>> Wrapped the host functions in host interface
