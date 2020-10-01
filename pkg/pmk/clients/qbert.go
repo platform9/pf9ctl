@@ -55,8 +55,12 @@ func (c QbertImpl) CreateCluster(
 
 	exists, err := c.checkClusterExists(r.Name, projectID, token)
 
-	if exists || err != nil {
-		return "", fmt.Errorf("Cluster name already exists, please select a different name while cluster creation or error while checking clusters %s", err.Error())
+	if err != nil {
+		return "", fmt.Errorf("Unable to check existing cluster: %s", err.Error())
+	}
+
+	if exists {
+		return "", fmt.Errorf("Cluster name already exists, please select a different name while cluster creation")
 	}
 
 	np, err := c.GetNodePoolID(projectID, token)
@@ -187,7 +191,7 @@ func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, erro
 
 	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
 	client := http.Client{}
-
+	fmt.Println(name)
 	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
 
 	if err != nil {
@@ -204,15 +208,17 @@ func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, erro
 	if resp.StatusCode != 200 {
 		return false, fmt.Errorf("Couldn't query the qbert Endpoint: %s", err.Error())
 	}
-	var payload []map[string]string
+	var payload []map[string]interface{}
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
+	fmt.Println("Error is : %s", err)
 	if err != nil {
 		return false, err
 	}
 
 	for _, val := range payload {
+		fmt.Println(val["name"])
 		if val["name"] == name {
 			return true, err
 		}
