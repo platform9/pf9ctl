@@ -191,12 +191,10 @@ func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, erro
 
 	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
 	client := http.Client{}
-	fmt.Println(name)
 	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
 
 	if err != nil {
-		fmt.Println(err.Error())
-		return false, err
+		return false, fmt.Errorf("Unable to create request to check cluster name: %w", err)
 	}
 
 	req.Header.Set("X-Auth-Token", token)
@@ -206,13 +204,12 @@ func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, erro
 		return false, err
 	}
 	if resp.StatusCode != 200 {
-		return false, fmt.Errorf("Couldn't query the qbert Endpoint: %s", err.Error())
+		return false, fmt.Errorf("Couldn't query the qbert Endpoint: %s", resp.StatusCode)
 	}
 	var payload []map[string]interface{}
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
-	fmt.Println("Error is : %s", err)
 	if err != nil {
 		return false, err
 	}
