@@ -215,11 +215,10 @@ func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, erro
 	}
 
 	for _, val := range payload {
-		fmt.Println(val["name"])
 		if val["name"] == name {
-			return true, err
+			return true, nil
 		}
 	}
 
-	return false, err
+	return false, nil
 }
