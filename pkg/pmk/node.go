@@ -22,6 +22,7 @@ func PrepNode(
 	password string,
 	sshkey string,
 	ips []string) error {
+
 	log.Info.Println("Received a call to start preping node(s).")
 
 	hostOS, err := validatePlatform()
@@ -41,7 +42,9 @@ func PrepNode(
 
 	auth, err := c.Keystone.GetAuth(
 		ctx.Username,
-		ctx.Password, ctx.Tenant)
+		ctx.Password,
+		ctx.Tenant,
+	)
 
 	if err != nil {
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
@@ -62,7 +65,15 @@ func PrepNode(
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(WaitPeriod * time.Second)
 
-	return c.Resmgr.AuthorizeHost(hostID, auth.Token)
+	if err := c.Resmgr.AuthorizeHost(hostID, auth.Token); err != nil {
+		return err
+	}
+
+	if err := c.Segment.SendEvent("Prep Node - Successful", auth); err != nil {
+		log.Error.Printf("Unable to send Segment event for Node prep. Error: %s", err.Error())
+	}
+
+	return nil
 }
 
 func installHostAgent(ctx Context, auth clients.KeystoneAuth, hostOS string) error {

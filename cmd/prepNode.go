@@ -43,15 +43,13 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		log.Error.Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
-	clients, err := clients.New(ctx.Fqdn)
+	c, err := clients.New(ctx.Fqdn)
 	if err != nil {
-		log.Error.Fatalf("Unable to load clients needed for the Cmd")
+		log.Error.Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
 
-	err = pmk.PrepNode(
-		ctx, clients, user, password, sshKey, ips)
-
-	if err != nil {
+	if err := pmk.PrepNode(ctx, c, user, password, sshKey, ips); err != nil {
+		c.Segment.SendEvent("Prep Node - Failed", err)
 		log.Error.Fatalf("Unable to prep node: %s\n", err.Error())
 	}
 }
