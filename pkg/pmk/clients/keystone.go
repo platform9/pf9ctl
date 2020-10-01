@@ -4,9 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 
+	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
 )
 
@@ -21,11 +21,12 @@ type Keystone interface {
 }
 
 type KeystoneImpl struct {
-	fqdn string
+	fqdn   string
+	client HTTP
 }
 
-func NewKeystone(fqdn string) Keystone {
-	return KeystoneImpl{fqdn}
+func NewKeystone(fqdn string, client HTTP) Keystone {
+	return KeystoneImpl{fqdn: fqdn, client: client}
 }
 
 func (k KeystoneImpl) GetAuth(
@@ -65,7 +66,13 @@ func (k KeystoneImpl) GetAuth(
 		}
 	}`, username, decodedPassword, tenant)
 
-	resp, err := http.Post(url, "application/json", strings.NewReader(body))
+	req, err := rhttp.NewRequest("POST", url, strings.NewReader(body))
+	if err != nil {
+		return auth, nil
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := k.client.Do(req)
 	if err != nil {
 		return auth, err
 	}

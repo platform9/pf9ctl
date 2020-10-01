@@ -47,6 +47,10 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	service, _ := reader.ReadString('\n')
 	service = strings.TrimSuffix(service, "\n")
 
+	fmt.Printf("Proxy: ")
+	proxy, _ := reader.ReadString('\n')
+	proxy = strings.TrimSuffix(proxy, "\n")
+
 	if region == "" {
 		region = "RegionOne"
 	}
@@ -61,6 +65,7 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 		Password: encodedPasswd,
 		Region:   region,
 		Tenant:   service,
+		Proxy:    proxy,
 	}
 
 	if err := pmk.StoreContext(ctx, constants.Pf9DBLoc); err != nil {
