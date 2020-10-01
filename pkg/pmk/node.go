@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -38,7 +39,7 @@ func PrepNode(
 		return fmt.Errorf("Unable to setup node: %s", err.Error())
 	}
 
-	keystoneAuth, err := c.Keystone.GetAuth(
+	auth, err := c.Keystone.GetAuth(
 		ctx.Username,
 		ctx.Password, ctx.Tenant)
 
@@ -46,8 +47,8 @@ func PrepNode(
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
-	if err := installHostAgent(ctx, keystoneAuth, hostOS); err != nil {
-		return fmt.Errorf("Unable to install hostagent: %s", err.Error())
+	if err := installHostAgent(ctx, auth, hostOS); err != nil {
+		return fmt.Errorf("Unable to install hostagent: %w", err)
 	}
 
 	log.Info.Println("Identifying the hostID from conf")
@@ -61,17 +62,42 @@ func PrepNode(
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(WaitPeriod * time.Second)
 
-	return c.Resmgr.AuthorizeHost(hostID, keystoneAuth.Token)
+	return c.Resmgr.AuthorizeHost(hostID, auth.Token)
 }
 
-func installHostAgent(ctx Context, keystoneAuth clients.KeystoneAuth, hostOS string) error {
-	log.Info.Println("Downloading Hostagent installer Certless")
+func installHostAgent(ctx Context, auth clients.KeystoneAuth, hostOS string) error {
+	log.Info.Println("Download Hostagent")
 
-	hostagentInstaller := fmt.Sprintf(
+	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", ctx.Fqdn, hostOS)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("Unable to create a http request: %w", err)
+	}
+
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to send a request to clientL %w", err)
+	}
+
+	switch resp.StatusCode {
+	case 404:
+		return installHostAgentLegacy(ctx, auth, hostOS)
+	case 200:
+		return installHostAgentCertless(ctx, auth, hostOS)
+	default:
+		return fmt.Errorf("Invalid status code when identifiying hostagent type: %d", resp.StatusCode)
+	}
+}
+
+func installHostAgentCertless(ctx Context, auth clients.KeystoneAuth, hostOS string) error {
+	log.Info.Println("Downloading Hostagent Installer Certless")
+
+	url := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
 		ctx.Fqdn, hostOS)
 
-	cmd := fmt.Sprintf(`curl --silent --show-error  %s -o  /tmp/installer.sh`, hostagentInstaller)
+	cmd := fmt.Sprintf(`curl --silent --show-error  %s -o  /tmp/installer.sh`, url)
 	fmt.Println(cmd)
 	_, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
@@ -85,14 +111,14 @@ func installHostAgent(ctx Context, keystoneAuth clients.KeystoneAuth, hostOS str
 		return err
 	}
 	decodedPassword := string(decodedBytePassword)
-	cmd = fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, decodedPassword)
+	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, decodedPassword)
 
 	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
 	if err != nil {
 		return err
 	}
 
-	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, cmd)
+	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
 	_, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return err
@@ -152,15 +178,43 @@ func pf9PackagesPresent(hostOS string, exec clients.Executor) bool {
 	if hostOS == "debian" {
 		err = exec.Run("bash",
 			"-c",
-			"dpkg -l | grep -i pf9")
+			"dpkg -l | grep -i 'pf9-'")
 	} else {
 		// not checking for redhat because if it has already passed validation
 		// it must be either debian or redhat based
 		err = exec.Run("bash",
 			"-c",
-			"yum list | grep -i pf9")
-
+			"yum list | grep -i 'pf9-'")
 	}
 
 	return err == nil
+}
+
+func installHostAgentLegacy(ctx Context, auth clients.KeystoneAuth, hostOS string) error {
+	log.Info.Println("Downloading Hostagent Installer Legacy")
+
+	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)
+	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install.log", auth.ProjectID)
+
+	cmd := fmt.Sprintf(`curl --silent --show-error -H "X-Auth-Token: %s" %s -o  /tmp/installer.sh`, auth.Token, url)
+	_, err := exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		return err
+	}
+
+	log.Info.Println("Hostagent download completed successfully")
+	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
+	if err != nil {
+		return err
+	}
+
+	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+	_, err = exec.Command("bash", "-c", cmd).Output()
+	if err != nil {
+		return err
+	}
+
+	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
+	log.Info.Println("hostagent installed successfully")
+	return nil
 }
