@@ -11,16 +11,22 @@ import (
 
 // Bootstrap simply preps the local node and attach it as master to a newly
 // created cluster.
-func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) error {
-	log.Debug("Received a call to boostrap the local node")
+func Bootstrap(
+	ctx Context,
+	c clients.Client,
+	req clients.ClusterCreateRequest) error {
+	log.Info.Println("Received a call to boostrap the local node")
 
-	resp, err := util.AskBool("Prep local node for kubernetes cluster")
-	if err != nil || !resp {
-		log.Errorf("Couldn't fetch user content")
+	prep, err := util.AskBool("PrepLocal node for kubernetes cluster")
+	if err != nil {
+		return fmt.Errorf("Unable to capture user response: %w", err)
 	}
 
-	if err := PrepNode(ctx, c, "", "", "", []string{}); err != nil {
-		return fmt.Errorf("Unable to prepnode: %w", err)
+	if prep {
+		err = PrepNode(ctx, c, "", "", "", []string{})
+		if err != nil {
+			return fmt.Errorf("Unable to prepnode: %w", err)
+		}
 	}
 
 	keystoneAuth, err := c.Keystone.GetAuth(
