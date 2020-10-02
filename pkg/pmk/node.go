@@ -239,7 +239,7 @@ func installHostAgentLegacy(
 
 func downloadFile(client clients.HTTP, req *http.Request, loc string) error {
 
-	f, err := os.Open(loc)
+	f, err := os.Create(loc)
 	if err != nil {
 		return fmt.Errorf("Unable to create a file for download: %w", err)
 	}
