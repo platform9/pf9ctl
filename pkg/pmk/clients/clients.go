@@ -1,7 +1,5 @@
 package clients
 
-import "github.com/platform9/pf9ctl/pkg/util"
-
 const HTTPMaxRetry = 5
 
 // Client struct encapsulate the collection of
@@ -21,7 +19,6 @@ func New(fqdn string, proxy string) (Client, error) {
 
 	http, err := NewHTTP(
 		func(impl *HTTPImpl) { impl.Proxy = proxy },
-		func(impl *HTTPImpl) { impl.RetryPolicy = util.RetryPolicyOn404 },
 		func(impl *HTTPImpl) { impl.Retry = HTTPMaxRetry })
 
 	if err != nil {

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
-	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
 )
 
@@ -74,7 +74,7 @@ func (c QbertImpl) CreateCluster(
 
 	url := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID)
 
-	req, err := rhttp.NewRequest("POST", url, strings.NewReader(string(byt)))
+	req, err := http.NewRequest("POST", url, strings.NewReader(string(byt)))
 	if err != nil {
 		return "", err
 	}
@@ -118,7 +118,7 @@ func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error 
 		"%s/qbert/v3/%s/clusters/%s/attach",
 		c.fqdn, projectID, clusterID)
 
-	req, err := rhttp.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {
 		return fmt.Errorf("Unable to create a request: %w", err)
 	}
@@ -141,7 +141,7 @@ func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error 
 func (c QbertImpl) GetNodePoolID(projectID, token string) (string, error) {
 
 	qbertAPIEndpoint := fmt.Sprintf("%s/qbert/v3/%s/cloudProviders", c.fqdn, projectID)
-	req, err := rhttp.NewRequest("GET", qbertAPIEndpoint, nil)
+	req, err := http.NewRequest("GET", qbertAPIEndpoint, nil)
 
 	if err != nil {
 		return "", err

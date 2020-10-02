@@ -204,6 +204,10 @@ func installHostAgentLegacy(ctx Context, auth clients.KeystoneAuth, hostOS strin
 		return err
 	}
 
+	if ctx.Proxy != "" {
+
+	}
+
 	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
 	_, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {

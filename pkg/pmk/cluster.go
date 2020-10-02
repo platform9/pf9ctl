@@ -50,7 +50,6 @@ func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) 
 	}
 	log.Info("Attaching node to the cluster...")
 	nodeID := strings.TrimSuffix(output, "\n")
-
 	err = c.Qbert.AttachNode(
 		clusterID,
 		nodeID,

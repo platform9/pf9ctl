@@ -3,6 +3,9 @@ module github.com/platform9/pf9ctl
 go 1.14
 
 require (
+	github.com/PuerkitoBio/rehttp v1.0.0
+	github.com/aybabtme/iocontrol v0.0.0-20150809002002-ad15bcfc95a0 // indirect
+	github.com/benbjohnson/clock v1.0.3 // indirect
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/mitchellh/go-homedir v1.1.0

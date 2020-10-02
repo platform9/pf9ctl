@@ -4,9 +4,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strings"
 
-	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
 )
 
@@ -66,7 +66,7 @@ func (k KeystoneImpl) GetAuth(
 		}
 	}`, username, decodedPassword, tenant)
 
-	req, err := rhttp.NewRequest("POST", url, strings.NewReader(body))
+	req, err := http.NewRequest("POST", url, strings.NewReader(body))
 	if err != nil {
 		return auth, nil
 	}
