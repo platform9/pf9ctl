@@ -3,9 +3,10 @@ package pmk
 import (
 	"encoding/base64"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
-	"os/exec"
+	"os"
 	"runtime"
 	"strings"
 
@@ -50,7 +51,7 @@ func PrepNode(
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
-	if err := installHostAgent(ctx, auth, host.String()); err != nil {
+	if err := installHostAgent(ctx, c, auth, host.String()); err != nil {
 		return fmt.Errorf("Unable to install hostagent: %w", err)
 	}
 
@@ -75,7 +76,8 @@ func PrepNode(
 	return nil
 }
 
-func installHostAgent(ctx Context, auth clients.KeystoneAuth, host string) error {
+func installHostAgent(
+	ctx Context, c clients.Client, auth clients.KeystoneAuth, host string) error {
 	log.Info("Download Hostagent")
 
 	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", ctx.Fqdn, host)
@@ -87,34 +89,39 @@ func installHostAgent(ctx Context, auth clients.KeystoneAuth, host string) error
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Unable to send a request to clientL %w", err)
+		return fmt.Errorf("Unable to send a request to client %w", err)
 	}
 
 	switch resp.StatusCode {
 	case 404:
-		return installHostAgentLegacy(ctx, auth, host)
+		return installHostAgentLegacy(
+			ctx, auth, c.HTTP, c.Executor, host)
 	case 200:
-		return installHostAgentCertless(ctx, auth, host)
+		return installHostAgentCertless(
+			ctx, auth, c.HTTP, c.Executor, host)
 	default:
 		return fmt.Errorf("Invalid status code when identifiying hostagent type: %d", resp.StatusCode)
 	}
 }
 
-func installHostAgentCertless(ctx Context, auth clients.KeystoneAuth, hostOS string) error {
+func installHostAgentCertless(
+	ctx Context, auth clients.KeystoneAuth, httpClient clients.HTTP, exec clients.Executor, hostOS string) error {
 	log.Info("Downloading Hostagent Installer Certless")
 
 	url := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
 		ctx.Fqdn, hostOS)
 
-	cmd := fmt.Sprintf(`curl --silent --show-error  %s -o  /tmp/installer.sh`, url)
-	_, err := exec.Command("bash", "-c", cmd).Output()
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to create request: %w", err)
 	}
-	log.Debug("Hostagent download completed successfully")
 
-	// Decoding base64 encoded password
+	if err := downloadFile(httpClient, req, "/tmp/installer.sh"); err != nil {
+		return fmt.Errorf("Unable to download hostagent installer: %w", err)
+	}
+
+	log.Info("Hostagent download completed successfully")
 	decodedBytePassword, err := base64.StdEncoding.DecodeString(ctx.Password)
 	if err != nil {
 		return err
@@ -122,13 +129,17 @@ func installHostAgentCertless(ctx Context, auth clients.KeystoneAuth, hostOS str
 	decodedPassword := string(decodedBytePassword)
 	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, decodedPassword)
 
-	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
+	err = exec.Run("bash", "-c", "chmod +x /tmp/installer.sh")
 	if err != nil {
 		return err
 	}
 
-	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
-	_, err = exec.Command("bash", "-c", cmd).Output()
+	cmd := fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+	if ctx.Proxy != "" {
+		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy=%s --skip-os-check --ntpd %s`, ctx.Proxy, installOptions)
+	}
+
+	err = exec.Run("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}
@@ -186,35 +197,66 @@ func getHost(hostReleaseLoc string, exec clients.Executor) (Host, error) {
 	}
 }
 
-func installHostAgentLegacy(ctx Context, auth clients.KeystoneAuth, hostOS string) error {
+func installHostAgentLegacy(
+	ctx Context,
+	auth clients.KeystoneAuth,
+	httpClient clients.HTTP,
+	exec clients.Executor,
+	hostOS string) error {
 	log.Info("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)
-	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
-
-	cmd := fmt.Sprintf(`curl --silent --show-error -H "X-Auth-Token: %s" %s -o /tmp/installer.sh`, auth.Token, url)
-	_, err := exec.Command("bash", "-c", cmd).Output()
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Auth-Token", auth.Token)
+
+	if err := downloadFile(httpClient, req, "/tmp/installer.sh"); err != nil {
+		return fmt.Errorf("Unable to download hostagent installer: %w", err)
 	}
 
 	log.Debug("Hostagent download completed successfully")
 	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
-	if err != nil {
-		return err
-	}
 
+	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install.log", auth.ProjectID)
+
+	cmd := fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
 	if ctx.Proxy != "" {
-
+		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy=%s --skip-os-check --ntpd %s`, ctx.Proxy, installOptions)
 	}
 
-	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
-	_, err = exec.Command("bash", "-c", cmd).Output()
+	err = exec.Run("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}
 
-	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	log.Info("Hostagent installed successfully")
+	log.Info.Println("Hostagent installed successfully")
+	return nil
+}
+
+func downloadFile(client clients.HTTP, req *http.Request, loc string) error {
+
+	f, err := os.Open(loc)
+	if err != nil {
+		return fmt.Errorf("Unable to create a file for download: %w", err)
+	}
+
+	defer f.Close()
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to make a request to client: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	_, err = io.Copy(f, resp.Body)
+	if err != nil {
+		return fmt.Errorf("Unable to copy the body into file: %w", err)
+	}
+
 	return nil
 }
