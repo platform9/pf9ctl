@@ -26,7 +26,7 @@ func NewHTTP(options ...func(*HTTPImpl)) (*HTTPImpl, error) {
 		option(resp)
 	}
 
-	var transport *http.Transport
+	var transport http.RoundTripper
 	if resp.Proxy != "" {
 		proxyURL, err := url.Parse(resp.Proxy)
 		if err != nil {
@@ -35,13 +35,19 @@ func NewHTTP(options ...func(*HTTPImpl)) (*HTTPImpl, error) {
 
 		resp.ProxyURL = proxyURL
 		transport = &http.Transport{Proxy: http.ProxyURL(proxyURL)}
+	} else {
+		transport = http.DefaultTransport
 	}
 
-	t := rehttp.NewTransport(transport, rehttp.RetryAny(
+	t := rehttp.NewTransport(transport, rehttp.RetryAll(
+		rehttp.RetryAny(
+			rehttp.RetryTemporaryErr(),
+			rehttp.RetryStatuses(400, 404),
+		),
 		rehttp.RetryMaxRetries(resp.Retry),
-		rehttp.RetryTemporaryErr(),
-		rehttp.RetryStatuses(400, 404)),
-		rehttp.ExpJitterDelay(time.Second*time.Duration(2), time.Second*time.Duration(60)))
+	),
+		// rehttp.ExpJitterDelay(time.Second*time.Duration(2), time.Second*time.Duration(60))
+		rehttp.ConstDelay(time.Second*time.Duration(10)))
 
 	resp.client = &http.Client{Transport: t}
 	return resp, nil
