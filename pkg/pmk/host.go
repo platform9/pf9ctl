@@ -55,7 +55,7 @@ func (h Redhat) InstallPackage(names ...string) error {
 //EnableNTP enables the NTP service for the Redhat host.
 func (h Redhat) EnableNTP() error {
 	err := h.InstallPackage("ntpd")
-	err = h.exec.Run("bash", "-c", "systemctl enable --now ntp")
+	err = h.exec.Run("bash", "-c", "systemctl enable --now ntpd")
 	return err
 }
 
