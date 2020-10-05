@@ -86,8 +86,7 @@ func installHostAgent(
 		return fmt.Errorf("Unable to create a http request: %w", err)
 	}
 
-	client := http.Client{}
-	resp, err := client.Do(req)
+	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return fmt.Errorf("Unable to send a request to client %w", err)
 	}
