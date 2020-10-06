@@ -218,7 +218,10 @@ func installHostAgentLegacy(
 	}
 
 	log.Debug("Hostagent download completed successfully")
-	_, err = exec.Command("bash", "-c", "chmod +x /tmp/installer.sh").Output()
+	err = exec.Run("bash", "-c", "chmod +x /tmp/installer.sh")
+	if err != nil {
+		return err
+	}
 
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install.log", auth.ProjectID)
 
