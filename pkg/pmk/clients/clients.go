@@ -1,6 +1,8 @@
 package clients
 
-const HTTPMaxRetry = 5
+// HTTPMaxRetry indicates the number of
+// retries to be carried out before giving up.
+const HTTPMaxRetry = 9
 
 // Client struct encapsulate the collection of
 // external services
