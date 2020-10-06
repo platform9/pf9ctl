@@ -69,6 +69,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		MetalLBAddressPool:    metallbIPRange,
 		AllowWorkloadOnMaster: allowWorkloadsOnMaster,
 		Privileged:            privileged,
+		HTTPProxy:             ctx.Proxy,
 	}
 
 	err = pmk.Bootstrap(ctx, c, payload)

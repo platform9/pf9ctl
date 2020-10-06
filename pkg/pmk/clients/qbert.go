@@ -45,6 +45,7 @@ type ClusterCreateRequest struct {
 	NodePoolUUID          string     `json:"nodePoolUuid"`
 	EnableMetalLb         bool       `json:"enableMetallb"`
 	Masterless            bool       `json:"masterless"`
+	HTTPProxy             string     `json:"httpProxy,omitempty"`
 }
 
 func (c QbertImpl) CreateCluster(
