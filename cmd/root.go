@@ -7,8 +7,8 @@ import (
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
-	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/constants"
+	"github.com/platform9/pf9ctl/pkg/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,22 +26,26 @@ var rootCmd = &cobra.Command{
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-
 	if err := initializeBaseDirs(); err != nil {
-		log.Error.Fatalf("Base directory initialization failed: %s\n", err.Error())
+		fmt.Printf("Base directory initialization failed: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	// Initializing zap logger with console and file logging support
+	if err := logger.New(); err != nil {
+		fmt.Printf("Logger initialization failed: %s", err.Error())
+		os.Exit(1)
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		log.Error.Fatalf(err.Error())
+		logger.Log.Fatalf(err.Error())
 	}
 }
 
 func initializeBaseDirs() (err error) {
-	log.Info.Println("Received a call to create base dirs")
-
-	err = os.MkdirAll(pmk.Pf9Dir, os.ModeDir)
-	err = os.MkdirAll(pmk.Pf9DBDir, os.ModeDir)
-	err = os.MkdirAll(pmk.Pf9LogDir, os.ModeDir)
+	err = os.MkdirAll(constants.Pf9Dir, os.ModeDir)
+	err = os.MkdirAll(constants.Pf9DBDir, os.ModeDir)
+	err = os.MkdirAll(constants.Pf9LogDir, os.ModeDir)
 
 	return
 }
@@ -53,7 +57,7 @@ func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-// initConfig reads in config file and ENV variables if set.
+// InitConfig reads in config file and ENV variables if set.
 func initConfig() {
 
 	if cfgFile != "" {
@@ -68,8 +72,9 @@ func initConfig() {
 		viper.SetConfigName(".pf9ctl")
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
+	// Read in environment variables that match
+	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err == nil {
-		log.Error.Println("Using config file:", viper.ConfigFileUsed())
+		logger.Log.Errorf("Error occured while reading the config file: %s", viper.ConfigFileUsed())
 	}
 }

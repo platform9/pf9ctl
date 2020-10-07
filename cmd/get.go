@@ -11,7 +11,7 @@ var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Display one or many resources",
 	// Run: func(cmd *cobra.Command, args []string) {
-	// 	fmt.Println("get called")
+	// 	logger.Log.Info("Get called")
 	// },
 }
 

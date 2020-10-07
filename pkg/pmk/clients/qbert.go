@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	rhttp "github.com/hashicorp/go-retryablehttp"
-	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/logger"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
@@ -51,7 +51,6 @@ type ClusterCreateRequest struct {
 func (c QbertImpl) CreateCluster(
 	r ClusterCreateRequest,
 	projectID, token string) (string, error) {
-	log.Info.Println("Received a call to create a cluster in management plane")
 
 	exists, err := c.checkClusterExists(r.Name, projectID, token)
 
@@ -106,9 +105,7 @@ func (c QbertImpl) CreateCluster(
 }
 
 func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error {
-
-	log.Info.Printf("Received a call to attachnode: %s to cluster: %s\n",
-		nodeID, clusterID)
+	logger.Log.Debugf("Attaching the node: %s to cluster: %s", nodeID, clusterID)
 
 	var p []map[string]interface{}
 	p = append(p, map[string]interface{}{
@@ -157,7 +154,6 @@ func (c QbertImpl) GetNodePoolID(projectID, token string) (string, error) {
 	req, err := http.NewRequest("GET", qbertAPIEndpoint, nil)
 
 	if err != nil {
-		fmt.Println(err.Error())
 		return "", err
 	}
 
@@ -188,7 +184,6 @@ func (c QbertImpl) GetNodePoolID(projectID, token string) (string, error) {
 }
 
 func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, error) {
-
 	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
 	client := http.Client{}
 	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
@@ -204,7 +199,7 @@ func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, erro
 		return false, err
 	}
 	if resp.StatusCode != 200 {
-		return false, fmt.Errorf("Couldn't query the qbert Endpoint: %s", resp.StatusCode)
+		return false, fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
 	}
 	var payload []map[string]interface{}
 

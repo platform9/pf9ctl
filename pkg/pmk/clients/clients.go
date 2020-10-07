@@ -15,7 +15,6 @@ type Client struct {
 // New creates the clients needed by the CLI
 // to interact with the external services.
 func New(fqdn string) (Client, error) {
-
 	return Client{
 		Resmgr:   NewResmgr(fqdn),
 		Keystone: NewKeystone(fqdn),

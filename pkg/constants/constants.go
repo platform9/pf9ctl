@@ -1,4 +1,4 @@
-package pmk
+package constants
 
 import (
 	"os"
@@ -15,7 +15,7 @@ var (
 	// Pf9DBDir is the base dir for storing pf9 db context
 	Pf9DBDir = filepath.Join(Pf9Dir, "db")
 	// Pf9DBLoc represents location of the context file.
-	Pf9DBLoc = filepath.Join(Pf9DBDir, "express.json")
+	Pf9DBLoc = filepath.Join(Pf9DBDir, "config.json")
 	// Pf9Log represents location of the log.
 	Pf9Log = filepath.Join(Pf9LogDir, "pf9ctl.log")
 	// WaitPeriod is the sleep period for the cli
