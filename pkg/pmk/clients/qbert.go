@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	rhttp "github.com/hashicorp/go-retryablehttp"
-	"github.com/platform9/pf9ctl/pkg/logger"
+	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
@@ -105,7 +105,7 @@ func (c QbertImpl) CreateCluster(
 }
 
 func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error {
-	logger.Log.Debugf("Attaching the node: %s to cluster: %s", nodeID, clusterID)
+	log.Debugf("Attaching the node: %s to cluster: %s", nodeID, clusterID)
 
 	var p []map[string]interface{}
 	p = append(p, map[string]interface{}{

@@ -1,4 +1,4 @@
-package logger
+package log
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var Log *zap.SugaredLogger
+var s *zap.SugaredLogger
 
 func New() error {
 	// If the file doesn't exist, create it, or append to the file
@@ -28,9 +28,9 @@ func New() error {
 		zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), fileLogs, zap.DebugLevel),
 	)
 
-	Log = zap.New(core, zap.AddCaller()).Sugar()
+	s = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1)).Sugar()
 
-	defer Log.Sync()
+	defer s.Sync()
 	return nil
 }
 

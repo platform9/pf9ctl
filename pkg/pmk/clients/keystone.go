@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/platform9/pf9ctl/pkg/logger"
+	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 type KeystoneAuth struct {
@@ -33,7 +33,7 @@ func (k KeystoneImpl) GetAuth(
 	password,
 	tenant string) (auth KeystoneAuth, err error) {
 
-	logger.Log.Debugf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n", k.fqdn, username, tenant)
+	log.Debugf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n", k.fqdn, username, tenant)
 
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", k.fqdn)
 

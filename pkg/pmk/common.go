@@ -6,11 +6,11 @@ import (
 	"os/exec"
 	"os/user"
 
-	"github.com/platform9/pf9ctl/pkg/logger"
+	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 func setupNode(hostOS string) (err error) {
-	logger.Log.Debug("Received a call to setup the node")
+	log.Debug("Received a call to setup the node")
 
 	if err := swapOff(); err != nil {
 		return err
@@ -57,7 +57,7 @@ func handlePF9UserGroup() error {
 }
 
 func createPF9User(name string) error {
-	logger.Log.Info("Creating Pf9 User")
+	log.Info("Creating Pf9 User")
 
 	_, err := user.Lookup(name)
 	if err != nil {
@@ -66,7 +66,7 @@ func createPF9User(name string) error {
 			return err
 		}
 
-		logger.Log.Debug("User not present, creating it")
+		log.Debug("User not present, creating it")
 		if _, err := exec.Command("bash", "-c", "useradd -g pf9group -d '/opt/pf9/home' -s '/bin/bash'  pf9").Output(); err != nil {
 			return err
 		}
@@ -76,7 +76,7 @@ func createPF9User(name string) error {
 }
 
 func createPF9Group(name string) error {
-	logger.Log.Info("Creating Pf9 group")
+	log.Info("Creating Pf9 group")
 
 	_, err := user.LookupGroup(name)
 	if err != nil {
@@ -97,7 +97,7 @@ func createPF9Group(name string) error {
 }
 
 func ubuntuPackageInstall() error {
-	logger.Log.Info("Installing required ubuntu packages")
+	log.Info("Installing required ubuntu packages")
 
 	_, err := exec.Command("bash", "-c", "apt-get update ").Output()
 	_, err = exec.Command("bash", "-c", "apt-get install curl uuid-runtime software-properties-common logrotate -y").Output()
@@ -105,24 +105,24 @@ func ubuntuPackageInstall() error {
 }
 
 func redhatCentosPackageInstall() error {
-	logger.Log.Debug("Installing required RedHat packages")
+	log.Debug("Installing required RedHat packages")
 
 	_, err := exec.Command("bash", "-c", "yum install libselinux-python -y").Output()
 	return err
 }
 
 func ntpInstallActivateUbuntu() error {
-	logger.Log.Info("Installing NTP")
+	log.Info("Installing NTP")
 
 	_, err := exec.Command("bash", "-c", "apt-get install ntp -y").Output()
 	if err != nil {
-		logger.Log.Errorf("ntp package installation failed: %s", err.Error())
+		log.Errorf("ntp package installation failed: %s", err.Error())
 	}
 
-	logger.Log.Debug("ntpd installation completed successfully")
+	log.Debug("ntpd installation completed successfully")
 	_, err = exec.Command("bash", "-c", "systemctl enable --now ntp").Output()
 	if err != nil {
-		logger.Log.Errorf("ntp startup failed: %s", err.Error())
+		log.Errorf("ntp startup failed: %s", err.Error())
 	}
 
 	return nil
@@ -130,20 +130,20 @@ func ntpInstallActivateUbuntu() error {
 func ntpInstallActivateRedhatCentos() error {
 	_, err := exec.Command("bash", "-c", "yum install ntp -y").Output()
 	if err != nil {
-		logger.Log.Errorf("ntp package installation failed: %s", err.Error())
+		log.Errorf("ntp package installation failed: %s", err.Error())
 	}
 
-	logger.Log.Debug("ntpd installation completed successfully")
+	log.Debug("ntpd installation completed successfully")
 	_, err = exec.Command("bash", "-c", "systemctl enable --now ntpd").Output()
 	if err != nil {
-		logger.Log.Errorf("ntp startup failed: %s", err.Error())
+		log.Errorf("ntp startup failed: %s", err.Error())
 	}
 
 	return nil
 }
 
 func swapOff() error {
-	logger.Log.Info("Disabling swap")
+	log.Info("Disabling swap")
 
 	_, err := exec.Command("bash", "-c", "swapoff -a").Output()
 	return err

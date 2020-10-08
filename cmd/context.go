@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/constants"
-	"github.com/platform9/pf9ctl/pkg/logger"
+	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
@@ -64,7 +64,7 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	}
 
 	if err := pmk.StoreContext(ctx, constants.Pf9DBLoc); err != nil {
-		logger.Log.Errorf("Failed to store context: %s", err.Error())
+		log.Errorf("Failed to store context: %s", err.Error())
 	}
 }
 
@@ -73,7 +73,7 @@ var contextCmdGet = &cobra.Command{
 	Short: "List stored context/s",
 	Long:  `List stored contexts or details about a specific context`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger.Log.Info("Get context called")
+		log.Info("Get context called")
 	},
 }
 

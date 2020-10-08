@@ -3,7 +3,7 @@
 package cmd
 
 import (
-	"github.com/platform9/pf9ctl/pkg/logger"
+	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +14,7 @@ var createCmd = &cobra.Command{
 	Long: `Use the create command to create cluster, context, support bundle and
 	other resources`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger.Log.Info("Create called")
+		log.Info("Create called")
 	},
 }
 

@@ -11,7 +11,7 @@ var useCmd = &cobra.Command{
 	Use:   "use",
 	Short: "Use a specific context",
 	// Run: func(cmd *cobra.Command, args []string) {
-	// 	logger.Log.Info("Use called")
+	// 	log.Info("Use called")
 	// },
 }
 
