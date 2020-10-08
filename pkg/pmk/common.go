@@ -116,13 +116,13 @@ func ntpInstallActivateUbuntu() error {
 
 	_, err := exec.Command("bash", "-c", "apt-get install ntp -y").Output()
 	if err != nil {
-		log.Errorf("ntp package installation failed: %s", err.Error())
+		return fmt.Errorf("ntp package installation failed: %s", err.Error())
 	}
 
 	log.Debug("ntpd installation completed successfully")
 	_, err = exec.Command("bash", "-c", "systemctl enable --now ntp").Output()
 	if err != nil {
-		log.Errorf("ntp startup failed: %s", err.Error())
+		return fmt.Errorf("ntp startup failed: %s", err.Error())
 	}
 
 	return nil
@@ -130,13 +130,13 @@ func ntpInstallActivateUbuntu() error {
 func ntpInstallActivateRedhatCentos() error {
 	_, err := exec.Command("bash", "-c", "yum install ntp -y").Output()
 	if err != nil {
-		log.Errorf("ntp package installation failed: %s", err.Error())
+		return fmt.Errorf("ntp package installation failed: %s", err.Error())
 	}
 
 	log.Debug("ntpd installation completed successfully")
 	_, err = exec.Command("bash", "-c", "systemctl enable --now ntpd").Output()
 	if err != nil {
-		log.Errorf("ntp startup failed: %s", err.Error())
+		return fmt.Errorf("ntp startup failed: %s", err.Error())
 	}
 
 	return nil

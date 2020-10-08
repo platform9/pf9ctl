@@ -40,6 +40,6 @@ func setCustomConfig() zapcore.EncoderConfig {
 		TimeKey:     "ts",
 		MessageKey:  "msg",
 		EncodeLevel: zapcore.CapitalLevelEncoder,
-		EncodeTime:  zapcore.EpochTimeEncoder,
+		EncodeTime:  zapcore.ISO8601TimeEncoder,
 	}
 }
