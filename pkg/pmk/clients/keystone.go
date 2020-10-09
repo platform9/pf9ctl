@@ -33,8 +33,7 @@ func (k KeystoneImpl) GetAuth(
 	password,
 	tenant string) (auth KeystoneAuth, err error) {
 
-	log.Info.Printf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n",
-		k.fqdn, username, tenant)
+	log.Debugf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n", k.fqdn, username, tenant)
 
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", k.fqdn)
 

@@ -96,5 +96,5 @@ func AskBool(msg string, args ...interface{}) (bool, error) {
 		return false, nil
 	}
 
-	return false, fmt.Errorf("Please provide ip as y or n, provided: %s", resp)
+	return false, fmt.Errorf("Please provide input as y or n, provided: %s", resp)
 }

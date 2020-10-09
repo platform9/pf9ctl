@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-
 	// Check if program is run using root privileges
 	if os.Geteuid() != 0 {
 		fmt.Println("This program requires root privileges. Please run the binary as a root user.")

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/platform9/pf9ctl/pkg/constants"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk/clients"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -13,11 +14,11 @@ import (
 // Bootstrap simply preps the local node and attach it as master to a newly
 // created cluster.
 func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) error {
-	log.Info.Println("Received a call to boostrap the local node")
+	log.Debug("Received a call to boostrap the local node")
 
-	resp, err := util.AskBool("PrepLocal node for kubernetes cluster")
+	resp, err := util.AskBool("Prep local node for kubernetes cluster")
 	if err != nil || !resp {
-		log.Error.Fatalf("Couldn't fetch user content")
+		log.Errorf("Couldn't fetch user content")
 	}
 
 	if err := PrepNode(ctx, c, "", "", "", []string{}); err != nil {
@@ -30,9 +31,10 @@ func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) 
 		ctx.Tenant,
 	)
 	if err != nil {
-		log.Error.Fatalf("keystone authentication failed: %s", err.Error())
+		log.Fatalf("keystone authentication failed: %s", err.Error())
 	}
 
+	log.Info("Creating the cluster...")
 	clusterID, err := c.Qbert.CreateCluster(
 		req,
 		keystoneAuth.ProjectID,
@@ -49,10 +51,9 @@ func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) 
 	}
 	nodeID := strings.TrimSuffix(string(output), "\n")
 
-	log.Info.Println("Waiting for the cluster to get created")
-	time.Sleep(WaitPeriod * time.Second)
+	time.Sleep(constants.WaitPeriod * time.Second)
 
-	log.Info.Println("Cluster created successfully")
+	log.Info("Attaching node to the cluster...")
 	err = c.Qbert.AttachNode(
 		clusterID,
 		nodeID,
@@ -62,6 +63,6 @@ func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) 
 		return fmt.Errorf("Unable to attach node: %w", err)
 	}
 
-	log.Info.Printf("Bootstrap successfully Finished\n")
+	log.Info("Bootstrap successfully finished")
 	return nil
 }

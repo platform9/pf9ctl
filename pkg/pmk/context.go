@@ -8,8 +8,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/log"
 )
 
-//Context stores information to contact with the
-// pf9 controller.
+// Context stores information to contact with the pf9 controller.
 type Context struct {
 	Fqdn     string `json:"fqdn"`
 	Username string `json:"os_username"`
@@ -20,7 +19,7 @@ type Context struct {
 
 // StoreContext simply updates the in-memory object
 func StoreContext(ctx Context, loc string) error {
-	log.Info.Println("Received a call to store context")
+	log.Info("Storing context")
 
 	f, err := os.Create(loc)
 	if err != nil {
@@ -33,10 +32,9 @@ func StoreContext(ctx Context, loc string) error {
 	return encoder.Encode(ctx)
 }
 
-// LoadContext returns the information for communication
-// with PF9 controller.
+// LoadContext returns the information for communication with PF9 controller.
 func LoadContext(loc string) (Context, error) {
-	log.Info.Println("Received a call to load context")
+	log.Info("Loading context...")
 
 	f, err := os.Open(loc)
 	if err != nil {

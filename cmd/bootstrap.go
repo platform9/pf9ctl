@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/platform9/pf9ctl/pkg/constants"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/pmk/clients"
@@ -42,16 +43,16 @@ var (
 )
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
-	log.Info.Println("Received a call to bootstrap the node")
+	log.Debug("Received a call to bootstrap the node")
 
-	ctx, err := pmk.LoadContext(pmk.Pf9DBLoc)
+	ctx, err := pmk.LoadContext(constants.Pf9DBLoc)
 	if err != nil {
-		log.Error.Fatalf("Unable to load context: %s", err.Error())
+		log.Fatalf("Unable to load context: %s", err.Error())
 	}
 
 	c, err := clients.New(ctx.Fqdn)
 	if err != nil {
-		log.Error.Fatalf("Unable to load clients: %s", err.Error())
+		log.Fatalf("Unable to load clients: %s", err.Error())
 	}
 	defer c.Segment.Close()
 
@@ -73,11 +74,11 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	err = pmk.Bootstrap(ctx, c, payload)
 	if err != nil {
 		c.Segment.SendEvent("Bootstrap - Cluster creation failed", err)
-		log.Error.Fatalf("Unable to bootstrap the cluster. Error: %s", err.Error())
+		log.Fatalf("Unable to bootstrap the cluster. Error: %s", err.Error())
 	}
 
 	if err := c.Segment.SendEvent("Bootstrap - Cluster creation succeeded", payload); err != nil {
-		log.Error.Printf("Unable to send Segment event for Bootstrap. Error: %s", err.Error())
+		log.Errorf("Unable to send Segment event for Bootstrap. Error: %s", err.Error())
 	}
 }
 

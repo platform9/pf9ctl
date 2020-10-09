@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"github.com/platform9/pf9ctl/pkg/constants"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/pmk/clients"
@@ -38,18 +39,18 @@ func init() {
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 
-	ctx, err := pmk.LoadContext(pmk.Pf9DBLoc)
+	ctx, err := pmk.LoadContext(constants.Pf9DBLoc)
 	if err != nil {
-		log.Error.Fatalf("Unable to load the context: %s\n", err.Error())
+		log.Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
 	c, err := clients.New(ctx.Fqdn)
 	if err != nil {
-		log.Error.Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+		log.Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
 
 	if err := pmk.PrepNode(ctx, c, user, password, sshKey, ips); err != nil {
 		c.Segment.SendEvent("Prep Node - Failed", err)
-		log.Error.Fatalf("Unable to prep node: %s\n", err.Error())
+		log.Fatalf("Unable to prep node: %s\n", err.Error())
 	}
 }
