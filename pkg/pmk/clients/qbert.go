@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 // CloudProviderType specifies the infrastructure where the cluster runs
@@ -24,12 +22,13 @@ type Qbert interface {
 	GetNodePoolID(projectID, token string) (string, error)
 }
 
-func NewQbert(fqdn string) Qbert {
-	return QbertImpl{fqdn}
+func NewQbert(fqdn string, client HTTP) Qbert {
+	return QbertImpl{fqdn, client}
 }
 
 type QbertImpl struct {
-	fqdn string
+	fqdn   string
+	client HTTP
 }
 
 type ClusterCreateRequest struct {
@@ -46,6 +45,7 @@ type ClusterCreateRequest struct {
 	NodePoolUUID          string     `json:"nodePoolUuid"`
 	EnableMetalLb         bool       `json:"enableMetallb"`
 	Masterless            bool       `json:"masterless"`
+	HTTPProxy             string     `json:"httpProxy,omitempty"`
 }
 
 func (c QbertImpl) CreateCluster(
@@ -75,17 +75,14 @@ func (c QbertImpl) CreateCluster(
 
 	url := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID)
 
-	client := http.Client{}
 	req, err := http.NewRequest("POST", url, strings.NewReader(string(byt)))
-
 	if err != nil {
-		fmt.Println(err.Error())
 		return "", err
 	}
 
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -122,18 +119,14 @@ func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error 
 		"%s/qbert/v3/%s/clusters/%s/attach",
 		c.fqdn, projectID, clusterID)
 
-	client := rhttp.Client{}
-	client.RetryMax = 5
-	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
-
-	req, err := rhttp.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {
 		return fmt.Errorf("Unable to create a request: %w", err)
 	}
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Unable to POST request through client: %w", err)
 	}
@@ -148,24 +141,25 @@ func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error 
 
 func (c QbertImpl) GetNodePoolID(projectID, token string) (string, error) {
 
-	qbertAPIEndpoint := fmt.Sprintf("%s/qbert/v3/%s/cloudProviders", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
-	client := http.Client{}
-
+	qbertAPIEndpoint := fmt.Sprintf("%s/qbert/v3/%s/cloudProviders", c.fqdn, projectID)
 	req, err := http.NewRequest("GET", qbertAPIEndpoint, nil)
 
 	if err != nil {
 		return "", err
 	}
 
-	req.Header.Set("X-Auth-Token", token) //
+	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := client.Do(req)
+
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return "", err
 	}
+
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("Couldn't query the qbert Endpoint: %s", err.Error())
 	}
+
 	var payload []map[string]string
 
 	decoder := json.NewDecoder(resp.Body)

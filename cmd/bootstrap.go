@@ -50,7 +50,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		log.Fatalf("Unable to load context: %s", err.Error())
 	}
 
-	c, err := clients.New(ctx.Fqdn)
+	c, err := clients.New(ctx.Fqdn, ctx.Proxy)
 	if err != nil {
 		log.Fatalf("Unable to load clients: %s", err.Error())
 	}
@@ -69,6 +69,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		MetalLBAddressPool:    metallbIPRange,
 		AllowWorkloadOnMaster: allowWorkloadsOnMaster,
 		Privileged:            privileged,
+		HTTPProxy:             ctx.Proxy,
 	}
 
 	err = pmk.Bootstrap(ctx, c, payload)

@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -97,4 +98,15 @@ func AskBool(msg string, args ...interface{}) (bool, error) {
 	}
 
 	return false, fmt.Errorf("Please provide input as y or n, provided: %s", resp)
+}
+
+func StringContainsAny(base string, contains []string) bool {
+
+	for _, contain := range contains {
+		if strings.Contains(base, contain) {
+			return true
+		}
+	}
+
+	return false
 }

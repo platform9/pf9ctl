@@ -15,6 +15,7 @@ type Context struct {
 	Password string `json:"os_password"`
 	Tenant   string `json:"os_tenant"`
 	Region   string `json:"os_region"`
+	Proxy    string `json:"proxy"`
 }
 
 // StoreContext simply updates the in-memory object

@@ -44,7 +44,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		log.Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
-	c, err := clients.New(ctx.Fqdn)
+	c, err := clients.New(ctx.Fqdn, ctx.Proxy)
 	if err != nil {
 		log.Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
