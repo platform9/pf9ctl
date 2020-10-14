@@ -9,7 +9,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/log"
 )
 
-func setupNode(hostOS string) (err error) {
+func setupNode(host Host) (err error) {
 	log.Debug("Received a call to setup the node")
 
 	if err := host.SwapOff(); err != nil {
@@ -84,7 +84,6 @@ func createPF9Group(name string) error {
 
 	return nil
 }
-<<<<<<< HEAD
 
 func ubuntuPackageInstall() error {
 	log.Info("Installing required ubuntu packages")
@@ -138,5 +137,3 @@ func swapOff() error {
 	_, err := exec.Command("bash", "-c", "swapoff -a").Output()
 	return err
 }
-=======
->>>>>>> Wrapped the host functions in host interface

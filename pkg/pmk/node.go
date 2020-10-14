@@ -235,7 +235,7 @@ func installHostAgentLegacy(
 		return err
 	}
 
-	log.Info.Println("Hostagent installed successfully")
+	log.Info("Hostagent installed successfully")
 	return nil
 }
 

@@ -15,7 +15,7 @@ func Bootstrap(
 	ctx Context,
 	c clients.Client,
 	req clients.ClusterCreateRequest) error {
-	log.Info.Println("Received a call to boostrap the local node")
+	log.Info("Received a call to boostrap the local node")
 
 	prep, err := util.AskBool("PrepLocal node for kubernetes cluster")
 	if err != nil {
@@ -47,7 +47,7 @@ func Bootstrap(
 	if err != nil {
 		return fmt.Errorf("Unable to create cluster: %w", err)
 	}
-	log.Info.Println("Cluster created successfully")
+	log.Info("Cluster created successfully")
 
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := c.Executor.RunWithStdout("bash", "-c", cmd)
