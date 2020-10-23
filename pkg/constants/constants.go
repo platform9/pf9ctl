@@ -5,7 +5,8 @@ import (
 	"path/filepath"
 	"time"
 )
-
+// Pkg structure is meant for other code to import it into their own 
+// code base, this MUST not be here
 var (
 	homeDir, _ = os.UserHomeDir()
 	//Pf9Dir is the base pf9dir
