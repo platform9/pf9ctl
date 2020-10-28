@@ -5,8 +5,8 @@ package cmd
 import (
 	"github.com/platform9/pf9ctl/pkg/constants"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
-	"github.com/platform9/pf9ctl/pkg/pmk/clients"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 )
@@ -51,7 +51,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatalf("Error connecting to host %s",err.Error())
 	}
-	c, err := clients.New(ctx.Fqdn, executor)
+	c, err := pmk.NewClient(ctx.Fqdn, executor)
 	if err != nil {
 		log.Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
@@ -81,7 +81,7 @@ func checkAndValidateRemote() bool {
 
 
 // getExecutor creates the right Executor
-func getExecutor() (clients.Executor, error) {
+func getExecutor() (cmdexec.Executor, error) {
 	if checkAndValidateRemote() {
 		var pKey []byte
 		var err error
@@ -91,8 +91,8 @@ func getExecutor() (clients.Executor, error) {
 				log.Fatalf("Unale to read the sshKey %s, %s", sshKey, err.Error())
 			}
 		}
-		return clients.NewRemoteExecutor(ips[0], 22, user, pKey, password)
+		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password)
  	}
 	log.Info("Using local exeuctor")
-	return clients.LocalExecutor{}, nil
+	return cmdexec.LocalExecutor{}, nil
 }

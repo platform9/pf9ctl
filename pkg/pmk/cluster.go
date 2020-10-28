@@ -1,3 +1,5 @@
+// Copyright © 2020 The Platform9 Systems Inc.
+
 package pmk
 
 import (
@@ -7,13 +9,13 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/constants"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/pmk/clients"
+	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 // Bootstrap simply preps the local node and attach it as master to a newly
 // created cluster.
-func Bootstrap(ctx Context, c clients.Client, req clients.ClusterCreateRequest) error {
+func Bootstrap(ctx Context, c Client, req qbert.ClusterCreateRequest) error {
 	log.Debug("Received a call to boostrap the local node")
 
 	resp, err := util.AskBool("Prep local node for kubernetes cluster")
