@@ -50,7 +50,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		log.Fatalf("Unable to load context: %s", err.Error())
 	}
 
-	c, err := clients.New(ctx.Fqdn)
+	c, err := clients.New(ctx.Fqdn, clients.LocalExecutor{})
 	if err != nil {
 		log.Fatalf("Unable to load clients: %s", err.Error())
 	}

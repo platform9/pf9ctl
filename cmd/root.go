@@ -43,10 +43,15 @@ func Execute() {
 }
 
 func initializeBaseDirs() (err error) {
-	err = os.MkdirAll(constants.Pf9Dir, os.ModeDir)
-	err = os.MkdirAll(constants.Pf9DBDir, os.ModeDir)
-	err = os.MkdirAll(constants.Pf9LogDir, os.ModeDir)
-
+	err = os.MkdirAll(constants.Pf9Dir, 0700)
+	if err != nil {
+		return 
+	}
+	err = os.MkdirAll(constants.Pf9DBDir, 0700)
+	if err != nil {
+		return
+	}
+	err = os.MkdirAll(constants.Pf9LogDir, 0700)
 	return
 }
 

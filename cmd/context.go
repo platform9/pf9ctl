@@ -78,6 +78,6 @@ var contextCmdGet = &cobra.Command{
 }
 
 func init() {
-	createCmd.AddCommand(contextCmdCreate)
-	getCmd.AddCommand(contextCmdGet)
+	rootCmd.AddCommand(contextCmdCreate)
+	rootCmd.AddCommand(contextCmdGet)
 }
