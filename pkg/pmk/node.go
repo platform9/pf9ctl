@@ -183,7 +183,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 		// it must be either debian or redhat based
 		err = exec.Run("bash",
 			"-c",
-			"yum list | grep -i 'pf9-'")
+			"yum list installed | grep -i 'pf9-'")
 	}
 
 	return err == nil
