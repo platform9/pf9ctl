@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	rhttp "github.com/hashicorp/go-retryablehttp"
-	"github.com/platform9/pf9ctl/pkg/log"
+	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
@@ -106,7 +106,7 @@ func (c QbertImpl) CreateCluster(
 }
 
 func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error {
-	log.Debugf("Attaching the node: %s to cluster: %s", nodeID, clusterID)
+	zap.S().Debugf("Attaching the node: %s to cluster: %s", nodeID, clusterID)
 
 	var p []map[string]interface{}
 	p = append(p, map[string]interface{}{

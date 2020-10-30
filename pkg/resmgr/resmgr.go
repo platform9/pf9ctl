@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	rhttp "github.com/hashicorp/go-retryablehttp"
-	"github.com/platform9/pf9ctl/pkg/log"
+	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
@@ -24,7 +24,7 @@ func NewResmgr(fqdn string, maxHttpRetry int) Resmgr {
 
 // AuthorizeHost registers the host with hostID to the resmgr.
 func (c *ResmgrImpl) AuthorizeHost(hostID string, token string) error {
-	log.Debugf("Authorizing the host: %s with DU: %s", hostID, c.fqdn)
+	zap.S().Debugf("Authorizing the host: %s with DU: %s", hostID, c.fqdn)
 
 	client := rhttp.NewClient()
 	client.RetryMax = c.maxHttpRetry

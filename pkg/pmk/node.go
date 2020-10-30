@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/constants"
-	"github.com/platform9/pf9ctl/pkg/log"
+	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 
@@ -18,7 +18,7 @@ import (
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(ctx Context, allClients Client) error {
 
-	log.Debug("Received a call to start preping node(s).")
+	zap.S().Debug("Received a call to start preping node(s).")
 
 	hostOS, err := validatePlatform(allClients.Executor)
 	if err != nil {
@@ -49,7 +49,7 @@ func PrepNode(ctx Context, allClients Client) error {
 		return fmt.Errorf("Unable to install hostagent: %w", err)
 	}
 
-	log.Debug("Identifying the hostID from conf")
+	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 
@@ -65,14 +65,14 @@ func PrepNode(ctx Context, allClients Client) error {
 	}
 
 	if err := allClients.Segment.SendEvent("Prep Node - Successful", auth); err != nil {
-		log.Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
+		zap.S().Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
 	}
 
 	return nil
 }
 
 func installHostAgent(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	log.Debug("Downloading Hostagent")
+	zap.S().Debug("Downloading Hostagent")
 
 	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", ctx.Fqdn, hostOS)
 	req, err := http.NewRequest("GET", url, nil)
@@ -97,7 +97,7 @@ func installHostAgent(ctx Context, auth keystone.KeystoneAuth, hostOS string, ex
 }
 
 func installHostAgentCertless(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	log.Info("Downloading Hostagent Installer Certless")
+	zap.S().Info("Downloading Hostagent Installer Certless")
 
 	url := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
@@ -108,7 +108,7 @@ func installHostAgentCertless(ctx Context, auth keystone.KeystoneAuth, hostOS st
 	if err != nil {
 		return err
 	}
-	log.Debug("Hostagent download completed successfully")
+	zap.S().Debug("Hostagent download completed successfully")
 
 	// Decoding base64 encoded password
 	decodedBytePassword, err := base64.StdEncoding.DecodeString(ctx.Password)
@@ -130,12 +130,12 @@ func installHostAgentCertless(ctx Context, auth keystone.KeystoneAuth, hostOS st
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	log.Info("Hostagent installed successfully")
+	zap.S().Info("Hostagent installed successfully")
 	return nil
 }
 
 func validatePlatform(exec cmdexec.Executor) (string, error) {
-	log.Debug("Received a call to validate platform")
+	zap.S().Debug("Received a call to validate platform")
 
 	data, err := exec.RunWithStdout("cat /etc/os-release")
 	if err != nil {
@@ -190,7 +190,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 }
 
 func installHostAgentLegacy(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	log.Info("Downloading Hostagent Installer Legacy")
+	zap.S().Info("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
@@ -201,7 +201,7 @@ func installHostAgentLegacy(ctx Context, auth keystone.KeystoneAuth, hostOS stri
 		return err
 	}
 
-	log.Debug("Hostagent download completed successfully")
+	zap.S().Debug("Hostagent download completed successfully")
 	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
 	if err != nil {
 		return err
@@ -214,6 +214,6 @@ func installHostAgentLegacy(ctx Context, auth keystone.KeystoneAuth, hostOS stri
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	log.Info("Hostagent installed successfully")
+	zap.S().Info("Hostagent installed successfully")
 	return nil
 }
