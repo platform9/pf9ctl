@@ -2,10 +2,10 @@ package pmk
 
 import (
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/pmk/clients"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 )
 // This files needs to be organized little better
-func setupNode(hostOS string, exec clients.Executor) (err error) {
+func setupNode(hostOS string, exec cmdexec.Executor) (err error) {
 	log.Debug("Received a call to setup the node")
 
 	if err := swapOff(exec); err != nil {
@@ -15,7 +15,7 @@ func setupNode(hostOS string, exec clients.Executor) (err error) {
 }
 
 
-func swapOff(exec clients.Executor) error {
+func swapOff(exec cmdexec.Executor) error {
 	log.Info("Disabling swap")
 
 	_, err := exec.RunWithStdout("bash", "-c", "swapoff -a")

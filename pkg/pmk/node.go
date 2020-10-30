@@ -1,3 +1,4 @@
+// Copyright © 2020 The Platform9 Systems Inc.
 package pmk
 
 import (
@@ -9,17 +10,13 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/constants"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/pmk/clients"
+	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
+
 )
 
 // PrepNode sets up prerequisites for k8s stack
-func PrepNode(
-	ctx Context,
-	allClients clients.Client,
-	user string,
-	password string,
-	sshkey string,
-	ips []string) error {
+func PrepNode(ctx Context, allClients Client) error {
 
 	log.Debug("Received a call to start preping node(s).")
 
@@ -74,7 +71,7 @@ func PrepNode(
 	return nil
 }
 
-func installHostAgent(ctx Context, auth clients.KeystoneAuth, hostOS string, exec clients.Executor) error {
+func installHostAgent(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	log.Debug("Downloading Hostagent")
 
 	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", ctx.Fqdn, hostOS)
@@ -99,7 +96,7 @@ func installHostAgent(ctx Context, auth clients.KeystoneAuth, hostOS string, exe
 	}
 }
 
-func installHostAgentCertless(ctx Context, auth clients.KeystoneAuth, hostOS string, exec clients.Executor) error {
+func installHostAgentCertless(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	log.Info("Downloading Hostagent Installer Certless")
 
 	url := fmt.Sprintf(
@@ -137,7 +134,7 @@ func installHostAgentCertless(ctx Context, auth clients.KeystoneAuth, hostOS str
 	return nil
 }
 
-func validatePlatform(exec clients.Executor) (string, error) {
+func validatePlatform(exec cmdexec.Executor) (string, error) {
 	log.Debug("Received a call to validate platform")
 
 	data, err := exec.RunWithStdout("cat /etc/os-release")
@@ -175,7 +172,7 @@ func validatePlatform(exec clients.Executor) (string, error) {
 	return "", nil
 }
 
-func pf9PackagesPresent(hostOS string, exec clients.Executor) bool {
+func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 	var err error
 	if hostOS == "debian" {
 		err = exec.Run("bash",
@@ -186,13 +183,13 @@ func pf9PackagesPresent(hostOS string, exec clients.Executor) bool {
 		// it must be either debian or redhat based
 		err = exec.Run("bash",
 			"-c",
-			"yum list | grep -i 'pf9-'")
+			"yum list installed | grep -i 'pf9-'")
 	}
 
 	return err == nil
 }
 
-func installHostAgentLegacy(ctx Context, auth clients.KeystoneAuth, hostOS string, exec clients.Executor) error {
+func installHostAgentLegacy(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	log.Info("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)

@@ -8,7 +8,8 @@ import (
 	"github.com/platform9/pf9ctl/pkg/constants"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
-	"github.com/platform9/pf9ctl/pkg/pmk/clients"
+	"github.com/platform9/pf9ctl/pkg/qbert"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +51,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		log.Fatalf("Unable to load context: %s", err.Error())
 	}
 
-	c, err := clients.New(ctx.Fqdn, clients.LocalExecutor{})
+	c, err := pmk.NewClient(ctx.Fqdn, cmdexec.LocalExecutor{})
 	if err != nil {
 		log.Fatalf("Unable to load clients: %s", err.Error())
 	}
@@ -58,14 +59,14 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	name := args[0]
 
-	payload := clients.ClusterCreateRequest{
+	payload := qbert.ClusterCreateRequest{
 		Name:                  name,
 		ContainerCIDR:         containersCIDR,
 		ServiceCIDR:           servicesCIDR,
 		MasterVirtualIP:       masterVIP,
 		MasterVirtualIPIface:  masterVIPIf,
 		ExternalDNSName:       externalDNSName,
-		NetworkPlugin:         clients.CNIBackend(networkPlugin),
+		NetworkPlugin:         qbert.CNIBackend(networkPlugin),
 		MetalLBAddressPool:    metallbIPRange,
 		AllowWorkloadOnMaster: allowWorkloadsOnMaster,
 		Privileged:            privileged,
