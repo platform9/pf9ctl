@@ -3,7 +3,6 @@
 package keystone
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -39,12 +38,6 @@ func (k KeystoneImpl) GetAuth(
 
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", k.fqdn)
 
-	// Decoding base64 encoded password
-	decodedBytePassword, err := base64.StdEncoding.DecodeString(password)
-	if err != nil {
-		return auth, err
-	}
-	decodedPassword := string(decodedBytePassword)
 
 	body := fmt.Sprintf(`{
 		"auth": {
@@ -65,7 +58,7 @@ func (k KeystoneImpl) GetAuth(
 				}
 			}
 		}
-	}`, username, decodedPassword, tenant)
+	}`, username, password, tenant)
 
 	resp, err := http.Post(url, "application/json", strings.NewReader(body))
 	if err != nil {

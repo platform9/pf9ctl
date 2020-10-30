@@ -1,10 +1,11 @@
 package pmk
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"os"
-
+	"time"
 	"go.uber.org/zap"
 )
 
@@ -15,12 +16,14 @@ type Context struct {
 	Password string `json:"os_password"`
 	Tenant   string `json:"os_tenant"`
 	Region   string `json:"os_region"`
+	WaitPeriod time.Duration `json:"wait_period"`
 }
 
 // StoreContext simply updates the in-memory object
 func StoreContext(ctx Context, loc string) error {
 	zap.S().Info("Storing context")
-
+	// obscure the password
+	ctx.Password = base64.StdEncoding.EncodeToString([]byte(ctx.Password))
 	f, err := os.Create(loc)
 	if err != nil {
 		return err
@@ -36,6 +39,7 @@ func StoreContext(ctx Context, loc string) error {
 func LoadContext(loc string) (Context, error) {
 	zap.S().Info("Loading context...")
 
+
 	f, err := os.Open(loc)
 	if err != nil {
 
@@ -47,7 +51,15 @@ func LoadContext(loc string) (Context, error) {
 
 	defer f.Close()
 
-	ctx := Context{}
+	ctx := Context{WaitPeriod: time.Duration(60)}
 	err = json.NewDecoder(f).Decode(&ctx)
+	// decode the password
+	// Decoding base64 encoded password
+	decodedBytePassword, err := base64.StdEncoding.DecodeString(ctx.Password)
+	if err != nil {
+		return ctx, err
+	}
+	ctx.Password = string(decodedBytePassword)
+
 	return ctx, err
 }

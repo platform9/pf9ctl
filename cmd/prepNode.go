@@ -3,7 +3,6 @@
 package cmd
 
 import (
-	"github.com/platform9/pf9ctl/pkg/constants"
 	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
@@ -41,7 +40,7 @@ func init() {
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 
-	ctx, err := pmk.LoadContext(constants.Pf9DBLoc)
+	ctx, err := pmk.LoadContext(Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}

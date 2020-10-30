@@ -2,13 +2,11 @@
 package pmk
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/platform9/pf9ctl/pkg/constants"
 	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
@@ -58,7 +56,7 @@ func PrepNode(ctx Context, allClients Client) error {
 	}
 
 	hostID := strings.TrimSuffix(output, "\n")
-	time.Sleep(constants.WaitPeriod * time.Second)
+	time.Sleep(ctx.WaitPeriod * time.Second)
 
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token); err != nil {
 		return err
@@ -110,13 +108,7 @@ func installHostAgentCertless(ctx Context, auth keystone.KeystoneAuth, hostOS st
 	}
 	zap.S().Debug("Hostagent download completed successfully")
 
-	// Decoding base64 encoded password
-	decodedBytePassword, err := base64.StdEncoding.DecodeString(ctx.Password)
-	if err != nil {
-		return err
-	}
-	decodedPassword := string(decodedBytePassword)
-	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, decodedPassword)
+	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, ctx.Password)
 
 	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
 	if err != nil {

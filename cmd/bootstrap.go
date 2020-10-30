@@ -4,8 +4,6 @@ package cmd
 
 import (
 	"fmt"
-
-	"github.com/platform9/pf9ctl/pkg/constants"
 	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/qbert"
@@ -46,7 +44,7 @@ var (
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("Received a call to bootstrap the node")
 
-	ctx, err := pmk.LoadContext(constants.Pf9DBLoc)
+	ctx, err := pmk.LoadContext(Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load context: %s", err.Error())
 	}

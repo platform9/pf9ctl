@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/platform9/pf9ctl/pkg/constants"
 	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -53,7 +51,7 @@ func Bootstrap(ctx Context, c Client, req qbert.ClusterCreateRequest) error {
 	}
 	nodeID := strings.TrimSuffix(string(output), "\n")
 
-	time.Sleep(constants.WaitPeriod * time.Second)
+	time.Sleep(ctx.WaitPeriod * time.Second)
 
 	zap.S().Info("Attaching node to the cluster...")
 	err = c.Qbert.AttachNode(

@@ -18,7 +18,6 @@ func ConfigureGlobalLog(debug bool, logFile string) error {
 	if err != nil {
 		return fmt.Errorf("Couldn't open the log file: %s. \nError is: %s", logFile, err.Error())
 	}
-	defer f.Close()
 
 	var lvl zapcore.Level
 
@@ -35,7 +34,7 @@ func ConfigureGlobalLog(debug bool, logFile string) error {
 	// Create custom zap config
 	core := zapcore.NewTee(
 		zapcore.NewCore(zapcore.NewConsoleEncoder(setCustomConfig()), consoleLogs, lvl),
-		zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), fileLogs, lvl),
+		zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), fileLogs, zap.DebugLevel),
 	)
 
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))

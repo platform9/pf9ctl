@@ -4,12 +4,10 @@ package cmd
 
 import (
 	"bufio"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/platform9/pf9ctl/pkg/constants"
 	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
@@ -36,8 +34,9 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	username = strings.TrimSuffix(username, "\n")
 
 	fmt.Printf("Password: ")
-	password, _ := terminal.ReadPassword(0)
-	encodedPasswd := base64.StdEncoding.EncodeToString(password)
+	passwordBytes, _ := terminal.ReadPassword(0)
+	password:= string(passwordBytes)
+	
 
 	fmt.Printf("\nRegion [RegionOne]: ")
 	region, _ := reader.ReadString('\n')
@@ -58,12 +57,13 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	ctx := pmk.Context{
 		Fqdn:     fqdn,
 		Username: username,
-		Password: encodedPasswd,
+		Password: password,
 		Region:   region,
 		Tenant:   service,
+		WaitPeriod: WaitPeriod,
 	}
 
-	if err := pmk.StoreContext(ctx, constants.Pf9DBLoc); err != nil {
+	if err := pmk.StoreContext(ctx, Pf9DBLoc); err != nil {
 		zap.S().Errorf("Failed to store context: %s", err.Error())
 	}
 }
