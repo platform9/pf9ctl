@@ -23,7 +23,7 @@ func Bootstrap(ctx Context, c Client, req qbert.ClusterCreateRequest) error {
 		log.Errorf("Couldn't fetch user content")
 	}
 
-	if err := PrepNode(ctx, c, "", "", "", []string{}); err != nil {
+	if err := PrepNode(ctx, c); err != nil {
 		return fmt.Errorf("Unable to prepnode: %w", err)
 	}
 
