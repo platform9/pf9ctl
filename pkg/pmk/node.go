@@ -16,13 +16,7 @@ import (
 )
 
 // PrepNode sets up prerequisites for k8s stack
-func PrepNode(
-	ctx Context,
-	allClients Client,
-	user string,
-	password string,
-	sshkey string,
-	ips []string) error {
+func PrepNode(ctx Context, allClients Client) error {
 
 	log.Debug("Received a call to start preping node(s).")
 
