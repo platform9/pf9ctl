@@ -1,9 +1,11 @@
-package clients
+// Copyright © 2020 The Platform9 Systems Inc.
+
+package cmdexec
 
 import (
 	"os/exec"
 	"github.com/platform9/pf9ctl/pkg/ssh"
-	"github.com/platform9/pf9ctl/pkg/log"
+	"go.uber.org/zap"
 	"fmt"
 )
 
@@ -46,7 +48,7 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 		cmd = fmt.Sprintf("%s \"%s\"", cmd, arg)
 	}
 	stdout, stderr, err := r.Client.RunCommand(cmd)
-	log.Debug("Running command ",cmd, "stdout:", string(stdout), "stderr:", string(stderr))
+	zap.S().Debug("Running command ",cmd, "stdout:", string(stdout), "stderr:", string(stderr))
 	return string(stdout), err
 }
 

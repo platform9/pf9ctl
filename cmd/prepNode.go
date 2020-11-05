@@ -3,10 +3,9 @@
 package cmd
 
 import (
-	"github.com/platform9/pf9ctl/pkg/constants"
-	"github.com/platform9/pf9ctl/pkg/log"
+	"go.uber.org/zap"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
-	"github.com/platform9/pf9ctl/pkg/pmk/clients"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 )
@@ -41,24 +40,24 @@ func init() {
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 
-	ctx, err := pmk.LoadContext(constants.Pf9DBLoc)
+	ctx, err := pmk.LoadContext(Pf9DBLoc)
 	if err != nil {
-		log.Fatalf("Unable to load the context: %s\n", err.Error())
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 	// TODO: there seems to be a bug, we will need multiple executors one per ip, so at this moment
 	// it will only work with one remote host
 	executor, err := getExecutor()
 	if err != nil {
-		log.Fatalf("Error connecting to host %s",err.Error())
+		zap.S().Fatalf("Error connecting to host %s",err.Error())
 	}
-	c, err := clients.New(ctx.Fqdn, executor)
+	c, err := pmk.NewClient(ctx.Fqdn, executor)
 	if err != nil {
-		log.Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
 
-	if err := pmk.PrepNode(ctx, c, user, password, sshKey, ips); err != nil {
+	if err := pmk.PrepNode(ctx, c); err != nil {
 		c.Segment.SendEvent("Prep Node - Failed", err)
-		log.Fatalf("Unable to prep node: %s\n", err.Error())
+		zap.S().Fatalf("Unable to prep node: %s\n", err.Error())
 	}
 }
 
@@ -69,30 +68,30 @@ func checkAndValidateRemote() bool {
 		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
 			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
 			if user =="" || (sshKey == "" && password == "") {
-				log.Fatalf("please provider 'user' and one of 'password' or ''ssh-key'")
+				zap.S().Fatalf("please provider 'user' and one of 'password' or ''ssh-key'")
 			}
 			foundRemote = true
 			return foundRemote
 		}
 	}
-	log.Info("Using local exeuctor")
+	zap.S().Info("Using local exeuctor")
 	return foundRemote
 }
 
 
 // getExecutor creates the right Executor
-func getExecutor() (clients.Executor, error) {
+func getExecutor() (cmdexec.Executor, error) {
 	if checkAndValidateRemote() {
 		var pKey []byte
 		var err error
 		if sshKey != "" {
 			pKey, err = ioutil.ReadFile(sshKey)
 			if err != nil {
-				log.Fatalf("Unale to read the sshKey %s, %s", sshKey, err.Error())
+				zap.S().Fatalf("Unale to read the sshKey %s, %s", sshKey, err.Error())
 			}
 		}
-		return clients.NewRemoteExecutor(ips[0], 22, user, pKey, password)
+		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password)
  	}
-	log.Info("Using local exeuctor")
-	return clients.LocalExecutor{}, nil
+	zap.S().Info("Using local exeuctor")
+	return cmdexec.LocalExecutor{}, nil
 }

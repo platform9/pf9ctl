@@ -3,7 +3,7 @@
 package cmd
 
 import (
-	"github.com/platform9/pf9ctl/pkg/log"
+	"go.uber.org/zap"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +14,7 @@ var clusterCmdGet = &cobra.Command{
 	Long: `Query your controller using the current context and list
 	 the clusters`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Info("Get cluster called")
+		zap.S().Info("Get cluster called")
 	},
 }
 
@@ -24,7 +24,7 @@ var clusterCmdCreate = &cobra.Command{
 	Short: "Create a kubernetes cluster",
 	Long:  `Create a cluster and add one or more nodes to it.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log.Info("Create cluster called")
+		zap.S().Info("Create cluster called")
 	},
 }
 

@@ -1,13 +1,14 @@
-package clients
+// Copyright © 2020 The Platform9 Systems Inc.
+
+package keystone
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
+	"go.uber.org/zap"
 
-	"github.com/platform9/pf9ctl/pkg/log"
 )
 
 type KeystoneAuth struct {
@@ -33,16 +34,10 @@ func (k KeystoneImpl) GetAuth(
 	password,
 	tenant string) (auth KeystoneAuth, err error) {
 
-	log.Debugf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n", k.fqdn, username, tenant)
+	zap.S().Debugf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n", k.fqdn, username, tenant)
 
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", k.fqdn)
 
-	// Decoding base64 encoded password
-	decodedBytePassword, err := base64.StdEncoding.DecodeString(password)
-	if err != nil {
-		return auth, err
-	}
-	decodedPassword := string(decodedBytePassword)
 
 	body := fmt.Sprintf(`{
 		"auth": {
@@ -63,7 +58,7 @@ func (k KeystoneImpl) GetAuth(
 				}
 			}
 		}
-	}`, username, decodedPassword, tenant)
+	}`, username, password, tenant)
 
 	resp, err := http.Post(url, "application/json", strings.NewReader(body))
 	if err != nil {

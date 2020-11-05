@@ -1,10 +1,11 @@
-package clients
+// Copyright © 2020 The Platform9 Systems Inc.
+package resmgr
 
 import (
 	"fmt"
 
 	rhttp "github.com/hashicorp/go-retryablehttp"
-	"github.com/platform9/pf9ctl/pkg/log"
+	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
@@ -14,18 +15,19 @@ type Resmgr interface {
 
 type ResmgrImpl struct {
 	fqdn string
+	maxHttpRetry int
 }
 
-func NewResmgr(fqdn string) Resmgr {
-	return &ResmgrImpl{fqdn}
+func NewResmgr(fqdn string, maxHttpRetry int) Resmgr {
+	return &ResmgrImpl{fqdn, maxHttpRetry}
 }
 
 // AuthorizeHost registers the host with hostID to the resmgr.
 func (c *ResmgrImpl) AuthorizeHost(hostID string, token string) error {
-	log.Debugf("Authorizing the host: %s with DU: %s", hostID, c.fqdn)
+	zap.S().Debugf("Authorizing the host: %s with DU: %s", hostID, c.fqdn)
 
 	client := rhttp.NewClient()
-	client.RetryMax = HTTPMaxRetry
+	client.RetryMax = c.maxHttpRetry
 	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
 	client.Logger = nil
 

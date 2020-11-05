@@ -7,7 +7,7 @@ import (
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
-	"github.com/platform9/pf9ctl/pkg/constants"
+	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -32,26 +32,26 @@ func Execute() {
 	}
 
 	// Initializing zap log with console and file logging support
-	if err := log.New(); err != nil {
+	if err := log.ConfigureGlobalLog(false, Pf9Log); err != nil {
 		fmt.Printf("log initialization failed: %s", err.Error())
 		os.Exit(1)
 	}
 
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatalf(err.Error())
+		zap.S().Fatalf(err.Error())
 	}
 }
 
 func initializeBaseDirs() (err error) {
-	err = os.MkdirAll(constants.Pf9Dir, 0700)
+	err = os.MkdirAll(Pf9Dir, 0700)
 	if err != nil {
 		return 
 	}
-	err = os.MkdirAll(constants.Pf9DBDir, 0700)
+	err = os.MkdirAll(Pf9DBDir, 0700)
 	if err != nil {
 		return
 	}
-	err = os.MkdirAll(constants.Pf9LogDir, 0700)
+	err = os.MkdirAll(Pf9LogDir, 0700)
 	return
 }
 
@@ -80,6 +80,6 @@ func initConfig() {
 	// Read in environment variables that match
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err == nil {
-		log.Errorf("Error occured while reading the config file: %s", viper.ConfigFileUsed())
+		zap.S().Errorf("Error occured while reading the config file: %s", viper.ConfigFileUsed())
 	}
 }

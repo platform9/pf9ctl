@@ -1,12 +1,12 @@
 package pmk
 
 import (
-	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/pmk/clients"
+	"go.uber.org/zap"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 )
 // This files needs to be organized little better
-func setupNode(hostOS string, exec clients.Executor) (err error) {
-	log.Debug("Received a call to setup the node")
+func setupNode(hostOS string, exec cmdexec.Executor) (err error) {
+	zap.S().Debug("Received a call to setup the node")
 
 	if err := swapOff(exec); err != nil {
 		return err
@@ -15,8 +15,8 @@ func setupNode(hostOS string, exec clients.Executor) (err error) {
 }
 
 
-func swapOff(exec clients.Executor) error {
-	log.Info("Disabling swap")
+func swapOff(exec cmdexec.Executor) error {
+	zap.S().Info("Disabling swap")
 
 	_, err := exec.RunWithStdout("bash", "-c", "swapoff -a")
 	return err
