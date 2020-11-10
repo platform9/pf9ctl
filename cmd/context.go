@@ -61,6 +61,7 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 		Region:   region,
 		Tenant:   service,
 		WaitPeriod: WaitPeriod,
+		AllowInsecure: false,
 	}
 
 	if err := pmk.StoreContext(ctx, Pf9DBLoc); err != nil {

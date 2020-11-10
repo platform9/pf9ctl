@@ -6,6 +6,8 @@ import (
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/resmgr"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"net/http"
+	"crypto/tls"
 
 )
 
@@ -23,7 +25,11 @@ type Client struct {
 
 // New creates the clients needed by the CLI
 // to interact with the external services.
-func NewClient(fqdn string, executor cmdexec.Executor) (Client, error) {
+func NewClient(fqdn string, executor cmdexec.Executor, allowInsecure bool) (Client, error) {
+	// Bring the hammer down to make default http allow insecure
+	if allowInsecure {
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 	return Client{
 		Resmgr:   resmgr.NewResmgr(fqdn, HTTPMaxRetry),
 		Keystone: keystone.NewKeystone(fqdn),
