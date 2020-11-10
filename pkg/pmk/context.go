@@ -17,6 +17,7 @@ type Context struct {
 	Tenant   string `json:"os_tenant"`
 	Region   string `json:"os_region"`
 	WaitPeriod time.Duration `json:"wait_period"`
+	AllowInsecure bool `json:"allow_insecure"`
 }
 
 // StoreContext simply updates the in-memory object
@@ -51,7 +52,7 @@ func LoadContext(loc string) (Context, error) {
 
 	defer f.Close()
 
-	ctx := Context{WaitPeriod: time.Duration(60)}
+	ctx := Context{WaitPeriod: time.Duration(60), AllowInsecure:false}
 	err = json.NewDecoder(f).Decode(&ctx)
 	// decode the password
 	// Decoding base64 encoded password

@@ -100,8 +100,11 @@ func installHostAgentCertless(ctx Context, auth keystone.KeystoneAuth, hostOS st
 	url := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
 		ctx.Fqdn, hostOS)
-
-	cmd := fmt.Sprintf(`curl --silent --show-error  %s -o  /tmp/installer.sh`, url)
+	insecureDownload := ""
+	if ctx.AllowInsecure {
+		insecureDownload = "-k"
+	}
+	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  /tmp/installer.sh`, insecureDownload, url)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
