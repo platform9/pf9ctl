@@ -31,7 +31,7 @@ func NewClient(fqdn string, executor cmdexec.Executor, allowInsecure bool) (Clie
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	return Client{
-		Resmgr:   resmgr.NewResmgr(fqdn, HTTPMaxRetry),
+		Resmgr:   resmgr.NewResmgr(fqdn, HTTPMaxRetry, allowInsecure),
 		Keystone: keystone.NewKeystone(fqdn),
 		Qbert:    qbert.NewQbert(fqdn),
 		Executor: executor,

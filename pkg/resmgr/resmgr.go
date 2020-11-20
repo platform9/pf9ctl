@@ -7,6 +7,9 @@ import (
 	rhttp "github.com/hashicorp/go-retryablehttp"
 	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/util"
+	"net/http"
+	"crypto/tls"
+
 )
 
 type Resmgr interface {
@@ -16,10 +19,11 @@ type Resmgr interface {
 type ResmgrImpl struct {
 	fqdn string
 	maxHttpRetry int
+	allowInsecure bool
 }
 
-func NewResmgr(fqdn string, maxHttpRetry int) Resmgr {
-	return &ResmgrImpl{fqdn, maxHttpRetry}
+func NewResmgr(fqdn string, maxHttpRetry int, allowInsecure bool) Resmgr {
+	return &ResmgrImpl{fqdn, maxHttpRetry, allowInsecure}
 }
 
 // AuthorizeHost registers the host with hostID to the resmgr.
@@ -27,6 +31,8 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string) error {
 	zap.S().Debugf("Authorizing the host: %s with DU: %s", hostID, c.fqdn)
 
 	client := rhttp.NewClient()
+	client.HTTPClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
 	client.RetryMax = c.maxHttpRetry
 	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
 	client.Logger = nil

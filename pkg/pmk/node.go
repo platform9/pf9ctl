@@ -189,7 +189,7 @@ func installHostAgentLegacy(ctx Context, auth keystone.KeystoneAuth, hostOS stri
 
 	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
-
+	//use insecure by default
 	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o /tmp/installer.sh`, auth.Token, url)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
