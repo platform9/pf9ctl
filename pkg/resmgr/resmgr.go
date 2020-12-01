@@ -9,7 +9,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/util"
 	"net/http"
 	"crypto/tls"
-
+	"time"
 )
 
 type Resmgr interface {
@@ -18,12 +18,15 @@ type Resmgr interface {
 
 type ResmgrImpl struct {
 	fqdn string
+	minWait time.Duration
+	maxWait time.Duration
 	maxHttpRetry int
 	allowInsecure bool
 }
 
-func NewResmgr(fqdn string, maxHttpRetry int, allowInsecure bool) Resmgr {
-	return &ResmgrImpl{fqdn, maxHttpRetry, allowInsecure}
+func NewResmgr(fqdn string, maxHttpRetry int, minWait, maxWait time.Duration, allowInsecure bool) Resmgr {
+
+	return &ResmgrImpl{fqdn, minWait, maxWait, maxHttpRetry, allowInsecure}
 }
 
 // AuthorizeHost registers the host with hostID to the resmgr.
@@ -33,6 +36,9 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string) error {
 	client := rhttp.NewClient()
 	client.HTTPClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
+	client.Logger = zap.S()
+	client.RetryWaitMin = c.minWait
+	client.RetryWaitMax = c.maxWait
 	client.RetryMax = c.maxHttpRetry
 	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
 	client.Logger = nil
