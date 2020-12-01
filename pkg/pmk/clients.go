@@ -8,10 +8,12 @@ import (
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"net/http"
 	"crypto/tls"
-
+	"time"
 )
 
-const HTTPMaxRetry = 5
+const HTTPMaxRetry = 15
+const HTTPRetryMinWait = 10 * time.Second
+const HTTPRetryMaxWait = 30 * time.Second
 
 // Clients struct encapsulate the collection of
 // external services
@@ -31,7 +33,7 @@ func NewClient(fqdn string, executor cmdexec.Executor, allowInsecure bool) (Clie
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 	return Client{
-		Resmgr:   resmgr.NewResmgr(fqdn, HTTPMaxRetry, allowInsecure),
+		Resmgr:   resmgr.NewResmgr(fqdn, HTTPMaxRetry, HTTPRetryMinWait, HTTPRetryMaxWait, allowInsecure),
 		Keystone: keystone.NewKeystone(fqdn),
 		Qbert:    qbert.NewQbert(fqdn),
 		Executor: executor,
