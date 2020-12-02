@@ -36,7 +36,6 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string) error {
 	client := rhttp.NewClient()
 	client.HTTPClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	client.Logger = zap.S()
 	client.RetryWaitMin = c.minWait
 	client.RetryWaitMax = c.maxWait
 	client.RetryMax = c.maxHttpRetry
