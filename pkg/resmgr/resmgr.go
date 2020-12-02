@@ -41,7 +41,6 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string) error {
 	client.RetryWaitMax = c.maxWait
 	client.RetryMax = c.maxHttpRetry
 	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
-	client.Logger = nil
 
 	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s/roles/pf9-kube", c.fqdn, hostID)
 	req, err := rhttp.NewRequest("PUT", url, nil)
