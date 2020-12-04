@@ -27,7 +27,7 @@ type Client struct {
 
 // New creates the clients needed by the CLI
 // to interact with the external services.
-func NewClient(fqdn string, executor cmdexec.Executor, allowInsecure bool) (Client, error) {
+func NewClient(fqdn string, executor cmdexec.Executor, allowInsecure bool, noTracking bool) (Client, error) {
 	// Bring the hammer down to make default http allow insecure
 	if allowInsecure {
 		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
@@ -37,6 +37,6 @@ func NewClient(fqdn string, executor cmdexec.Executor, allowInsecure bool) (Clie
 		Keystone: keystone.NewKeystone(fqdn),
 		Qbert:    qbert.NewQbert(fqdn),
 		Executor: executor,
-		Segment:  NewSegment(fqdn),
+		Segment:  NewSegment(fqdn, noTracking),
 	}, nil
 }
