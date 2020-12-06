@@ -27,6 +27,12 @@ func (c LocalExecutor) Run(name string, args ...string) error {
 // RunWithStdout runs a command locally returning stdout and err
 func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error) {
 	byt, err := exec.Command(name, args...).Output()
+	stderr := ""
+	if exitError, ok := err.(*exec.ExitError); ok {
+		stderr = string(exitError.Stderr)
+	}
+	zap.S().Debug("Ran command ",name, args)
+	zap.S().Debug( "stdout:", string(byt), "stderr:", stderr)
 	return string(byt), err
 }
 
