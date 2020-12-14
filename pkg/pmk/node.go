@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"regexp"
 
 	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/keystone"
@@ -147,9 +148,10 @@ func validatePlatform(exec cmdexec.Executor) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 		}
-		if strings.Contains(string(out), "7.5") || strings.Contains(string(out), "7.6") || strings.Contains(string(out), "7.7") || strings.Contains(string(out), "7.8") {
+		if match, _:= regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match  {
 			return "redhat", nil
 		}
+		return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
 
 	case strings.Contains(strDataLower, "ubuntu"):
 		out, err := exec.RunWithStdout(
@@ -162,6 +164,7 @@ func validatePlatform(exec cmdexec.Executor) (string, error) {
 		if strings.Contains(string(out), "16") || strings.Contains(string(out), "18") {
 			return "debian", nil
 		}
+		return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
 	}
 
 	return "", nil
