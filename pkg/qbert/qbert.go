@@ -126,6 +126,8 @@ func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error 
 	client := rhttp.Client{}
 	client.RetryMax = 5
 	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
+	client.Logger = &util.ZapWrapper{}
+
 
 	req, err := rhttp.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {

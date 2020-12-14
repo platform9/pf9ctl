@@ -9,7 +9,7 @@ import (
 	"gopkg.in/segmentio/analytics-go.v3"
 )
 
-const WriteKey = "P6DycMCALprZrUwWL9ZzRLlfMQwL5Xyl"
+const segmentWriteKey = "P6DycMCALprZrUwWL9ZzRLlfMQwL5Xyl"
 
 type Segment interface {
 	SendEvent(string, interface{}) error
@@ -22,8 +22,17 @@ type SegmentImpl struct {
 	client analytics.Client
 }
 
-func NewSegment(fqdn string) Segment {
-	client := analytics.New(WriteKey)
+type NoopSegment struct {
+
+}
+
+
+func NewSegment(fqdn string, noTracking bool) Segment {
+	// mock out segment if the user wants no Tracking
+	if noTracking {
+		return NoopSegment{}
+	}
+	client := analytics.New(segmentWriteKey)
 
 	return SegmentImpl{
 		fqdn:   fqdn,
@@ -55,4 +64,18 @@ func (c SegmentImpl) SendGroupTraits(name string, data interface{}) error {
 
 func (c SegmentImpl) Close() {
 	c.client.Close()
+}
+
+
+// The Noop Implementation of Segment
+func (c NoopSegment) SendEvent(name string, data interface{}) error {
+	return nil
+}
+
+func (c NoopSegment) SendGroupTraits(name string, data interface{}) error {
+	return nil
+}
+
+func (c NoopSegment) Close() {
+	return
 }

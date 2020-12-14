@@ -50,7 +50,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.S().Fatalf("Error connecting to host %s",err.Error())
 	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure)
+	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}

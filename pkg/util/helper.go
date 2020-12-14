@@ -9,7 +9,10 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"go.uber.org/zap"
+
 )
+
 
 var (
 
@@ -72,6 +75,9 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 	return false, nil
 }
 
+
+
+
 // AskBool function asks for the user input
 // for a boolean input
 func AskBool(msg string, args ...interface{}) (bool, error) {
@@ -97,4 +103,33 @@ func AskBool(msg string, args ...interface{}) (bool, error) {
 	}
 
 	return false, fmt.Errorf("Please provide input as y or n, provided: %s", resp)
+}
+
+// Logger interface allows to use other loggers than
+// standard log.Logger.
+type ZapWrapper struct {
+}
+/* 
+	Implmenting the LeveledLogger for retry http
+	type LeveledLogger interface {
+		Error(msg string, keysAndValues ...interface{})
+		Info(msg string, keysAndValues ...interface{})
+		Debug(msg string, keysAndValues ...interface{})
+		Warn(msg string, keysAndValues ...interface{})
+	}
+*/
+func (z *ZapWrapper) Error(msg string, args ...interface{}) {
+	zap.S().Errorf(msg, args)
+}
+
+func (z *ZapWrapper) Info(msg string, args ...interface{}) {
+	zap.S().Infof(msg, args)
+}
+
+func (z *ZapWrapper) Debug(msg string, args ...interface{}) {
+	zap.S().Debugf(msg, args)
+}
+
+func (z *ZapWrapper) Warn(msg string, args ...interface{}) {
+	zap.S().Warnf(msg, args)
 }
