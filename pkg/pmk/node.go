@@ -133,7 +133,7 @@ func installHostAgentCertless(ctx Context, auth keystone.KeystoneAuth, hostOS st
 func validatePlatform(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Received a call to validate platform")
 
-	data, err := exec.RunWithStdout("cat /etc/os-release")
+	data, err := exec.RunWithStdout("cat", "/etc/os-release")
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
