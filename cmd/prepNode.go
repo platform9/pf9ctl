@@ -74,7 +74,7 @@ func checkAndValidateRemote() bool {
 			return foundRemote
 		}
 	}
-	zap.S().Info("Using local exeuctor")
+	zap.S().Info("Using local executor")
 	return foundRemote
 }
 
@@ -91,6 +91,6 @@ func getExecutor() (cmdexec.Executor, error) {
 		}
 		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password)
 	}
-	zap.S().Info("Using local exeuctor")
+	zap.S().Info("Using local executor")
 	return cmdexec.LocalExecutor{}, nil
 }
