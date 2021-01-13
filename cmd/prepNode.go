@@ -3,11 +3,12 @@
 package cmd
 
 import (
-	"go.uber.org/zap"
+	"io/ioutil"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
-	"io/ioutil"
+	"go.uber.org/zap"
 )
 
 // prepNodeCmd represents the prepNode command
@@ -37,7 +38,6 @@ func init() {
 	rootCmd.AddCommand(prepNodeCmd)
 }
 
-
 func prepNodeRun(cmd *cobra.Command, args []string) {
 
 	ctx, err := pmk.LoadContext(Pf9DBLoc)
@@ -48,7 +48,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	// it will only work with one remote host
 	executor, err := getExecutor()
 	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s",err.Error())
+		zap.S().Fatalf("Error connecting to host %s", err.Error())
 	}
 	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
 	if err != nil {
@@ -61,13 +61,13 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 }
 
-// checkAndValidateRemote check if any of the command line 
+// checkAndValidateRemote check if any of the command line
 func checkAndValidateRemote() bool {
 	foundRemote := false
 	for _, ip := range ips {
 		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
 			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
-			if user =="" || (sshKey == "" && password == "") {
+			if user == "" || (sshKey == "" && password == "") {
 				zap.S().Fatalf("please provider 'user' and one of 'password' or ''ssh-key'")
 			}
 			foundRemote = true
@@ -77,7 +77,6 @@ func checkAndValidateRemote() bool {
 	zap.S().Info("Using local exeuctor")
 	return foundRemote
 }
-
 
 // getExecutor creates the right Executor
 func getExecutor() (cmdexec.Executor, error) {
@@ -91,7 +90,7 @@ func getExecutor() (cmdexec.Executor, error) {
 			}
 		}
 		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password)
- 	}
+	}
 	zap.S().Info("Using local exeuctor")
 	return cmdexec.LocalExecutor{}, nil
 }
