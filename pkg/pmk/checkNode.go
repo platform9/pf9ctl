@@ -1,4 +1,5 @@
 // Copyright © 2020 The Platform9 Systems Inc.
+
 package pmk
 
 import (
@@ -13,10 +14,15 @@ import (
 )
 
 const (
-	minCPUs      = 2
-	minMem       = 12
-	gB           = 1024.00 * 1024
-	minDisk      = 30
+	// number of CPUs
+	minCPUs = 2
+	// RAM in GiBs
+	minMem = 12
+	// Measure of a GiB in terms of bytes
+	gB = 1024 * 1024
+	// Disk size in GiBs
+	minDisk = 30
+	// Disk size in GiBs
 	minAvailDisk = 15
 
 	checkPass = "PASS"

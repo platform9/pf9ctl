@@ -4,6 +4,7 @@ import (
 	"reflect"
 )
 
+// Intersect returns a list of common items between two lists
 func Intersect(a interface{}, b interface{}) []interface{} {
 	set := make([]interface{}, 0)
 	hash := make(map[interface{}]bool)
@@ -23,15 +24,4 @@ func Intersect(a interface{}, b interface{}) []interface{} {
 	}
 
 	return set
-}
-
-func Contains(a interface{}, e interface{}) bool {
-	v := reflect.ValueOf(a)
-
-	for i := 0; i < v.Len(); i++ {
-		if v.Index(i).Interface() == e {
-			return true
-		}
-	}
-	return false
 }

@@ -1,3 +1,5 @@
+// Copyright © 2020 The pf9ctl authors
+
 package cmd
 
 import (
@@ -41,7 +43,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	result, err := pmk.CheckNode(c)
 	if err != nil {
-		c.Segment.SendEvent("Prerequisite Node - Failed", err)
+		c.Segment.SendEvent("Prerequisite Checks for Node - Failed", err)
 		zap.S().Fatalf("Unable to check prerequisites for node: %s\n", err.Error())
 	}
 	if !result {
