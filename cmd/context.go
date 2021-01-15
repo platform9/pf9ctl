@@ -5,11 +5,11 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/pmk"
-	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
@@ -74,9 +74,24 @@ var contextCmdGet = &cobra.Command{
 	Short: "Print stored context",
 	Long:  `Print details of the stored context`,
 	Run: func(cmd *cobra.Command, args []string) {
-		data, err := util.ReadFile(Pf9DBLoc)
+		_, err := os.Stat(Pf9DBLoc)
+		if err != nil || os.IsNotExist(err) {
+			zap.S().Fatal("Could not load context: ", err)
+		}
+
+		file, err := os.Open(Pf9DBLoc)
 		if err != nil {
-			fmt.Printf("No context found: %s\n", err)
+			zap.S().Fatal("Could not load context: ", err)
+		}
+		defer func() {
+			if err = file.Close(); err != nil {
+				zap.S().Error(err)
+			}
+		}()
+
+		data, err := ioutil.ReadAll(file)
+		if err != nil {
+			zap.S().Fatal("Could not load context: ", err)
 		}
 
 		fmt.Printf(string(data))
