@@ -174,14 +174,14 @@ func (c memoryCheck) check(exec cmdexec.Executor) (bool, error) {
 		return false, err
 	}
 
-	mem, err := strconv.Atoi(memS)
+	mem, err := strconv.ParseFloat(memS, 32)
 	if err != nil {
 		return false, err
 	}
 
 	zap.S().Debug("Total memory allocated in GiBs", mem)
 
-	return mem/1024 >= minMem, nil
+	return math.Ceil(mem/1024) >= minMem, nil
 }
 
 func (c memoryCheck) errMessage() string {
