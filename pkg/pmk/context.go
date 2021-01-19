@@ -6,18 +6,19 @@ import (
 	"errors"
 	"os"
 	"time"
+
 	"go.uber.org/zap"
 )
 
 // Context stores information to contact with the pf9 controller.
 type Context struct {
-	Fqdn     string `json:"fqdn"`
-	Username string `json:"os_username"`
-	Password string `json:"os_password"`
-	Tenant   string `json:"os_tenant"`
-	Region   string `json:"os_region"`
-	WaitPeriod time.Duration `json:"wait_period"`
-	AllowInsecure bool `json:"allow_insecure"`
+	Fqdn          string        `json:"fqdn"`
+	Username      string        `json:"os_username"`
+	Password      string        `json:"os_password"`
+	Tenant        string        `json:"os_tenant"`
+	Region        string        `json:"os_region"`
+	WaitPeriod    time.Duration `json:"wait_period"`
+	AllowInsecure bool          `json:"allow_insecure"`
 }
 
 // StoreContext simply updates the in-memory object
@@ -40,7 +41,6 @@ func StoreContext(ctx Context, loc string) error {
 func LoadContext(loc string) (Context, error) {
 	zap.S().Info("Loading context...")
 
-
 	f, err := os.Open(loc)
 	if err != nil {
 
@@ -52,7 +52,7 @@ func LoadContext(loc string) (Context, error) {
 
 	defer f.Close()
 
-	ctx := Context{WaitPeriod: time.Duration(60), AllowInsecure:false}
+	ctx := Context{WaitPeriod: time.Duration(60), AllowInsecure: false}
 	err = json.NewDecoder(f).Decode(&ctx)
 	// decode the password
 	// Decoding base64 encoded password

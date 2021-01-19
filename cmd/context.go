@@ -5,12 +5,13 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
-	"go.uber.org/zap"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -35,8 +36,7 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 
 	fmt.Printf("Password: ")
 	passwordBytes, _ := terminal.ReadPassword(0)
-	password:= string(passwordBytes)
-	
+	password := string(passwordBytes)
 
 	fmt.Printf("\nRegion [RegionOne]: ")
 	region, _ := reader.ReadString('\n')
@@ -55,12 +55,12 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 	}
 
 	ctx := pmk.Context{
-		Fqdn:     fqdn,
-		Username: username,
-		Password: password,
-		Region:   region,
-		Tenant:   service,
-		WaitPeriod: WaitPeriod,
+		Fqdn:          fqdn,
+		Username:      username,
+		Password:      password,
+		Region:        region,
+		Tenant:        service,
+		WaitPeriod:    WaitPeriod,
 		AllowInsecure: false,
 	}
 
@@ -70,15 +70,35 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 }
 
 var contextCmdGet = &cobra.Command{
-	Use:   "context",
-	Short: "List stored context/s",
-	Long:  `List stored contexts or details about a specific context`,
+	Use:   "get",
+	Short: "Print stored context",
+	Long:  `Print details of the stored context`,
 	Run: func(cmd *cobra.Command, args []string) {
-		zap.S().Info("Get context called")
+		_, err := os.Stat(Pf9DBLoc)
+		if err != nil || os.IsNotExist(err) {
+			zap.S().Fatal("Could not load context: ", err)
+		}
+
+		file, err := os.Open(Pf9DBLoc)
+		if err != nil {
+			zap.S().Fatal("Could not load context: ", err)
+		}
+		defer func() {
+			if err = file.Close(); err != nil {
+				zap.S().Error(err)
+			}
+		}()
+
+		data, err := ioutil.ReadAll(file)
+		if err != nil {
+			zap.S().Fatal("Could not load context: ", err)
+		}
+
+		fmt.Printf(string(data))
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(contextCmdCreate)
-	rootCmd.AddCommand(contextCmdGet)
+	contextCmdCreate.AddCommand(contextCmdGet)
 }
