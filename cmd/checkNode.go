@@ -27,7 +27,7 @@ func init() {
 }
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
-	ctx, err := pmk.LoadContext(Pf9DBLoc)
+	ctx, err := pmk.LoadConfig(Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
@@ -41,12 +41,9 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
 
-	result, err := pmk.CheckNode(c)
-	if err != nil {
-		c.Segment.SendEvent("Prerequisite Checks for Node - Failed", err)
-		zap.S().Fatalf("Unable to check prerequisites for node: %s\n", err.Error())
-	}
+	result := pmk.CheckNode(c)
+
 	if !result {
-		zap.S().Fatal("Node not ready")
+		zap.S().Fatal("Node not ready. See verbose logs for more")
 	}
 }

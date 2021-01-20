@@ -1,23 +1,17 @@
 package util
 
-import (
-	"reflect"
-)
-
 // Intersect returns a list of common items between two lists
-func Intersect(a interface{}, b interface{}) []interface{} {
-	set := make([]interface{}, 0)
-	hash := make(map[interface{}]bool)
-	av := reflect.ValueOf(a)
-	bv := reflect.ValueOf(b)
+func Intersect(a []string, b []string) []string {
+	set := make([]string, 0)
+	hash := make(map[string]bool)
 
-	for i := 0; i < av.Len(); i++ {
-		el := av.Index(i).Interface()
+	for i := 0; i < len(a); i++ {
+		el := a[i]
 		hash[el] = true
 	}
 
-	for i := 0; i < bv.Len(); i++ {
-		el := bv.Index(i).Interface()
+	for i := 0; i < len(b); i++ {
+		el := b[i]
 		if _, found := hash[el]; found {
 			set = append(set, el)
 		}
