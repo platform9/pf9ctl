@@ -40,9 +40,9 @@ func init() {
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 
-	ctx, err := pmk.LoadContext(Pf9DBLoc)
+	ctx, err := pmk.LoadConfig(Pf9DBLoc)
 	if err != nil {
-		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+		zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
 	}
 	// TODO: there seems to be a bug, we will need multiple executors one per ip, so at this moment
 	// it will only work with one remote host

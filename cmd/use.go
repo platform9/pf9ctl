@@ -9,7 +9,7 @@ import (
 // useCmd represents the use command
 var useCmd = &cobra.Command{
 	Use:   "use",
-	Short: "Use a specific context",
+	Short: "Use a specific config",
 	// Run: func(cmd *cobra.Command, args []string) {
 	// 	log.Info("Use called")
 	// },

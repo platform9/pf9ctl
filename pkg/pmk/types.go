@@ -7,10 +7,10 @@ type CloudProviderType string
 type CNIBackend string
 
 const (
-	// ContextFile is used to store context information
-	ContextFile string = "pf9_context.json"
-	// DefaultContextDir is the default path for context file
-	DefaultContextDir string = "~/"
+	// ConfigFile is used to store config information
+	ConfigFile string = "pf9_config.json"
+	// DefaultConfigDir is the default path for config file
+	DefaultConfigDir string = "~/"
 	// LogFile specifies the filename to which CLI logs o/p and errors
 	LogFile string = "pf9ctl.log"
 
@@ -30,4 +30,4 @@ const (
 	Weave CNIBackend = "weave"
 )
 
-// Context specifies information required to connect to the PF9 Controller
+// Config specifies information required to connect to the PF9 Controller

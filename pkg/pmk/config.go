@@ -10,20 +10,20 @@ import (
 	"go.uber.org/zap"
 )
 
-// Context stores information to contact with the pf9 controller.
-type Context struct {
+// Config stores information to contact with the pf9 controller.
+type Config struct {
 	Fqdn          string        `json:"fqdn"`
-	Username      string        `json:"os_username"`
-	Password      string        `json:"os_password"`
-	Tenant        string        `json:"os_tenant"`
-	Region        string        `json:"os_region"`
+	Username      string        `json:"username"`
+	Password      string        `json:"password"`
+	Tenant        string        `json:"tenant"`
+	Region        string        `json:"region"`
 	WaitPeriod    time.Duration `json:"wait_period"`
 	AllowInsecure bool          `json:"allow_insecure"`
 }
 
-// StoreContext simply updates the in-memory object
-func StoreContext(ctx Context, loc string) error {
-	zap.S().Info("Storing context")
+// StoreConfig simply updates the in-memory object
+func StoreConfig(ctx Config, loc string) error {
+	zap.S().Info("Storing config")
 	// obscure the password
 	ctx.Password = base64.StdEncoding.EncodeToString([]byte(ctx.Password))
 	f, err := os.Create(loc)
@@ -37,22 +37,22 @@ func StoreContext(ctx Context, loc string) error {
 	return encoder.Encode(ctx)
 }
 
-// LoadContext returns the information for communication with PF9 controller.
-func LoadContext(loc string) (Context, error) {
-	zap.S().Info("Loading context...")
+// LoadConfig returns the information for communication with PF9 controller.
+func LoadConfig(loc string) (Config, error) {
+	zap.S().Info("Loading config...")
 
 	f, err := os.Open(loc)
 	if err != nil {
 
 		if os.IsNotExist(err) {
-			return Context{}, errors.New("Context absent")
+			return Config{}, errors.New("Config absent")
 		}
-		return Context{}, err
+		return Config{}, err
 	}
 
 	defer f.Close()
 
-	ctx := Context{WaitPeriod: time.Duration(60), AllowInsecure: false}
+	ctx := Config{WaitPeriod: time.Duration(60), AllowInsecure: false}
 	err = json.NewDecoder(f).Decode(&ctx)
 	// decode the password
 	// Decoding base64 encoded password
