@@ -3,15 +3,15 @@
 package cmd
 
 import (
-	"go.uber.org/zap"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 // clusterCmdGet represents the cluster get command
 var clusterCmdGet = &cobra.Command{
 	Use:   "cluster",
 	Short: "Display one or many clusters",
-	Long: `Query your controller using the current context and list
+	Long: `Query your controller using the current config and list
 	 the clusters`,
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Info("Get cluster called")

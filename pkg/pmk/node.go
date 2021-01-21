@@ -4,18 +4,17 @@ package pmk
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
-	"regexp"
 
-	"go.uber.org/zap"
-	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
-
+	"github.com/platform9/pf9ctl/pkg/keystone"
+	"go.uber.org/zap"
 )
 
 // PrepNode sets up prerequisites for k8s stack
-func PrepNode(ctx Context, allClients Client) error {
+func PrepNode(ctx Config, allClients Client) error {
 
 	zap.S().Debug("Received a call to start preping node(s).")
 
@@ -70,7 +69,7 @@ func PrepNode(ctx Context, allClients Client) error {
 	return nil
 }
 
-func installHostAgent(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
+func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent")
 
 	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", ctx.Fqdn, hostOS)
@@ -95,7 +94,7 @@ func installHostAgent(ctx Context, auth keystone.KeystoneAuth, hostOS string, ex
 	}
 }
 
-func installHostAgentCertless(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
+func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Info("Downloading Hostagent Installer Certless")
 
 	url := fmt.Sprintf(
@@ -148,7 +147,7 @@ func validatePlatform(exec cmdexec.Executor) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 		}
-		if match, _:= regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match  {
+		if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match {
 			return "redhat", nil
 		}
 		return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
@@ -187,7 +186,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 	return err == nil
 }
 
-func installHostAgentLegacy(ctx Context, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
+func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Info("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)

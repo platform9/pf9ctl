@@ -15,15 +15,15 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-// contextCmdCreate represents the context command
-var contextCmdCreate = &cobra.Command{
-	Use:   "context",
-	Short: "Create a new context",
-	Long:  `Create a new context that can be used to query Platform9 controller`,
-	Run:   contextCmdCreateRun,
+// configCmdCreate represents the config command
+var configCmdCreate = &cobra.Command{
+	Use:   "config",
+	Short: "Create a new config",
+	Long:  `Create a new config that can be used to query Platform9 controller`,
+	Run:   configCmdCreateRun,
 }
 
-func contextCmdCreateRun(cmd *cobra.Command, args []string) {
+func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Printf("Platform9 Account URL: ")
@@ -54,7 +54,7 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 		service = "service"
 	}
 
-	ctx := pmk.Context{
+	ctx := pmk.Config{
 		Fqdn:          fqdn,
 		Username:      username,
 		Password:      password,
@@ -64,24 +64,24 @@ func contextCmdCreateRun(cmd *cobra.Command, args []string) {
 		AllowInsecure: false,
 	}
 
-	if err := pmk.StoreContext(ctx, Pf9DBLoc); err != nil {
-		zap.S().Errorf("Failed to store context: %s", err.Error())
+	if err := pmk.StoreConfig(ctx, Pf9DBLoc); err != nil {
+		zap.S().Errorf("Failed to store config: %s", err.Error())
 	}
 }
 
-var contextCmdGet = &cobra.Command{
+var configCmdGet = &cobra.Command{
 	Use:   "get",
-	Short: "Print stored context",
-	Long:  `Print details of the stored context`,
+	Short: "Print stored config",
+	Long:  `Print details of the stored config`,
 	Run: func(cmd *cobra.Command, args []string) {
 		_, err := os.Stat(Pf9DBLoc)
 		if err != nil || os.IsNotExist(err) {
-			zap.S().Fatal("Could not load context: ", err)
+			zap.S().Fatal("Could not load config: ", err)
 		}
 
 		file, err := os.Open(Pf9DBLoc)
 		if err != nil {
-			zap.S().Fatal("Could not load context: ", err)
+			zap.S().Fatal("Could not load config: ", err)
 		}
 		defer func() {
 			if err = file.Close(); err != nil {
@@ -91,7 +91,7 @@ var contextCmdGet = &cobra.Command{
 
 		data, err := ioutil.ReadAll(file)
 		if err != nil {
-			zap.S().Fatal("Could not load context: ", err)
+			zap.S().Fatal("Could not load config: ", err)
 		}
 
 		fmt.Printf(string(data))
@@ -99,6 +99,6 @@ var contextCmdGet = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(contextCmdCreate)
-	contextCmdCreate.AddCommand(contextCmdGet)
+	rootCmd.AddCommand(configCmdCreate)
+	configCmdCreate.AddCommand(configCmdGet)
 }
