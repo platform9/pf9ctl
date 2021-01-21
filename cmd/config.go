@@ -18,9 +18,8 @@ import (
 // configCmdCreate represents the config command
 var configCmdCreate = &cobra.Command{
 	Use:   "config",
-	Short: "Create a new config",
-	Long:  `Create a new config that can be used to query Platform9 controller`,
-	Run:   configCmdCreateRun,
+	Short: "Create or get config",
+	Long:  `Create or get PF9 controller config used by this CLI`,
 }
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
@@ -98,7 +97,15 @@ var configCmdGet = &cobra.Command{
 	},
 }
 
+var configCmdSet = &cobra.Command{
+	Use:   "set",
+	Short: "Create a new config",
+	Long:  `Create a new config that can be used to query Platform9 controller`,
+	Run:   configCmdCreateRun,
+}
+
 func init() {
 	rootCmd.AddCommand(configCmdCreate)
 	configCmdCreate.AddCommand(configCmdGet)
+	configCmdCreate.AddCommand(configCmdSet)
 }
