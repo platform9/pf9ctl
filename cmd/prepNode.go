@@ -74,7 +74,7 @@ func checkAndValidateRemote() bool {
 			return foundRemote
 		}
 	}
-	zap.S().Info("Using local exeuctor")
+	zap.S().Debug("Using local executor")
 	return foundRemote
 }
 
@@ -86,11 +86,11 @@ func getExecutor() (cmdexec.Executor, error) {
 		if sshKey != "" {
 			pKey, err = ioutil.ReadFile(sshKey)
 			if err != nil {
-				zap.S().Fatalf("Unale to read the sshKey %s, %s", sshKey, err.Error())
+				zap.S().Fatalf("Unable to read the sshKey %s, %s", sshKey, err.Error())
 			}
 		}
 		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password)
 	}
-	zap.S().Info("Using local exeuctor")
+	zap.S().Debug("Using local executor")
 	return cmdexec.LocalExecutor{}, nil
 }
