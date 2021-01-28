@@ -19,13 +19,16 @@ REPO := pf9ctl
 PACKAGE_GOPATH := /go/src/github.com/platform9/$(REPO)
 LDFLAGS := $(shell source ./version.sh ; KUBE_ROOT=. ; KUBE_GIT_VERSION=${VERSION_OVERRIDE} ; kube::version::ldflags)
 GIT_STORAGE_MOUNT := $(shell source ./git_utils.sh; container_git_storage_mount)
+CONT_USER := $(shell id -u)
+CONT_GRP := $(shell id -g)
+XDG_CACHE_HOME := /tmp
 
 .PHONY: clean clean-all container-build default format test
 
 default: $(BIN)
 
 container-build:
-	docker run --rm -e VERSION_OVERRIDE=${VERSION_OVERRIDE} -v $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) -w $(PACKAGE_GOPATH) golang:1.14.1 make
+	docker run --rm --env XDG_CACHE_HOME=$(XDG_CACHE_HOME) --env VERSION_OVERRIDE=${VERSION_OVERRIDE} --env GOPATH=/tmp --user $(CONT_USER):$(CONT_GRP) --volume $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) --workdir $(PACKAGE_GOPATH) platform9systems/build-centos7-golang:1.15.2 make
 
 $(BIN): test
 	go build -o $(BIN_DIR)/$(BIN) -ldflags "$(LDFLAGS)"
