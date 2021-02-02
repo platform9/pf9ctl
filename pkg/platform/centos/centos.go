@@ -25,7 +25,10 @@ func NewCentOS(exec cmdexec.Executor) *CentOS {
 func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := c.checkPackages()
+	result, err := c.checkPyCli()
+	checks = append(checks, platform.Check{"PyCliCheck", result, err})
+
+	result, err = c.checkPackages()
 	checks = append(checks, platform.Check{"PackageCheck", result, err})
 
 	result, err = c.checkSudo()

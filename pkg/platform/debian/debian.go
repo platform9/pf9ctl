@@ -25,7 +25,10 @@ func NewDebian(exec cmdexec.Executor) *Debian {
 func (d *Debian) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := d.checkPackages()
+	result, err := d.checkPyCli()
+	checks = append(checks, platform.Check{"PyCliCheck", result, err})
+
+	result, err = d.checkPackages()
 	checks = append(checks, platform.Check{"PackageCheck", result, err})
 
 	result, err = d.checkSudo()
