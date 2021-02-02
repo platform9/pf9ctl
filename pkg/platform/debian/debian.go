@@ -150,3 +150,23 @@ func (d *Debian) checkPort() (bool, error) {
 
 	return true, nil
 }
+
+func (d *Debian) checkPyCli() (bool, error) {
+	_, err := d.exec.RunWithStdout("ls", util.PyCliLink)
+	if err == nil {
+		if _, err = d.exec.RunWithStdout("rm", "-rf", util.PyCliLink); err != nil {
+			return false, err
+		}
+		zap.S().Debug("Removed Python CLI symlink")
+	}
+
+	_, err = d.exec.RunWithStdout("ls", util.PyCliPath)
+	if err == nil {
+		if _, err = d.exec.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
+			return false, err
+		}
+		zap.S().Debug("Removed Python CLI directory")
+	}
+
+	return true, nil
+}

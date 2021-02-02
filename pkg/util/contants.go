@@ -1,5 +1,10 @@
 package util
 
+import (
+	"os"
+	"path/filepath"
+)
+
 var RequiredPorts []string
 
 const (
@@ -17,6 +22,14 @@ const (
 
 	CheckPass = "PASS"
 	CheckFail = "FAIL"
+)
+
+var (
+	homeDir, _ = os.UserHomeDir()
+	// PyCliPath is the path of virtual env directory of the Python CLI
+	PyCliPath = filepath.Join(homeDir, "pf9/pf9-venv")
+	// PyCliLink is the Symlink of the Python CLI
+	PyCliLink = "/usr/bin/pf9ctl"
 )
 
 func init() {
