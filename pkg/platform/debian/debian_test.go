@@ -1,4 +1,4 @@
-package centos
+package debian
 
 import (
 	"testing"
@@ -49,7 +49,7 @@ func TestCPU(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
+			c := &Debian{exec: tc.exec}
 			o, err := c.checkCPU()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -61,8 +61,7 @@ func TestCPU(t *testing.T) {
 		})
 	}
 }
-
-// RAM check test case
+//RAM check test case
 func TestRAM(t *testing.T) {
 	type want struct {
 		result bool
@@ -89,7 +88,7 @@ func TestRAM(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "13", nil
+						return "8000", nil
 					},
 				},
 			},
@@ -101,7 +100,7 @@ func TestRAM(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
+			c := &Debian{exec: tc.exec}
 			o, err := c.checkMem()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -113,59 +112,6 @@ func TestRAM(t *testing.T) {
 		})
 	}
 }
-
-// Disk check test case
-func TestDisk(t *testing.T) {
-	type want struct {
-		result bool
-		err    error
-	}
-
-	cases := map[string]struct {
-		args
-		want
-	}{
-		"CheckPass": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "31000000", nil
-					},
-				},
-			},
-			want: want{
-				result: true,
-			},
-		},
-		"CheckFail": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "13", nil
-					},
-				},
-			},
-			want: want{
-				result: false,
-			},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
-			o, err := c.checkDisk()
-
-			if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
-			if diff := cmp.Diff(tc.want.result, o); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
-		})
-	}
-}
-
 //Sudo check test case
 func TestSudo(t *testing.T) {
 	type want struct {
@@ -205,7 +151,7 @@ func TestSudo(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
+			c := &Debian{exec: tc.exec}
 			o, err := c.checkSudo()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -217,7 +163,6 @@ func TestSudo(t *testing.T) {
 		})
 	}
 }
-
 //Port check test case
 func TestPort(t *testing.T) {
 	type want struct {
@@ -257,7 +202,7 @@ func TestPort(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
+			c := &Debian{exec: tc.exec}
 			o, err := c.checkPort()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -269,7 +214,57 @@ func TestPort(t *testing.T) {
 		})
 	}
 }
+//Disk check test case
+func TestDisk(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
 
+	cases := map[string]struct {
+		args
+		want
+	}{
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "31000000", nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "30000", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &Debian{exec: tc.exec}
+			o, err := c.checkDisk()
+
+			if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
 //Packages check test case
 func TestPackages(t *testing.T) {
 	type want struct {
@@ -309,7 +304,7 @@ func TestPackages(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
+			c := &Debian{exec: tc.exec}
 			o, err := c.checkPackages()
 			
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {

@@ -52,7 +52,7 @@ func (c *CentOS) Check() []platform.Check {
 func (c *CentOS) checkPackages() (bool, error) {
 	var err error
 	err = c.exec.Run("bash", "-c", "yum list installed | grep -i 'pf9-'")
-
+	
 	return !(err == nil), nil
 }
 
@@ -154,7 +154,7 @@ func (c *CentOS) checkPort() (bool, error) {
 	}
 
 	openPortsArray := strings.Split(string(openPorts), "\n")
-
+	
 	intersection := util.Intersect(util.RequiredPorts, openPortsArray)
 
 	if len(intersection) != 0 {
