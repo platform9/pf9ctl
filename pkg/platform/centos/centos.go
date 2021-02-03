@@ -138,6 +138,9 @@ func (c *CentOS) checkDisk() (bool, error) {
 func (c *CentOS) checkPort() (bool, error) {
 	var arg string
 
+	// For remote execution the command is wrapped under quotes ("") which creates
+	// problems for the awk command. To resolve this, $4 is escaped.
+	// Tweaks like this can be prevented by modifying the remote executor.
 	switch c.exec.(type) {
 	case cmdexec.LocalExecutor:
 		arg = "netstat -tupna | awk '{print $4}' | sed -e 's/.*://' | sort | uniq"
