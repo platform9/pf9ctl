@@ -25,7 +25,10 @@ func NewDebian(exec cmdexec.Executor) *Debian {
 func (d *Debian) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := d.checkPackages()
+	result, err := d.removePyCli()
+	checks = append(checks, platform.Check{"PyCliCheck", result, err})
+
+	result, err = d.checkPackages()
 	checks = append(checks, platform.Check{"PackageCheck", result, err})
 
 	result, err = d.checkSudo()
@@ -146,6 +149,26 @@ func (d *Debian) checkPort() (bool, error) {
 	if len(intersection) != 0 {
 		zap.S().Debug("Ports required but not available: ", intersection)
 		return false, nil
+	}
+
+	return true, nil
+}
+
+func (d *Debian) removePyCli() (bool, error) {
+	_, err := d.exec.RunWithStdout("ls", util.PyCliLink)
+	if err == nil {
+		if _, err = d.exec.RunWithStdout("rm", "-rf", util.PyCliLink); err != nil {
+			return false, err
+		}
+		zap.S().Debug("Removed Python CLI symlink")
+	}
+
+	_, err = d.exec.RunWithStdout("ls", util.PyCliPath)
+	if err == nil {
+		if _, err = d.exec.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
+			return false, err
+		}
+		zap.S().Debug("Removed Python CLI directory")
 	}
 
 	return true, nil

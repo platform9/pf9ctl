@@ -25,7 +25,10 @@ func NewCentOS(exec cmdexec.Executor) *CentOS {
 func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := c.checkPackages()
+	result, err := c.removePyCli()
+	checks = append(checks, platform.Check{"PyCliCheck", result, err})
+
+	result, err = c.checkPackages()
 	checks = append(checks, platform.Check{"PackageCheck", result, err})
 
 	result, err = c.checkSudo()
@@ -145,6 +148,27 @@ func (c *CentOS) checkPort() (bool, error) {
 	if len(intersection) != 0 {
 		zap.S().Debug("Ports required but not available: ", intersection)
 		return false, nil
+	}
+
+	return true, nil
+}
+
+func (c *CentOS) removePyCli() (bool, error) {
+
+	_, err := c.exec.RunWithStdout("ls", util.PyCliLink)
+	if err == nil {
+		if _, err = c.exec.RunWithStdout("rm", "-rf", util.PyCliLink); err != nil {
+			return false, err
+		}
+		zap.S().Debug("Removed Python CLI symlink")
+	}
+
+	_, err = c.exec.RunWithStdout("ls", util.PyCliPath)
+	if err == nil {
+		if _, err = c.exec.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
+			return false, err
+		}
+		zap.S().Debug("Removed Python CLI directory")
 	}
 
 	return true, nil
