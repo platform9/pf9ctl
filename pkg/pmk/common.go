@@ -33,9 +33,9 @@ func swapOffFstab(exec cmdexec.Executor, file string) error {
 	replace := `#\1 \2 \3 \4`
 	// also the expression is in the EXTENDED regexp (ERE) form not the BRE, so use the ERE form
 	sedCmd := fmt.Sprintf("s/%s/%s/", search, replace)
-	zap.S().Info("Executing command ",sedCmd, file)
+	zap.S().Debug("Executing command ",sedCmd, file)
 	stdout, err := exec.RunWithStdout("sed", "-E", "-i.bak", sedCmd, file)
-	zap.S().Info("Returned value: ", stdout)
+	zap.S().Debug("Returned value: ", stdout)
 	return err
 
 }
