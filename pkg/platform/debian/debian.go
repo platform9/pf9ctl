@@ -25,7 +25,7 @@ func NewDebian(exec cmdexec.Executor) *Debian {
 func (d *Debian) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := d.checkPyCli()
+	result, err := d.removePyCli()
 	checks = append(checks, platform.Check{"PyCliCheck", result, err})
 
 	result, err = d.checkPackages()
@@ -154,7 +154,7 @@ func (d *Debian) checkPort() (bool, error) {
 	return true, nil
 }
 
-func (d *Debian) checkPyCli() (bool, error) {
+func (d *Debian) removePyCli() (bool, error) {
 	_, err := d.exec.RunWithStdout("ls", util.PyCliLink)
 	if err == nil {
 		if _, err = d.exec.RunWithStdout("rm", "-rf", util.PyCliLink); err != nil {

@@ -25,7 +25,7 @@ func NewCentOS(exec cmdexec.Executor) *CentOS {
 func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := c.checkPyCli()
+	result, err := c.removePyCli()
 	checks = append(checks, platform.Check{"PyCliCheck", result, err})
 
 	result, err = c.checkPackages()
@@ -153,7 +153,7 @@ func (c *CentOS) checkPort() (bool, error) {
 	return true, nil
 }
 
-func (c *CentOS) checkPyCli() (bool, error) {
+func (c *CentOS) removePyCli() (bool, error) {
 
 	_, err := c.exec.RunWithStdout("ls", util.PyCliLink)
 	if err == nil {
