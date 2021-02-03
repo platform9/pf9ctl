@@ -136,7 +136,16 @@ func (c *CentOS) checkDisk() (bool, error) {
 }
 
 func (c *CentOS) checkPort() (bool, error) {
-	openPorts, err := c.exec.RunWithStdout("bash", "-c", "netstat -tupna | awk '{print $4}' | sed -e 's/.*://' | sort | uniq")
+	var arg string
+
+	switch c.exec.(type) {
+	case cmdexec.LocalExecutor:
+		arg = "netstat -tupna | awk '{print $4}' | sed -e 's/.*://' | sort | uniq"
+	case *cmdexec.RemoteExecutor:
+		arg = "netstat -tupna | awk '{print \\$4}' | sed -e 's/.*://' | sort | uniq"
+	}
+
+	openPorts, err := c.exec.RunWithStdout("bash", "-c", arg)
 	if err != nil {
 		return false, err
 	}
