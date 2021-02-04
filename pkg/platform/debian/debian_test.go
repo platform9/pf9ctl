@@ -21,6 +21,8 @@ func TestCPU(t *testing.T) {
 		args
 		want
 	}{
+		//Success case. Minimun CPU required is 2
+		//Returning 4 CPUS. Therfore test case should pass
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -33,6 +35,8 @@ func TestCPU(t *testing.T) {
 				result: true,
 			},
 		},
+		//Failure case. CPUS should be less than 2 (No of CPU < 2)
+		//Returning 1 CPUS. Therfore test case should pass
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -72,11 +76,13 @@ func TestRAM(t *testing.T) {
 		args
 		want
 	}{
+		//Success case. Minimum required RAM 12GB
+		//Returning 12288 MB = 12 GB. Therfore test case should pass
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "12000", nil
+						return "12288", nil
 					},
 				},
 			},
@@ -84,11 +90,13 @@ func TestRAM(t *testing.T) {
 				result: true,
 			},
 		},
+		//Failure case. RAM should be less than 12 GB. (RAM < 12 GB)
+		//Returning 8 GB. Therfore test case should pass
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "8000", nil
+						return "8192", nil
 					},
 				},
 			},
@@ -123,6 +131,9 @@ func TestSudo(t *testing.T) {
 		args
 		want
 	}{
+		//Success case. User should have sudo permission.
+		//If user id == 0 then user have sudo permission.
+		//Returning 0. Therfore test case should pass.
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -135,6 +146,8 @@ func TestSudo(t *testing.T) {
 				result: true,
 			},
 		},
+		//Failure case. User should have id other than zero
+		//Returning 100. Therfore test case should pass
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -174,11 +187,13 @@ func TestPort(t *testing.T) {
 		args
 		want
 	}{
+		//Success case. Required ports should not be opened.
+		//Returning ports which are not required. Therfore test case should pass.
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "22", nil
+						return "22\n25\n123\n5395", nil
 					},
 				},
 			},
@@ -186,11 +201,13 @@ func TestPort(t *testing.T) {
 				result: true,
 			},
 		},
+		//Failure case. Required ports should be closed.
+		//Returning closed ports. Therfore test case should pass
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "10255", nil
+						return "10255\n10255\n443", nil
 					},
 				},
 			},
@@ -225,11 +242,13 @@ func TestDisk(t *testing.T) {
 		args
 		want
 	}{
+		//Success case. Minimum required disk is 30 GB
+		//Returning 31457280 KB = 30 GB. Therfore test case should pass.
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "31000000", nil
+						return "31457280", nil
 					},
 				},
 			},
@@ -237,11 +256,13 @@ func TestDisk(t *testing.T) {
 				result: true,
 			},
 		},
+		//Failure case. Disk should be less than 30 GB.
+		//Returning 15728640 KB = 15 GB. Therfore test case should pass.
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "30000", nil
+						return "15728640", nil
 					},
 				},
 			},
@@ -276,6 +297,8 @@ func TestPackages(t *testing.T) {
 		args
 		want
 	}{
+		//Success case. Packages should not be installed allready.
+		//If packages are not installed returning nil error. Therfore test case should pass.
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -288,6 +311,8 @@ func TestPackages(t *testing.T) {
 				result: false,
 			},
 		},
+		//Failure case. If packages are installed allready.
+		//Returning Error. Therfore test case should pass.
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
