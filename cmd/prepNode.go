@@ -70,7 +70,7 @@ func checkAndValidateRemote() bool {
 		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
 			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
 			if user == "" || (sshKey == "" && password == "") {
-				fmt.Printf("Password: ")
+				fmt.Printf("Enter Password: ")
 				passwordBytes, _ := terminal.ReadPassword(0)
 				password = string(passwordBytes)
 			}
