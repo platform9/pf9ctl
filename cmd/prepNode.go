@@ -3,12 +3,14 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // prepNodeCmd represents the prepNode command
@@ -68,7 +70,9 @@ func checkAndValidateRemote() bool {
 		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
 			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
 			if user == "" || (sshKey == "" && password == "") {
-				zap.S().Fatalf("please provider 'user' and one of 'password' or ''ssh-key'")
+				fmt.Printf("Password: ")
+				passwordBytes, _ := terminal.ReadPassword(0)
+				password = string(passwordBytes)
 			}
 			foundRemote = true
 			return foundRemote
