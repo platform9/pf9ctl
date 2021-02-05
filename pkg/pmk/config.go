@@ -45,7 +45,7 @@ func LoadConfig(loc string) (Config, error) {
 	if err != nil {
 
 		if os.IsNotExist(err) {
-			return Config{}, errors.New("Config absent")
+			return Config{}, errors.New("Config absent, run `sudo pf9ctl config set`")
 		}
 		return Config{}, err
 	}
