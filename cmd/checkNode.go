@@ -27,6 +27,7 @@ func init() {
 }
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
+	zap.S().Debug("==========Running check-node==========")
 	ctx, err := pmk.LoadConfig(Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -46,4 +47,5 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	if !result {
 		zap.S().Errorf("Node not ready. See %s or use --verbose for logs", Pf9Log)
 	}
+	zap.S().Debug("==========Finished running check-node==========")
 }

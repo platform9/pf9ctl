@@ -23,6 +23,7 @@ var configCmdCreate = &cobra.Command{
 }
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
+	zap.S().Debug("==========Running set config==========")
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Printf("Platform9 Account URL: ")
@@ -66,6 +67,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	if err := pmk.StoreConfig(ctx, Pf9DBLoc); err != nil {
 		zap.S().Errorf("Failed to store config: %s", err.Error())
 	}
+	zap.S().Debug("==========Finished running set config==========")
 }
 
 var configCmdGet = &cobra.Command{
@@ -73,6 +75,7 @@ var configCmdGet = &cobra.Command{
 	Short: "Print stored config",
 	Long:  `Print details of the stored config`,
 	Run: func(cmd *cobra.Command, args []string) {
+		zap.S().Debug("==========Running get config==========")
 		_, err := os.Stat(Pf9DBLoc)
 		if err != nil || os.IsNotExist(err) {
 			zap.S().Fatal("Could not load config: ", err)
@@ -94,6 +97,7 @@ var configCmdGet = &cobra.Command{
 		}
 
 		fmt.Printf(string(data))
+		zap.S().Debug("==========Finished running get config==========")
 	},
 }
 

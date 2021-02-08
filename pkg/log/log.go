@@ -15,7 +15,7 @@ import (
 // to print more information and a logFile where the logs would be saved
 func ConfigureGlobalLog(debug bool, logFile string) error {
 
-	runLogLocation := fmt.Sprintf("%s-%s.%s", logFile[:strings.LastIndex(logFile, ".")], time.Now().Format("2006010-2150405"), logFile[strings.LastIndex(logFile, ".")+1:])
+	runLogLocation := fmt.Sprintf("%s-%s.%s", logFile[:strings.LastIndex(logFile, ".")], time.Now().Format("2006010"), logFile[strings.LastIndex(logFile, ".")+1:])
 	// If the file doesn't exist, create it, or append to the file
 	f, err := os.OpenFile(runLogLocation, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -36,8 +36,8 @@ func ConfigureGlobalLog(debug bool, logFile string) error {
 
 	// Create custom zap config
 	core := zapcore.NewTee(
-		zapcore.NewCore(zapcore.NewConsoleEncoder(setCustomConfig()), consoleLogs, lvl),
-		zapcore.NewCore(zapcore.NewJSONEncoder(setCustomConfig()), fileLogs, zap.DebugLevel),
+		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleConfig()), consoleLogs, lvl),
+		zapcore.NewCore(zapcore.NewJSONEncoder(fileConfig()), fileLogs, zap.DebugLevel),
 	)
 
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
@@ -47,7 +47,15 @@ func ConfigureGlobalLog(debug bool, logFile string) error {
 	return nil
 }
 
-func setCustomConfig() zapcore.EncoderConfig {
+func fileConfig() zapcore.EncoderConfig {
+	config := zap.NewProductionEncoderConfig()
+	config.EncodeTime = zapcore.TimeEncoder(func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		enc.AppendString(t.UTC().Format("2006-01-02T15:04:05.9999Z"))
+	})
+	return config
+}
+
+func consoleConfig() zapcore.EncoderConfig {
 	return zapcore.EncoderConfig{
 		LevelKey:    "level",
 		TimeKey:     "ts",
