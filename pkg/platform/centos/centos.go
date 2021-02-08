@@ -51,7 +51,7 @@ func (c *CentOS) Check() []platform.Check {
 
 func (c *CentOS) checkPackages() (bool, error) {
 	var err error
-	err = c.exec.Run("bash", "-c", "yum list installed | grep -i 'pf9-'")
+	err = c.exec.Run("bash", "-c", "yum list installed | { grep -i 'pf9-' || true; }")
 
 	return !(err == nil), nil
 }

@@ -52,8 +52,7 @@ func (d *Debian) Check() []platform.Check {
 func (d *Debian) checkPackages() (bool, error) {
 
 	var err error
-	err = d.exec.Run("bash", "-c", "dpkg -l | grep -i 'pf9-'")
-
+	err = d.exec.Run("bash", "-c", "dpkg -l | { grep -i 'pf9-' || true; }")
 	return !(err == nil), nil
 }
 
