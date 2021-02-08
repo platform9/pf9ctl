@@ -29,7 +29,7 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"PyCliCheck", result, err})
 
 	result, err = d.checkPackages()
-	checks = append(checks, platform.Check{"PackageCheck", result, err})
+	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
 
 	result, err = d.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", result, err})
