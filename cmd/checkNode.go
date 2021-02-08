@@ -44,6 +44,6 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	result := pmk.CheckNode(c)
 
 	if !result {
-		zap.S().Fatal("Node not ready. See verbose logs for more")
+		zap.S().Errorf("Node not ready. See %s or use --verbose for logs", Pf9Log)
 	}
 }
