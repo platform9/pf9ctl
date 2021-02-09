@@ -41,7 +41,7 @@ func init() {
 }
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
-
+	zap.S().Debug("==========Running prep-node==========")
 	ctx, err := pmk.LoadConfig(Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
@@ -61,6 +61,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		c.Segment.SendEvent("Prep Node - Failed", err)
 		zap.S().Fatalf("Unable to prep node: %s\n", err.Error())
 	}
+	zap.S().Debug("==========Finished running prep-node==========")
 }
 
 // checkAndValidateRemote check if any of the command line
