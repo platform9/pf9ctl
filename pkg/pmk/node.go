@@ -170,20 +170,22 @@ func validatePlatform(exec cmdexec.Executor) (string, error) {
 }
 
 func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
-	var err error
+	var out string
 	if hostOS == "debian" {
-		err = exec.Run("bash",
+		out, _ = exec.RunWithStdout("bash",
 			"-c",
 			"dpkg -l | { grep -i 'pf9-' || true; }")
 	} else {
 		// not checking for redhat because if it has already passed validation
 		// it must be either debian or redhat based
-		err = exec.Run("bash",
+		out, _ = exec.RunWithStdout("bash",
 			"-c",
 			"yum list installed | { grep -i 'pf9-' || true; }")
 	}
 
-	return err == nil
+	fmt.Println(">>", out)
+
+	return !(out == "")
 }
 
 func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
