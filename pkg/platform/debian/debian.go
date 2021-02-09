@@ -26,7 +26,7 @@ func (d *Debian) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := d.removePyCli()
-	checks = append(checks, platform.Check{"PyCliCheck", result, err})
+	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
 
 	result, err = d.checkPackages()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
