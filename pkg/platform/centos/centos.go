@@ -26,10 +26,10 @@ func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := c.removePyCli()
-	checks = append(checks, platform.Check{"PyCliCheck", result, err})
+	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
 
 	result, err = c.checkPackages()
-	checks = append(checks, platform.Check{"PackageCheck", result, err})
+	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
 
 	result, err = c.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", result, err})
