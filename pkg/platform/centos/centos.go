@@ -167,21 +167,10 @@ func (c *CentOS) checkPort() (bool, error) {
 
 func (c *CentOS) removePyCli() (bool, error) {
 
-	_, err := c.exec.RunWithStdout("ls", util.PyCliLink)
-	if err == nil {
-		if _, err = c.exec.RunWithStdout("rm", "-rf", util.PyCliLink); err != nil {
-			return false, err
-		}
-		zap.S().Debug("Removed Python CLI symlink")
+	if _, err := c.exec.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
+		return false, err
 	}
-
-	_, err = c.exec.RunWithStdout("ls", util.PyCliPath)
-	if err == nil {
-		if _, err = c.exec.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
-			return false, err
-		}
-		zap.S().Debug("Removed Python CLI directory")
-	}
-
+	zap.S().Debug("Removed Python CLI directory")
+	
 	return true, nil
 }

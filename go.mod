@@ -8,7 +8,6 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/sftp v1.12.0
-	github.com/prometheus/common v0.4.0 // indirect
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
 	github.com/sethgrid/pester v1.1.0 // indirect
 	github.com/spf13/cobra v1.0.0
