@@ -51,10 +51,12 @@ func (d *Debian) Check() []platform.Check {
 
 func (d *Debian) checkPackages() (bool, error) {
 
-	var err error
-	err = d.exec.Run("bash", "-c", "dpkg -l | grep -i 'pf9-'")
+	out, err := d.exec.RunWithStdout("bash", "-c", "dpkg -l | { grep -i 'pf9-' || true; }")
+	if err != nil {
+		return false, err
+	}
 
-	return !(err == nil), nil
+	return out == "", nil
 }
 
 func (d *Debian) checkSudo() (bool, error) {
