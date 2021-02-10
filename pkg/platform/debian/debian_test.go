@@ -298,7 +298,7 @@ func TestPackages(t *testing.T) {
 		args
 		want
 	}{
-		//Success case. Packages should not be installed allready.
+		//Success case. Packages should not be installed already.
 		//If packages are not installed returning nil error. Therefore test case should pass.
 		"CheckPass": {
 			args: args{
@@ -312,7 +312,7 @@ func TestPackages(t *testing.T) {
 				result: false,
 			},
 		},
-		//Failure case. If packages are installed allready.
+		//Failure case. If packages are installed already.
 		//Returning Error. Therefore test case should pass.
 		"CheckFail": {
 			args: args{
