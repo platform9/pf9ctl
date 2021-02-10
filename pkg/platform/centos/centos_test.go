@@ -1,0 +1,401 @@
+package centos
+
+import (
+	"testing"
+	"fmt"
+	"github.com/google/go-cmp/cmp"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/stretchr/testify/assert"
+)
+
+type args struct {
+	exec cmdexec.Executor
+}
+//CPU check test case
+func TestCPU(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Minimun CPU required is 2
+		//Returning 4 CPUS. Therefore test case should pass
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "4", nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		//Failure case. CPUS should be less than 2 (No of CPU < 2)
+		//Returning 1 CPUS. Therefore test case should pass
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			o, err := c.checkCPU()
+
+			if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+// RAM check test case
+func TestRAM(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Minimum required RAM 12GB
+		//Returning 12288 MB = 12 GB. Therefore test case should pass
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "12288", nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		//Failure case. RAM should be less than 12 GB. (RAM < 12 GB)
+		//Returning 8 GB. Therefore test case should pass
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "8192", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			o, err := c.checkMem()
+
+			if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+// Disk check test case
+func TestDisk(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Minimum required disk is 30 GB
+		//Returning 31457280 KB = 30 GB. Therefore test case should pass.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "31457280", nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		//Failure case. Disk should be less than 30 GB.
+		//Returning 15728640 KB = 15 GB. Therefore test case should pass.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "15728640", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			o, err := c.checkDisk()
+
+			if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+//Sudo check test case
+func TestSudo(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. User should have sudo permission.
+		//If user id == 0 then user have sudo permission.
+		//Returning 0. Therefore test case should pass.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		//Failure case. User should have id other than zero
+		//Returning 100. Therefore test case should pass
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "100", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			o, err := c.checkSudo()
+
+			if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+//Port check test case
+func TestPort(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Required ports should not be opened.
+		//Returning ports which are not required. Therefore test case should pass.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "22\n111\n25\n3036", nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		//Failure case. Required ports should be closed.
+		//Returning closed ports. Therefore test case should pass
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "10255\n443\n10250", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			o, err := c.checkPort()
+
+			if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+//Packages check test case
+func TestPackages(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Packages should not be installed already.
+		//If packages are not installed returning nil error. Therefore test case should pass.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRun: func(name string, args ...string) (error) {
+						return nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+			},
+		},
+		//Failure case. If packages are installed already.
+		//Returning Error. Therefore test case should pass.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRun: func(name string, args ...string) (error) {
+						return fmt.Errorf("Error")
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			o, err := c.checkPackages()
+			
+			if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+//Test case for RemovePyCli check
+func TestRemovePyCli(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Faking error code of rm -rf command. 0 error code indicates that rm -rf executed successfully
+		//Returned nil error. 
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0",nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		//Failure case. Faking error code of rm -rf command. Other than 0 error code indicates some error occurred
+		//Returned error value.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1",fmt.Errorf("Error")
+					},
+				},
+			},
+			want: want{
+				result: false,
+				err : fmt.Errorf("Error"),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			result, err := c.removePyCli()
+			
+			assert.Equal(t, tc.want.err, err)
+			assert.Equal(t, tc.want.result, result)
+		})
+	}
+}
