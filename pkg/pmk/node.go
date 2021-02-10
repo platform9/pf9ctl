@@ -131,12 +131,13 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 
 func validatePlatform(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Received a call to validate platform")
+	
 	strDataLower , err := openOSReleaseFile(exec)
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
 
-	//strDataLower := strings.ToLower(string(data))
+	
 	switch {
 	case strings.Contains(strDataLower, "centos") || strings.Contains(strDataLower, "redhat"):
 		osVersion , err := centosVersion(exec)
