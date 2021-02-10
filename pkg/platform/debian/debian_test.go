@@ -299,31 +299,31 @@ func TestPackages(t *testing.T) {
 		want
 	}{
 		//Success case. Packages should not be installed already.
-		//If packages are not installed returning nil error. Therefore test case should pass.
+		//If packages are not installed returning empty output. Therefore test case should pass.
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
-					MockRun: func(name string, args ...string) (error) {
-						return nil
-					},
-				},
-			},
-			want: want{
-				result: false,
-			},
-		},
-		//Failure case. If packages are installed already.
-		//Returning Error. Therefore test case should pass.
-		"CheckFail": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRun: func(name string, args ...string) (error) {
-						return fmt.Errorf("Error")
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "",nil
 					},
 				},
 			},
 			want: want{
 				result: true,
+			},
+		},
+		//Failure case. If packages are installed already.
+		//Returning list of packages. Therefore test case should pass.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "pf9-comms.x86_64\npf9-hostagent.x86_64\npf9-kube.x86_64\npf9-muster.x86_64",nil
+					},
+				},
+			},
+			want: want{
+				result: false,
 			},
 		},
 	}
