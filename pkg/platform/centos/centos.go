@@ -26,10 +26,10 @@ func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := c.removePyCli()
-	checks = append(checks, platform.Check{"PyCliCheck", result, err})
+	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
 
 	result, err = c.checkPackages()
-	checks = append(checks, platform.Check{"PackageCheck", result, err})
+	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
 
 	result, err = c.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", result, err})
@@ -50,10 +50,13 @@ func (c *CentOS) Check() []platform.Check {
 }
 
 func (c *CentOS) checkPackages() (bool, error) {
-	var err error
-	err = c.exec.Run("bash", "-c", "yum list installed | grep -i 'pf9-'")
-	
-	return !(err == nil), nil
+
+	out, err := c.exec.RunWithStdout("bash", "-c", "yum list installed | { grep -i 'pf9-' || true; }")
+	if err != nil {
+		return false, nil
+	}
+
+	return out == "", nil
 }
 
 func (c *CentOS) checkSudo() (bool, error) {
@@ -171,6 +174,6 @@ func (c *CentOS) removePyCli() (bool, error) {
 		return false, err
 	}
 	zap.S().Debug("Removed Python CLI directory")
-	
+
 	return true, nil
 }
