@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"go.uber.org/zap"
+	"github.com/stretchr/testify/assert"
+	"fmt"
 )
 
 
@@ -67,3 +69,52 @@ func TestFsTabEdit(t *testing.T) {
 
 }
 
+//SwapOff test case
+func TestSwapOff(t *testing.T) {
+	type want struct {
+		err    error
+	}
+	type args struct {
+		exec cmdexec.Executor
+	}
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. The swapoff -a command returns nil error on successful execution
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				err : nil,
+			},
+		},
+		//Failure case. The swapoff -a command returns error on execution
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", fmt.Errorf("Error")
+					},
+				},
+			},
+			want: want{
+				err : fmt.Errorf("Error"),
+			},
+		},
+		
+	}
+
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			err := swapOff(tc.args.exec)
+			assert.Equal(t, tc.want.err, err)
+		})
+	}
+}
