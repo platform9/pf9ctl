@@ -4,7 +4,8 @@ import (
 	"math"
 	"strconv"
 	"strings"
-
+	"fmt"
+	"regexp"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -176,4 +177,22 @@ func (c *CentOS) removePyCli() (bool, error) {
 	zap.S().Debug("Removed Python CLI directory")
 
 	return true, nil
+}
+
+func Version(exec cmdexec.Executor) (string, error) {
+//using cat command content of os-release file is printed on terminal
+//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
+//using cut command required field (7.6.1810) is selected.
+	out, err := exec.RunWithStdout(
+		"bash",
+		"-c",
+		"cat /etc/*release | grep '(Core)' | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
+	if err != nil {
+		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
+	}
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match {
+		return "redhat", nil
+	}
+	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
+
 }
