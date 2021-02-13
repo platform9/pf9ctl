@@ -178,12 +178,12 @@ func (d *Debian) removePyCli() (bool, error) {
 	return true, nil
 }
 
-func Version(exec cmdexec.Executor) (string, error) {
+func (d *Debian) Version() (string, error) {
 //using cat command content of os-release file is printed on terminal
 //using grep command os name and version are searched (pretty_name)
 //using cut command required field is selected
 //in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
-	out, err := exec.RunWithStdout(
+	out, err := d.exec.RunWithStdout(
 		"bash",
 		"-c",
 		"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")

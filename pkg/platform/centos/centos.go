@@ -179,11 +179,11 @@ func (c *CentOS) removePyCli() (bool, error) {
 	return true, nil
 }
 
-func Version(exec cmdexec.Executor) (string, error) {
+func (c *CentOS) Version() (string, error) {
 //using cat command content of os-release file is printed on terminal
 //using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
 //using cut command required field (7.6.1810) is selected.
-	out, err := exec.RunWithStdout(
+	out, err := c.exec.RunWithStdout(
 		"bash",
 		"-c",
 		"cat /etc/*release | grep '(Core)' | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")

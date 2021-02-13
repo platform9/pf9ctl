@@ -4,8 +4,6 @@ package pmk
 import (
 	"fmt"
 	"net/http"
-	//"centos"
-	//"debian"
 	"strings"
 	"time"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
@@ -14,7 +12,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"go.uber.org/zap"
-	//"github.com/platform9/pf9ctl/pkg/platform"
+	"github.com/platform9/pf9ctl/pkg/platform"
 )
 
 // PrepNode sets up prerequisites for k8s stack
@@ -140,15 +138,17 @@ func validatePlatform(exec cmdexec.Executor) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
-
+	var platform platform.Platform
 	switch {
 	case strings.Contains(strDataLower, util.Centos) || strings.Contains(strDataLower, util.Redhat):
-		osVersion , err := centos.Version(exec)
+		platform = centos.NewCentOS(exec)
+		osVersion , err := platform.Version()
 		if err == nil{
 			return osVersion,nil
 		}
 	case strings.Contains(strDataLower, util.Ubuntu):
-		osVersion , err := debian.Version(exec)
+		platform = debian.NewDebian(exec)
+		osVersion , err := platform.Version()
 		if err == nil{
 			return osVersion,nil
 		}
