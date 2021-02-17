@@ -4,7 +4,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
-
+	"fmt"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -176,4 +176,22 @@ func (d *Debian) removePyCli() (bool, error) {
 	zap.S().Debug("Removed Python CLI directory")
 
 	return true, nil
+}
+
+func (d *Debian) Version() (string, error) {
+//using cat command content of os-release file is printed on terminal
+//using grep command os name and version are searched (pretty_name)
+//using cut command required field is selected
+//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
+	out, err := d.exec.RunWithStdout(
+		"bash",
+		"-c",
+		"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
+	if err != nil {
+		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
+	}
+	if strings.Contains(string(out), "16") || strings.Contains(string(out), "18") {
+		return "debian", nil
+	}
+	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
 }

@@ -30,6 +30,9 @@ var (
 	PyCliPath = filepath.Join(homeDir, "pf9/pf9-venv")
 	// PyCliLink is the Symlink of the Python CLI
 	PyCliLink = "/usr/bin/pf9ctl"
+	Centos = "centos"
+	Redhat = "redhat"
+	Ubuntu = "ubuntu"
 )
 
 func init() {
