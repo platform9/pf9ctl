@@ -27,7 +27,11 @@ func PrepNode(ctx Config, allClients Client) error {
 
 	present := pf9PackagesPresent(hostOS, allClients.Executor)
 	if present {
-		return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
+		errStr := "\n\nPlatform9 packages already present on the host." +
+			"\nPlease uninstall these packages if you want to prep the node again.\n" +
+			"Instructions to uninstall these are at:" +
+			"\nhttps://docs.platform9.com/kubernetes/pmk-cli-unistall-hostagent"
+		return fmt.Errorf(errStr)
 	}
 
 	err = setupNode(hostOS, allClients.Executor)
