@@ -42,7 +42,10 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
 
-	result := pmk.CheckNode(c)
+	result, err := pmk.CheckNode(ctx, c)
+	if err != nil {
+		zap.S().Fatalf("Unable to perform pre-requisite checks on this node. Error: %s", err.Error())
+	}
 
 	if !result {
 		zap.S().Errorf("Node not ready. See %s or use --verbose for logs", Pf9Log)
