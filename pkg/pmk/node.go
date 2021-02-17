@@ -3,16 +3,16 @@ package pmk
 
 import (
 	"fmt"
-	"net/http"
-	"strings"
-	"time"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/util"
-	"github.com/platform9/pf9ctl/pkg/cmdexec"
-	"github.com/platform9/pf9ctl/pkg/keystone"
 	"go.uber.org/zap"
-	"github.com/platform9/pf9ctl/pkg/platform"
+	"net/http"
+	"strings"
+	"time"
 )
 
 // PrepNode sets up prerequisites for k8s stack
@@ -133,36 +133,36 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 
 func validatePlatform(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Received a call to validate platform")
-	
-	strDataLower , err := openOSReleaseFile(exec)
+
+	strData, err := openOSReleaseFile(exec)
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
 	var platform platform.Platform
 	switch {
-	case strings.Contains(strDataLower, util.Centos) || strings.Contains(strDataLower, util.Redhat):
+	case strings.Contains(strData, util.Centos) || strings.Contains(strData, util.Redhat):
 		platform = centos.NewCentOS(exec)
-		osVersion , err := platform.Version()
-		if err == nil{
-			return osVersion,nil
+		osVersion, err := platform.Version()
+		if err == nil {
+			return osVersion, nil
 		}
-	case strings.Contains(strDataLower, util.Ubuntu):
+	case strings.Contains(strData, util.Ubuntu):
 		platform = debian.NewDebian(exec)
-		osVersion , err := platform.Version()
-		if err == nil{
-			return osVersion,nil
+		osVersion, err := platform.Version()
+		if err == nil {
+			return osVersion, nil
 		}
 	}
 
 	return "", nil
 }
 
-func openOSReleaseFile(exec cmdexec.Executor) (string,error) {
+func openOSReleaseFile(exec cmdexec.Executor) (string, error) {
 	data, err := exec.RunWithStdout("cat", "/etc/os-release")
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
-	return strings.ToLower(string(data)),nil
+	return strings.ToLower(string(data)), nil
 }
 
 func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
