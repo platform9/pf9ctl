@@ -3,14 +3,16 @@ package pmk
 
 import (
 	"fmt"
-	"net/http"
-	"regexp"
-	"strings"
-	"time"
-
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/platform"
+	"github.com/platform9/pf9ctl/pkg/platform/centos"
+	"github.com/platform9/pf9ctl/pkg/platform/debian"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
+	"net/http"
+	"strings"
+	"time"
 )
 
 // PrepNode sets up prerequisites for k8s stack
@@ -132,41 +134,35 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 func validatePlatform(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Received a call to validate platform")
 
+	strData, err := openOSReleaseFile(exec)
+	if err != nil {
+		return "", fmt.Errorf("failed reading data from file: %s", err)
+	}
+	var platform platform.Platform
+	switch {
+	case strings.Contains(strData, util.Centos) || strings.Contains(strData, util.Redhat):
+		platform = centos.NewCentOS(exec)
+		osVersion, err := platform.Version()
+		if err == nil {
+			return osVersion, nil
+		}
+	case strings.Contains(strData, util.Ubuntu):
+		platform = debian.NewDebian(exec)
+		osVersion, err := platform.Version()
+		if err == nil {
+			return osVersion, nil
+		}
+	}
+
+	return "", nil
+}
+
+func openOSReleaseFile(exec cmdexec.Executor) (string, error) {
 	data, err := exec.RunWithStdout("cat", "/etc/os-release")
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
-
-	strDataLower := strings.ToLower(string(data))
-	switch {
-	case strings.Contains(strDataLower, "centos") || strings.Contains(strDataLower, "redhat"):
-		out, err := exec.RunWithStdout(
-			"bash",
-			"-c",
-			"cat /etc/*release | grep '(Core)' | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
-		if err != nil {
-			return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
-		}
-		if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match {
-			return "redhat", nil
-		}
-		return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
-
-	case strings.Contains(strDataLower, "ubuntu"):
-		out, err := exec.RunWithStdout(
-			"bash",
-			"-c",
-			"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
-		if err != nil {
-			return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
-		}
-		if strings.Contains(string(out), "16") || strings.Contains(string(out), "18") {
-			return "debian", nil
-		}
-		return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
-	}
-
-	return "", nil
+	return strings.ToLower(string(data)), nil
 }
 
 func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
