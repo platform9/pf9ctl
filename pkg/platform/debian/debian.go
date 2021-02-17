@@ -67,7 +67,6 @@ func (d *Debian) checkSudo() (bool, error) {
 
 	id, err := strconv.Atoi(idS)
 	if err != nil {
-		zap.S().Info(">", err)
 		return false, err
 	}
 

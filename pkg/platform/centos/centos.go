@@ -67,7 +67,6 @@ func (c *CentOS) checkSudo() (bool, error) {
 
 	id, err := strconv.Atoi(idS)
 	if err != nil {
-		zap.S().Info(">", err)
 		return false, err
 	}
 
@@ -157,7 +156,7 @@ func (c *CentOS) checkPort() (bool, error) {
 	}
 
 	openPortsArray := strings.Split(string(openPorts), "\n")
-	
+
 	intersection := util.Intersect(util.RequiredPorts, openPortsArray)
 
 	if len(intersection) != 0 {

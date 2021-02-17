@@ -121,7 +121,7 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
 	_, err = exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to run /tmp/installer.sh")
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
@@ -182,8 +182,6 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 			"-c",
 			"yum list installed | { grep -i 'pf9-' || true; }")
 	}
-
-	fmt.Println(">>", out)
 
 	return !(out == "")
 }
