@@ -394,3 +394,54 @@ func TestRemovePyCli(t *testing.T) {
 		})
 	}
 }
+
+func TestVersion(t *testing.T) {
+	type want struct {
+		result string
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Mocking out version of ubuntu.
+		//Should return linux distribution name.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "16",nil
+					},
+				},
+			},
+			want: want{
+				result : "debian",
+				err: nil,
+			},
+		},
+		//Mocking out empty output. Should return error saying that Couldn't read the OS configuration file.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "",fmt.Errorf("Error")
+					},
+				},
+			},
+			want: want{
+				result : "",
+				err: fmt.Errorf("Couldn't read the OS configuration file os-release: Error"),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &Debian{exec: tc.exec}
+			result, err := c.Version()
+			assert.Equal(t, tc.want.err, err)
+			assert.Equal(t, tc.want.result, result)
+		})
+	}
+}
