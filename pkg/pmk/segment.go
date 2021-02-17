@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"gopkg.in/segmentio/analytics-go.v3"
 )
 
@@ -23,9 +24,7 @@ type SegmentImpl struct {
 }
 
 type NoopSegment struct {
-
 }
-
 
 func NewSegment(fqdn string, noTracking bool) Segment {
 	// mock out segment if the user wants no Tracking
@@ -41,6 +40,7 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 }
 
 func (c SegmentImpl) SendEvent(name string, data interface{}) error {
+	zap.S().Debug("Sending Segment Event: %s", name)
 	return c.client.Enqueue(analytics.Track{
 		AnonymousId: uuid.New().String(),
 		Event:       name,
@@ -65,7 +65,6 @@ func (c SegmentImpl) SendGroupTraits(name string, data interface{}) error {
 func (c SegmentImpl) Close() {
 	c.client.Close()
 }
-
 
 // The Noop Implementation of Segment
 func (c NoopSegment) SendEvent(name string, data interface{}) error {
