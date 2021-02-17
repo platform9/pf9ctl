@@ -43,20 +43,20 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 	)
 
 	if err != nil {
-		return false, fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
+		return false, fmt.Errorf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 
 	checks := platform.Check()
 	result := true
 	for _, check := range checks {
 		if check.Result {
-			segment_str := "Check Node: " + check.Name + " Status: " + checkPass
+			segment_str := "CheckNode: " + check.Name + " Status: " + checkPass
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
 			fmt.Printf("%s : %s\n", check.Name, checkPass)
 		} else {
-			segment_str := "Check Node: " + check.Name + " Status: " + checkFail
+			segment_str := "CheckNode: " + check.Name + " Status: " + checkFail
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
