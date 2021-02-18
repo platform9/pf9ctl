@@ -4,10 +4,12 @@ package pmk
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -43,6 +45,14 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 	)
 
 	if err != nil {
+		// Certificate expiration is detected by the http library and
+		// only error object gets populated, which means that the http
+		// status code does not reflect the actual error code.
+		// So parsing the err to check for certificate expiration.
+		if strings.Contains(strings.ToLower(err.Error()), util.CertsExpireErr) {
+
+			return false, fmt.Errorf("Possible clock skew detected. Check the system time and retry.")
+		}
 		return false, fmt.Errorf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 
