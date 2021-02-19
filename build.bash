@@ -33,5 +33,4 @@ if [ ${TEAMCITY_BUILD_BRANCH} = master ]; then
     ln ${TEAMCITY_CHECKOUT_DIR}/src/github.com/platform9/pf9ctl/cli_setup.sh ${TEAMCITY_CHECKOUT_DIR}/build/publish-to-artf/cli_setup.sh
 else
     echo "Not publishing wrapper script to artifactory since this is not built off master branch."
-
 fi
