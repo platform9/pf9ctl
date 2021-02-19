@@ -14,7 +14,7 @@ cat > ${TEAMCITY_CHECKOUT_DIR}/build/upload_spec.json << EOF
 {
   "files": [
     {
-      "pattern": "build/publish-to-artf/**/*",
+      "pattern": "build/publish-to-artf/*",
       "target": "pf9-bins/pf9-ctl/",
       "flat": true
     }
