@@ -28,7 +28,10 @@ var clusterCmdCreate = &cobra.Command{
 	},
 }
 
+/*
+// This initialization is using create and get commands which are not in use for now.
 func init() {
+
 	//createCmd.AddCommand(clusterCmdCreate)
 
 	// Here you will define your flags and configuration settings.
@@ -42,4 +45,4 @@ func init() {
 	// clusterCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	//getCmd.AddCommand(clusterCmdGet)
-}
+}*/

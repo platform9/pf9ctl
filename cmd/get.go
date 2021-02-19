@@ -15,6 +15,8 @@ var getCmd = &cobra.Command{
 	// },
 }
 
+/*
+This initialization of get command to root isnot in use for now.
 func init() {
 	//rootCmd.AddCommand(getCmd)
 
@@ -27,4 +29,4 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
+}*/

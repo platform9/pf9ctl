@@ -3,8 +3,8 @@
 package cmd
 
 import (
-	"go.uber.org/zap"
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 // supportBundleCmd represents the supportBundle command
@@ -22,6 +22,8 @@ to quickly create a Cobra application.`,
 	},
 }
 
+/*
+This initialization is using create commands which is not in use for now.
 func init() {
 	//createCmd.AddCommand(supportBundleCmd)
 
@@ -34,4 +36,4 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// supportBundleCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
+}*/
