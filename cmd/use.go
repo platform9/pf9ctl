@@ -16,7 +16,7 @@ var useCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(useCmd)
+	//rootCmd.AddCommand(useCmd)
 
 	// Here you will define your flags and configuration settings.
 
