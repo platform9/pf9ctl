@@ -28,8 +28,11 @@ func (d *Debian) Check() []platform.Check {
 	result, err := d.removePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
 
-	result, err = d.checkPackages()
+	result, err = d.checkExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
+
+	result, err = d.checkOSPackages()
+	checks = append(checks, platform.Check{"OS Packages Check", result, err})
 
 	result, err = d.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", result, err})
@@ -49,7 +52,7 @@ func (d *Debian) Check() []platform.Check {
 	return checks
 }
 
-func (d *Debian) checkPackages() (bool, error) {
+func (d *Debian) checkExistingInstallation() (bool, error) {
 
 	out, err := d.exec.RunWithStdout("bash", "-c", "dpkg -l | { grep -i 'pf9-' || true; }")
 	if err != nil {
@@ -57,6 +60,24 @@ func (d *Debian) checkPackages() (bool, error) {
 	}
 
 	return out == "", nil
+}
+
+func (d *Debian) checkOSPackages() (bool, error) {
+
+	packages := []string{"ntp", "curl"}
+	errLines := []string{"Packages not found: "}
+
+	for _, p := range packages {
+		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg -l %s", p))
+		if err != nil {
+			errLines = append(errLines, p)
+		}
+	}
+
+	if len(errLines) > 1 {
+		return false, fmt.Errorf(strings.Join(errLines, " "))
+	}
+	return true, nil
 }
 
 func (d *Debian) checkSudo() (bool, error) {
