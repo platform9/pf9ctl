@@ -94,5 +94,5 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allowWorkloadsOnMaster", true, "Taint master nodes ( to enable workloads )")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "networkPlugin", "flannel", "Specify network plugin ( Possible values: flannel or calico )")
 
-	rootCmd.AddCommand(bootstrapCmd)
+	//rootCmd.AddCommand(bootstrapCmd)
 }

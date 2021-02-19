@@ -23,7 +23,7 @@ to quickly create a Cobra application.`,
 }
 
 func init() {
-	createCmd.AddCommand(supportBundleCmd)
+	//createCmd.AddCommand(supportBundleCmd)
 
 	// Here you will define your flags and configuration settings.
 
