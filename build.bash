@@ -14,7 +14,7 @@ cat > ${TEAMCITY_CHECKOUT_DIR}/build/upload_spec.json << EOF
 {
   "files": [
     {
-      "pattern": "build/publish-to-artf/pf9ctl",
+      "pattern": "build/publish-to-artf/**/*",
       "target": "pf9-bins/pf9-ctl/",
       "flat": true
     }
@@ -26,6 +26,7 @@ echo "##teamcity[setParameter name='env.UPLOAD_SPEC_PATH' value='${TEAMCITY_CHEC
 
 if [ ${TEAMCITY_BUILD_BRANCH} = master ]; then
     ln ${TEAMCITY_CHECKOUT_DIR}/src/github.com/platform9/pf9ctl/bin/pf9ctl ${TEAMCITY_CHECKOUT_DIR}/build/publish-to-artf/pf9ctl
+    ln ${TEAMCITY_CHECKOUT_DIR}/src/github.com/platform9/pf9ctl/cli_setup.sh ${TEAMCITY_CHECKOUT_DIR}/build/publish-to-artf/cli_setup.sh
 else
-    echo "Not publishing pf9ctl binary to artifactory since this is not built off master branch."
+    echo "Not publishing files to artifactory since this is not built off master branch."
 fi
