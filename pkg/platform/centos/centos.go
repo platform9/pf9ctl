@@ -13,6 +13,10 @@ import (
 	"go.uber.org/zap"
 )
 
+var (
+	packages = [2]string{"ntp", "curl"}
+)
+
 // CentOS reprents centos based host machine
 type CentOS struct {
 	exec cmdexec.Executor
@@ -66,7 +70,6 @@ func (c *CentOS) checkExistingInstallation() (bool, error) {
 
 func (c *CentOS) checkOSPackages() (bool, error) {
 
-	packages := []string{"curl"}
 	errLines := []string{"Packages not found: "}
 
 	for _, p := range packages {

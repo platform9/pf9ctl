@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+var (
+	packages = [2]string{"ntp", "curl"}
+)
+
 // Debian represents debian based host machine
 type Debian struct {
 	exec cmdexec.Executor
@@ -64,7 +68,6 @@ func (d *Debian) checkExistingInstallation() (bool, error) {
 
 func (d *Debian) checkOSPackages() (bool, error) {
 
-	packages := []string{"ntp", "curl"}
 	errLines := []string{"Packages not found: "}
 
 	for _, p := range packages {
