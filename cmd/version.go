@@ -3,22 +3,20 @@
 package cmd
 
 import (
-	"go.uber.org/zap"
+	"fmt"
+
 	"github.com/spf13/cobra"
+	"go.uber.org/zap"
 )
 
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Current version of CLI being used",
+	Long:  "Gives the current PF9CTL version",
 	Run: func(cmd *cobra.Command, args []string) {
-		zap.S().Info("Version called")
+		zap.S().Debug("Version called")
+		fmt.Println("PF9CTL v1.0.0")
 	},
 }
 
