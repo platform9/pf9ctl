@@ -13,10 +13,11 @@ import (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Current version of CLI being used",
-	Long:  "Gives the current PF9CTL version",
+	Long:  "Gives the current pf9ctl version",
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Debug("Version called")
-		fmt.Println("PF9CTL v1.0.0")
+		//Prints the current version of pf9ctl being used.
+		fmt.Println(Version)
 	},
 }
 
