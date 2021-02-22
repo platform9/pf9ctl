@@ -90,7 +90,7 @@ log_file=${pf9_basedir}/log/cli_install.log
 pf9_bin=${pf9_basedir}/bin
 pf9_state_dirs="${pf9_bin} ${pf9_basedir}/db ${pf9_basedir}/log"
 cli_exec=${pf9_bin}/pf9ctl
-cli_path="https://artifactory.platform9.horse:443/artifactory/pf9-bins/pf9-ctl/pf9ctl"
+cli_path="https://pmkft-assets.s3-us-west-1.amazonaws.com/pf9ctl"
 
 initialize_basedir
 download_cli_binary
