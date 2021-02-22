@@ -27,5 +27,5 @@ var (
 
 //This is the current version of cli.
 const (
-	Version string = "pf9ctl v1.0"
+	Version string = "pf9ctl version: v1.0"
 )
