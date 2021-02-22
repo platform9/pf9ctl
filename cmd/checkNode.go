@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -48,7 +49,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if !result {
-		zap.S().Errorf("Node not ready. See %s or use --verbose for logs", Pf9Log)
+		zap.S().Errorf("Node not ready. See %s or use --verbose for logs", log.GetLogLocation(Pf9Log))
 	}
 	zap.S().Debug("==========Finished running check-node==========")
 }
