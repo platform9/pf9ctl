@@ -2,14 +2,19 @@ package centos
 
 import (
 	"fmt"
-	"github.com/platform9/pf9ctl/pkg/cmdexec"
-	"github.com/platform9/pf9ctl/pkg/platform"
-	"github.com/platform9/pf9ctl/pkg/util"
-	"go.uber.org/zap"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/platform"
+	"github.com/platform9/pf9ctl/pkg/util"
+	"go.uber.org/zap"
+)
+
+var (
+	packages = [2]string{"ntp", "curl"}
 )
 
 // CentOS reprents centos based host machine
@@ -29,8 +34,11 @@ func (c *CentOS) Check() []platform.Check {
 	result, err := c.removePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
 
-	result, err = c.checkPackages()
+	result, err = c.checkExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
+
+	result, err = c.checkOSPackages()
+	checks = append(checks, platform.Check{"OS Packages Check", result, err})
 
 	result, err = c.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", result, err})
@@ -50,7 +58,7 @@ func (c *CentOS) Check() []platform.Check {
 	return checks
 }
 
-func (c *CentOS) checkPackages() (bool, error) {
+func (c *CentOS) checkExistingInstallation() (bool, error) {
 
 	out, err := c.exec.RunWithStdout("bash", "-c", "yum list installed | { grep -i 'pf9-' || true; }")
 	if err != nil {
@@ -58,6 +66,23 @@ func (c *CentOS) checkPackages() (bool, error) {
 	}
 
 	return out == "", nil
+}
+
+func (c *CentOS) checkOSPackages() (bool, error) {
+
+	errLines := []string{"Packages not found: "}
+
+	for _, p := range packages {
+		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
+		if err != nil {
+			errLines = append(errLines, p)
+		}
+	}
+
+	if len(errLines) > 1 {
+		return false, fmt.Errorf(strings.Join(errLines, " "))
+	}
+	return true, nil
 }
 
 func (c *CentOS) checkSudo() (bool, error) {
