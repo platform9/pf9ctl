@@ -33,6 +33,7 @@ var (
 	Centos = "centos"
 	Redhat = "redhat"
 	Ubuntu = "ubuntu"
+	CertsExpireErr = "certificate has expired or is not yet valid"
 )
 
 func init() {

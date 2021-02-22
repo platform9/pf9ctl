@@ -1,16 +1,21 @@
 package centos
 
 import (
-	"testing"
+	"errors"
 	"fmt"
+	"testing"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/stretchr/testify/assert"
 )
 
+var errOSPackage = errors.New("Packages not found:  ntp curl")
+
 type args struct {
 	exec cmdexec.Executor
 }
+
 //CPU check test case
 func TestCPU(t *testing.T) {
 	type want struct {
@@ -292,8 +297,8 @@ func TestPort(t *testing.T) {
 	}
 }
 
-//Packages check test case
-func TestPackages(t *testing.T) {
+//ExistingInstallation check test case
+func TestExistingInstallation(t *testing.T) {
 	type want struct {
 		result bool
 		err    error
@@ -309,7 +314,7 @@ func TestPackages(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "",nil
+						return "", nil
 					},
 				},
 			},
@@ -323,7 +328,7 @@ func TestPackages(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "pf9-comms.x86_64\npf9-hostagent.x86_64\npf9-kube.x86_64\npf9-muster.x86_64",nil
+						return "pf9-comms.x86_64\npf9-hostagent.x86_64\npf9-kube.x86_64\npf9-muster.x86_64", nil
 					},
 				},
 			},
@@ -336,8 +341,8 @@ func TestPackages(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, err := c.checkPackages()
-			
+			o, err := c.checkExistingInstallation()
+
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
@@ -347,6 +352,60 @@ func TestPackages(t *testing.T) {
 		})
 	}
 }
+
+func TestOSPackages(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		// Success case. OS Packages should be installed.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRun: func(name string, args ...string) error {
+						return nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+			},
+		},
+		// Failure case. If packages are not installed.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRun: func(name string, args ...string) error {
+						return fmt.Errorf("Error: No matching Packages to list")
+					},
+				},
+			},
+			want: want{
+				result: false,
+				err:    errOSPackage,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			o, err := c.checkOSPackages()
+
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+
+			assert.Equal(t, tc.want.err, err)
+		})
+	}
+}
+
 //Test case for RemovePyCli check
 func TestRemovePyCli(t *testing.T) {
 	type want struct {
@@ -359,12 +418,12 @@ func TestRemovePyCli(t *testing.T) {
 		want
 	}{
 		//Success case. Faking error code of rm -rf command. 0 error code indicates that rm -rf executed successfully
-		//Returned nil error. 
+		//Returned nil error.
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "0",nil
+						return "0", nil
 					},
 				},
 			},
@@ -378,13 +437,13 @@ func TestRemovePyCli(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1",fmt.Errorf("Error")
+						return "1", fmt.Errorf("Error")
 					},
 				},
 			},
 			want: want{
 				result: false,
-				err : fmt.Errorf("Error"),
+				err:    fmt.Errorf("Error"),
 			},
 		},
 	}
@@ -393,58 +452,7 @@ func TestRemovePyCli(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
 			result, err := c.removePyCli()
-			
-			assert.Equal(t, tc.want.err, err)
-			assert.Equal(t, tc.want.result, result)
-		})
-	}
-}
 
-func TestVersion(t *testing.T) {
-	type want struct {
-		result string
-		err    error
-	}
-
-	cases := map[string]struct {
-		args
-		want
-	}{
-		//Success case. Mocking out version of centos.
-		//Should return linux distribution name.
-		"CheckPass": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "7.6",nil
-					},
-				},
-			},
-			want: want{
-				result : "redhat",
-				err: nil,
-			},
-		},
-		//Mocking out empty output. Should return error saying that Couldn't read the OS configuration file.
-		"CheckFail": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "",fmt.Errorf("Error")
-					},
-				},
-			},
-			want: want{
-				result : "",
-				err: fmt.Errorf("Couldn't read the OS configuration file os-release: Error"),
-			},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
-			result, err := c.Version()
 			assert.Equal(t, tc.want.err, err)
 			assert.Equal(t, tc.want.result, result)
 		})

@@ -1,15 +1,20 @@
 package centos
 
 import (
+	"fmt"
 	"math"
+	"regexp"
 	"strconv"
 	"strings"
-	"fmt"
-	"regexp"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
+)
+
+var (
+	packages = [2]string{"ntp", "curl"}
 )
 
 // CentOS reprents centos based host machine
@@ -27,10 +32,13 @@ func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := c.removePyCli()
-	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
+	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
 
-	result, err = c.checkPackages()
+	result, err = c.checkExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
+
+	result, err = c.checkOSPackages()
+	checks = append(checks, platform.Check{"OS Packages Check", result, err})
 
 	result, err = c.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", result, err})
@@ -50,7 +58,7 @@ func (c *CentOS) Check() []platform.Check {
 	return checks
 }
 
-func (c *CentOS) checkPackages() (bool, error) {
+func (c *CentOS) checkExistingInstallation() (bool, error) {
 
 	out, err := c.exec.RunWithStdout("bash", "-c", "yum list installed | { grep -i 'pf9-' || true; }")
 	if err != nil {
@@ -58,6 +66,23 @@ func (c *CentOS) checkPackages() (bool, error) {
 	}
 
 	return out == "", nil
+}
+
+func (c *CentOS) checkOSPackages() (bool, error) {
+
+	errLines := []string{"Packages not found: "}
+
+	for _, p := range packages {
+		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
+		if err != nil {
+			errLines = append(errLines, p)
+		}
+	}
+
+	if len(errLines) > 1 {
+		return false, fmt.Errorf(strings.Join(errLines, " "))
+	}
+	return true, nil
 }
 
 func (c *CentOS) checkSudo() (bool, error) {
@@ -68,7 +93,6 @@ func (c *CentOS) checkSudo() (bool, error) {
 
 	id, err := strconv.Atoi(idS)
 	if err != nil {
-		zap.S().Info(">", err)
 		return false, err
 	}
 
@@ -158,7 +182,7 @@ func (c *CentOS) checkPort() (bool, error) {
 	}
 
 	openPortsArray := strings.Split(string(openPorts), "\n")
-	
+
 	intersection := util.Intersect(util.RequiredPorts, openPortsArray)
 
 	if len(intersection) != 0 {
@@ -180,9 +204,9 @@ func (c *CentOS) removePyCli() (bool, error) {
 }
 
 func (c *CentOS) Version() (string, error) {
-//using cat command content of os-release file is printed on terminal
-//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
-//using cut command required field (7.6.1810) is selected.
+	//using cat command content of os-release file is printed on terminal
+	//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
+	//using cut command required field (7.6.1810) is selected.
 	out, err := c.exec.RunWithStdout(
 		"bash",
 		"-c",

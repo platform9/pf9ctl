@@ -23,7 +23,7 @@ type Config struct {
 
 // StoreConfig simply updates the in-memory object
 func StoreConfig(ctx Config, loc string) error {
-	zap.S().Info("Storing config")
+	zap.S().Info("Storing configuration details")
 	// obscure the password
 	ctx.Password = base64.StdEncoding.EncodeToString([]byte(ctx.Password))
 	f, err := os.Create(loc)
@@ -39,7 +39,7 @@ func StoreConfig(ctx Config, loc string) error {
 
 // LoadConfig returns the information for communication with PF9 controller.
 func LoadConfig(loc string) (Config, error) {
-	zap.S().Info("Loading config...")
+	zap.S().Info("Loading configuration details")
 
 	f, err := os.Open(loc)
 	if err != nil {

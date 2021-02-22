@@ -3,6 +3,8 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -20,8 +22,8 @@ func init() {
 	checkNodeCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
 	checkNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes")
 	checkNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	checkNodeCmd.Flags().StringSliceVarP(&ips, "ips", "i", []string{}, "ips of host to be prepared")
-	checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "")
+	checkNodeCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
+	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
 	rootCmd.AddCommand(checkNodeCmd)
 }
@@ -42,10 +44,14 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
 
-	result := pmk.CheckNode(c)
+	result, err := pmk.CheckNode(ctx, c)
+	if err != nil {
+		zap.S().Fatalf("Unable to perform pre-requisite checks on this node. Error: %s", err.Error())
+	}
 
 	if !result {
-		zap.S().Errorf("Node not ready. See %s or use --verbose for logs", Pf9Log)
+		fmt.Printf("Node not ready. See %s or use --verbose for logs \n", log.GetLogLocation(Pf9Log))
+		zap.S().Debugf("Node not ready. See %s or use --verbose for logs", log.GetLogLocation(Pf9Log))
 	}
 	zap.S().Debug("==========Finished running check-node==========")
 }

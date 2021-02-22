@@ -1,14 +1,18 @@
 package debian
 
 import (
-	"math"
-	"strconv"
-	"strings"
 	"fmt"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
+	"math"
+	"strconv"
+	"strings"
+)
+
+var (
+	packages = [2]string{"ntp", "curl"}
 )
 
 // Debian represents debian based host machine
@@ -26,10 +30,13 @@ func (d *Debian) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := d.removePyCli()
-	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
+	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
 
-	result, err = d.checkPackages()
+	result, err = d.checkExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
+
+	result, err = d.checkOSPackages()
+	checks = append(checks, platform.Check{"OS Packages Check", result, err})
 
 	result, err = d.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", result, err})
@@ -49,7 +56,7 @@ func (d *Debian) Check() []platform.Check {
 	return checks
 }
 
-func (d *Debian) checkPackages() (bool, error) {
+func (d *Debian) checkExistingInstallation() (bool, error) {
 
 	out, err := d.exec.RunWithStdout("bash", "-c", "dpkg -l | { grep -i 'pf9-' || true; }")
 	if err != nil {
@@ -57,6 +64,23 @@ func (d *Debian) checkPackages() (bool, error) {
 	}
 
 	return out == "", nil
+}
+
+func (d *Debian) checkOSPackages() (bool, error) {
+
+	errLines := []string{"Packages not found: "}
+
+	for _, p := range packages {
+		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg -l %s", p))
+		if err != nil {
+			errLines = append(errLines, p)
+		}
+	}
+
+	if len(errLines) > 1 {
+		return false, fmt.Errorf(strings.Join(errLines, " "))
+	}
+	return true, nil
 }
 
 func (d *Debian) checkSudo() (bool, error) {
@@ -67,7 +91,6 @@ func (d *Debian) checkSudo() (bool, error) {
 
 	id, err := strconv.Atoi(idS)
 	if err != nil {
-		zap.S().Info(">", err)
 		return false, err
 	}
 
@@ -179,10 +202,10 @@ func (d *Debian) removePyCli() (bool, error) {
 }
 
 func (d *Debian) Version() (string, error) {
-//using cat command content of os-release file is printed on terminal
-//using grep command os name and version are searched (pretty_name)
-//using cut command required field is selected
-//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
+	//using cat command content of os-release file is printed on terminal
+	//using grep command os name and version are searched (pretty_name)
+	//using cut command required field is selected
+	//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
 	out, err := d.exec.RunWithStdout(
 		"bash",
 		"-c",

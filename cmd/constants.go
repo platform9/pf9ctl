@@ -24,3 +24,8 @@ var (
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
 )
+
+//This is the current version of cli.
+const (
+	Version string = "pf9ctl version: v1.0"
+)

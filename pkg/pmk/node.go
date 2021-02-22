@@ -15,25 +15,19 @@ import (
 	"time"
 )
 
+// Sends an event to segment based on the input string and uses auth as keystone UUID property.
+func sendSegmentEvent(allClients Client, eventStr string, auth keystone.KeystoneAuth) {
+	if err := allClients.Segment.SendEvent("Prep-node : "+eventStr, auth); err != nil {
+		zap.S().Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
+	}
+	// Segment events get posted from it's queue only after closing the client.
+	allClients.Segment.Close()
+}
+
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(ctx Config, allClients Client) error {
 
 	zap.S().Debug("Received a call to start preping node(s).")
-
-	hostOS, err := validatePlatform(allClients.Executor)
-	if err != nil {
-		return fmt.Errorf("Invalid host os: %s", err.Error())
-	}
-
-	present := pf9PackagesPresent(hostOS, allClients.Executor)
-	if present {
-		return fmt.Errorf("Platform9 packages already present on the host. Please uninstall these packages if you want to prep the node again")
-	}
-
-	err = setupNode(hostOS, allClients.Executor)
-	if err != nil {
-		return fmt.Errorf("Unable to setup node: %s", err.Error())
-	}
 
 	auth, err := allClients.Keystone.GetAuth(
 		ctx.Username,
@@ -45,28 +39,58 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
-	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
-		return fmt.Errorf("Unable to install hostagent: %w", err)
+	hostOS, err := validatePlatform(allClients.Executor)
+	if err != nil {
+		errStr := "Error: Invalid host OS. " + err.Error()
+		sendSegmentEvent(allClients, errStr, auth)
+		return fmt.Errorf(errStr)
 	}
 
+	present := pf9PackagesPresent(hostOS, allClients.Executor)
+	if present {
+		errStr := "\n\nPlatform9 packages already present on the host." +
+			"\nPlease uninstall these packages if you want to prep the node again.\n" +
+			"Instructions to uninstall these are at:" +
+			"\nhttps://docs.platform9.com/kubernetes/pmk-cli-unistall-hostagent"
+		sendSegmentEvent(allClients, "Error: Platform9 packages already present.", auth)
+		return fmt.Errorf(errStr)
+	}
+
+	err = setupNode(hostOS, allClients.Executor)
+	if err != nil {
+		errStr := "Error: Unable to disable swap. " + err.Error()
+		sendSegmentEvent(allClients, errStr, auth)
+		return fmt.Errorf(errStr)
+	}
+
+	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
+		errStr := "Error: Unable to install hostagent. " + err.Error()
+		sendSegmentEvent(allClients, errStr, auth)
+		return fmt.Errorf(errStr)
+	}
+
+	zap.S().Info("Initialising the host")
 	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 
 	if err != nil {
-		return fmt.Errorf("Unable to fetch host ID for host authorization: %s", err.Error())
+		errStr := "Error: Unable to fetch host ID. " + err.Error()
+		sendSegmentEvent(allClients, errStr, auth)
+		return fmt.Errorf(errStr)
 	}
 
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token); err != nil {
-		return err
+		errStr := "Error: Unable to authorize host. " + err.Error()
+		sendSegmentEvent(allClients, errStr, auth)
+		return fmt.Errorf(errStr)
 	}
 
-	if err := allClients.Segment.SendEvent("Prep Node - Successful", auth); err != nil {
-		zap.S().Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
-	}
+	zap.S().Info("Host successfully attached to the Platform9 control-plane")
+	sendSegmentEvent(allClients, "Successful", auth)
 
 	return nil
 }
@@ -97,7 +121,7 @@ func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exe
 }
 
 func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	zap.S().Info("Downloading Hostagent Installer Certless")
+	zap.S().Info("Downloading the installer (this might take a few minutes...)")
 
 	url := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
@@ -123,11 +147,11 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
 	_, err = exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to run /tmp/installer.sh")
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	zap.S().Info("Hostagent installed successfully")
+	zap.S().Info("Platform9 packages installed successfully")
 	return nil
 }
 
@@ -178,8 +202,6 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 			"-c",
 			"yum list installed | { grep -i 'pf9-' || true; }")
 	}
-
-	fmt.Println(">>", out)
 
 	return !(out == "")
 }
