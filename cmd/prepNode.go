@@ -34,8 +34,8 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
 	prepNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes")
 	prepNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	prepNodeCmd.Flags().StringSliceVarP(&ips, "IPs", "i", []string{}, "IPs of host to be prepared")
-	//prepNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "")
+	prepNodeCmd.Flags().StringSliceVarP(&ips, "IP", "i", []string{}, "IP of host to be prepared")
+	//prepNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
 	rootCmd.AddCommand(prepNodeCmd)
 }
