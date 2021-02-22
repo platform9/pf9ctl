@@ -93,6 +93,6 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&appCatalogEnabled, "appCatalogEnabled", false, "Enable Helm application catalog")
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allowWorkloadsOnMaster", true, "Taint master nodes ( to enable workloads )")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "networkPlugin", "flannel", "Specify network plugin ( Possible values: flannel or calico )")
-
-	rootCmd.AddCommand(bootstrapCmd)
+	// This is the bootstrap command to initialize its run and add to root which is not in use for now.
+	//rootCmd.AddCommand(bootstrapCmd)
 }

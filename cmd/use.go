@@ -15,8 +15,10 @@ var useCmd = &cobra.Command{
 	// },
 }
 
+/*
+This initialization of use command to root isnot in use for now.
 func init() {
-	rootCmd.AddCommand(useCmd)
+	//rootCmd.AddCommand(useCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -27,4 +29,4 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// useCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}
+}*/
