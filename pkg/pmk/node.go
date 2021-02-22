@@ -69,6 +69,7 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf(errStr)
 	}
 
+	zap.S().Info("Initialising the host")
 	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
@@ -88,6 +89,7 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf(errStr)
 	}
 
+	zap.S().Info("Host successfully attached to the Platform9 control-plane")
 	sendSegmentEvent(allClients, "Successful", auth)
 
 	return nil
@@ -119,7 +121,7 @@ func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exe
 }
 
 func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	zap.S().Info("Downloading Hostagent Installer Certless")
+	zap.S().Info("Downloading the installer (this might take a few minutes...)")
 
 	url := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
@@ -149,7 +151,7 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	zap.S().Info("Hostagent installed successfully")
+	zap.S().Info("Platform9 packages installed successfully")
 	return nil
 }
 
