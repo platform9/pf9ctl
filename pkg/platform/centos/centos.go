@@ -31,17 +31,17 @@ func NewCentOS(exec cmdexec.Executor) *CentOS {
 func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := c.removePyCli()
-	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
+	result, err := c.checkSudo()
+	checks = append(checks, platform.Check{"SudoCheck", result, err})
+	if !result {
+		return checks
+	}
+
+	result, err = c.removePyCli()
+	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
 
 	result, err = c.checkExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
-
-	result, err = c.checkOSPackages()
-	checks = append(checks, platform.Check{"OS Packages Check", result, err})
-
-	result, err = c.checkSudo()
-	checks = append(checks, platform.Check{"SudoCheck", result, err})
 
 	result, err = c.checkCPU()
 	checks = append(checks, platform.Check{"CPUCheck", result, err})
@@ -86,17 +86,20 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 }
 
 func (c *CentOS) checkSudo() (bool, error) {
-	idS, err := c.exec.RunWithStdout("bash", "-c", "id -u | tr -d '\\n'")
+	result, err := c.exec.RunWithStdout("bash", "-c", "getent group wheel | cut -d: -f4 | tr -d '\\n'")
+
 	if err != nil {
 		return false, err
 	}
 
-	id, err := strconv.Atoi(idS)
+	users := strings.Split(result, ",")
+
+	currentUser, err := c.exec.RunWithStdout("bash", "-c", "echo $USER")
 	if err != nil {
 		return false, err
 	}
 
-	return id == 0, nil
+	return util.IsInSlice(currentUser, users), nil
 }
 
 func (c *CentOS) checkCPU() (bool, error) {

@@ -3,10 +3,11 @@
 package cmdexec
 
 import (
+	"fmt"
 	"os/exec"
+
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"go.uber.org/zap"
-	"fmt"
 )
 
 // Executor interace abstracts us from local or remote execution
@@ -20,30 +21,32 @@ type LocalExecutor struct{}
 
 // Run runs a command locally returning just success or failure
 func (c LocalExecutor) Run(name string, args ...string) error {
-	cmd := exec.Command(name, args...)
+	args = append([]string{name}, args...)
+	cmd := exec.Command("sudo", args...)
 	return cmd.Run()
 }
 
 // RunWithStdout runs a command locally returning stdout and err
 func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error) {
-	byt, err := exec.Command(name, args...).Output()
+	args = append([]string{name}, args...)
+	byt, err := exec.Command("sudo", args...).Output()
 	stderr := ""
 	if exitError, ok := err.(*exec.ExitError); ok {
 		stderr = string(exitError.Stderr)
 	}
-	zap.S().Debug("Ran command ",name, args)
-	zap.S().Debug( "stdout:", string(byt), "stderr:", stderr)
+	zap.S().Debug("Ran command ", name, args)
+	zap.S().Debug("stdout:", string(byt), "stderr:", stderr)
 	return string(byt), err
 }
 
 // RemoteExecutor as the name implies runs commands usign SSH on remote host
-type RemoteExecutor struct{
+type RemoteExecutor struct {
 	Client ssh.Client
 }
 
 // Run runs a command locally returning just success or failure
 func (r *RemoteExecutor) Run(name string, args ...string) error {
-	 _,err := r.RunWithStdout(name, args...)
+	_, err := r.RunWithStdout(name, args...)
 	return err
 }
 
@@ -54,16 +57,16 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 		cmd = fmt.Sprintf("%s \"%s\"", cmd, arg)
 	}
 	stdout, stderr, err := r.Client.RunCommand(cmd)
-	zap.S().Debug("Running command ",cmd, "stdout:", string(stdout), "stderr:", string(stderr))
+	zap.S().Debug("Running command ", cmd, "stdout:", string(stdout), "stderr:", string(stderr))
 	return string(stdout), err
 }
 
 // NewRemoteExecutor create an Executor interface to execute commands remotely
 func NewRemoteExecutor(host string, port int, username string, privateKey []byte, password string) (Executor, error) {
-	 client, err := ssh.NewClient(host, port, username, privateKey, password)
-	 if err != nil {
-		 return nil, err
-	 }
-	 re := &RemoteExecutor{Client: client}
-	 return re, nil
+	client, err := ssh.NewClient(host, port, username, privateKey, password)
+	if err != nil {
+		return nil, err
+	}
+	re := &RemoteExecutor{Client: client}
+	return re, nil
 }

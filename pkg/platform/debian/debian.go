@@ -2,13 +2,14 @@ package debian
 
 import (
 	"fmt"
+	"math"
+	"strconv"
+	"strings"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
-	"math"
-	"strconv"
-	"strings"
 )
 
 var (
@@ -29,17 +30,18 @@ func NewDebian(exec cmdexec.Executor) *Debian {
 func (d *Debian) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := d.removePyCli()
-	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
+	result, err := d.checkSudo()
+	checks = append(checks, platform.Check{"SudoCheck", result, err})
+	if !result {
+		// zap.S().Error("The current user needs to have sudo privileges to run this command.")
+		return checks
+	}
+
+	result, err = d.removePyCli()
+	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
 
 	result, err = d.checkExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
-
-	result, err = d.checkOSPackages()
-	checks = append(checks, platform.Check{"OS Packages Check", result, err})
-
-	result, err = d.checkSudo()
-	checks = append(checks, platform.Check{"SudoCheck", result, err})
 
 	result, err = d.checkCPU()
 	checks = append(checks, platform.Check{"CPUCheck", result, err})
@@ -84,17 +86,21 @@ func (d *Debian) checkOSPackages() (bool, error) {
 }
 
 func (d *Debian) checkSudo() (bool, error) {
-	idS, err := d.exec.RunWithStdout("bash", "-c", "id -u | tr -d '\\n'")
+
+	result, err := d.exec.RunWithStdout("bash", "-c", "getent group sudo | cut -d: -f4 | tr -d '\\n'")
+
 	if err != nil {
 		return false, err
 	}
 
-	id, err := strconv.Atoi(idS)
+	users := strings.Split(result, ",")
+
+	currentUser, err := d.exec.RunWithStdout("bash", "-c", "echo $USER")
 	if err != nil {
 		return false, err
 	}
 
-	return id == 0, nil
+	return util.IsInSlice(currentUser, users), nil
 }
 
 func (d *Debian) checkCPU() (bool, error) {

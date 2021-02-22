@@ -19,3 +19,13 @@ func Intersect(a []string, b []string) []string {
 
 	return set
 }
+
+// IsInSlice checks is element x is in slice a
+func IsInSlice(x string, a []string) bool {
+	for _, i := range a {
+		if i == x {
+			return true
+		}
+	}
+	return false
+}
