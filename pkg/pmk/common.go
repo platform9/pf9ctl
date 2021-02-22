@@ -23,7 +23,7 @@ func setupNode(hostOS string, exec cmdexec.Executor) (err error) {
 func swapOff(exec cmdexec.Executor) error {
 	zap.S().Info("Disabling swap")
 
-	_, err := exec.RunWithStdout("bash", "-c", "swapoff -a")
+	_, err := exec.WithSudo().RunWithStdout("bash", "-c", "swapoff -a")
 	return err
 }
 
@@ -35,7 +35,7 @@ func swapOffFstab(exec cmdexec.Executor, file string) error {
 	// also the expression is in the EXTENDED regexp (ERE) form not the BRE, so use the ERE form
 	sedCmd := fmt.Sprintf("s/%s/%s/", search, replace)
 	zap.S().Debug("Executing command ", sedCmd, file)
-	stdout, err := exec.RunWithStdout("sed", "-E", "-i.bak", sedCmd, file)
+	stdout, err := exec.WithSudo().RunWithStdout("sed", "-E", "-i.bak", sedCmd, file)
 	zap.S().Debug("Returned value: ", stdout)
 	return err
 

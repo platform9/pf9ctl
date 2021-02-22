@@ -12,12 +12,21 @@ import (
 
 // Executor interace abstracts us from local or remote execution
 type Executor interface {
+	WithSudo() Executor
 	Run(name string, args ...string) error
 	RunWithStdout(name string, args ...string) (string, error)
 }
 
 // LocalExecutor as the name implies executes commands locally
-type LocalExecutor struct{}
+type LocalExecutor struct {
+	sudo bool
+}
+
+// WithSudo makes the executor run command in privileged mode.
+func (c LocalExecutor) WithSudo() Executor {
+	c.sudo = true
+	return c
+}
 
 // Run runs a command locally returning just success or failure
 func (c LocalExecutor) Run(name string, args ...string) error {
@@ -28,13 +37,21 @@ func (c LocalExecutor) Run(name string, args ...string) error {
 
 // RunWithStdout runs a command locally returning stdout and err
 func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error) {
-	args = append([]string{name}, args...)
-	byt, err := exec.Command("sudo", args...).Output()
+	var byt []byte
+	var err error
+	if c.sudo {
+		args = append([]string{name}, args...)
+		byt, err = exec.Command("sudo", args...).Output()
+		zap.S().Debug("Ran command sudo ", args)
+	} else {
+		byt, err = exec.Command(name, args...).Output()
+		zap.S().Debug("Ran command ", name, args)
+	}
 	stderr := ""
 	if exitError, ok := err.(*exec.ExitError); ok {
 		stderr = string(exitError.Stderr)
 	}
-	zap.S().Debug("Ran command ", name, args)
+
 	zap.S().Debug("stdout:", string(byt), "stderr:", stderr)
 	return string(byt), err
 }
@@ -42,6 +59,13 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 // RemoteExecutor as the name implies runs commands usign SSH on remote host
 type RemoteExecutor struct {
 	Client ssh.Client
+	sudo   bool
+}
+
+// WithSudo makes the executor run command in privileged mode.
+func (r *RemoteExecutor) WithSudo() Executor {
+	r.sudo = true
+	return r
 }
 
 // Run runs a command locally returning just success or failure
@@ -55,6 +79,9 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 	cmd := name
 	for _, arg := range args {
 		cmd = fmt.Sprintf("%s \"%s\"", cmd, arg)
+	}
+	if r.sudo {
+		cmd = fmt.Sprintf("sudo %s", cmd)
 	}
 	stdout, stderr, err := r.Client.RunCommand(cmd)
 	zap.S().Debug("Running command ", cmd, "stdout:", string(stdout), "stderr:", string(stderr))

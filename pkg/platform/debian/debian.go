@@ -95,7 +95,7 @@ func (d *Debian) checkSudo() (bool, error) {
 
 	users := strings.Split(result, ",")
 
-	currentUser, err := d.exec.RunWithStdout("bash", "-c", "echo $USER")
+	currentUser, err := d.exec.RunWithStdout("bash", "-c", "echo $USER | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -180,7 +180,7 @@ func (d *Debian) checkPort() (bool, error) {
 		arg = "netstat -tupna | awk '{print \\$4}' | sed -e 's/.*://' | sort | uniq"
 	}
 
-	openPorts, err := d.exec.RunWithStdout("bash", "-c", arg)
+	openPorts, err := d.exec.WithSudo().RunWithStdout("bash", "-c", arg)
 	if err != nil {
 		return false, err
 	}

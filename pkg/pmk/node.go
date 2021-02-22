@@ -73,7 +73,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	zap.S().Info("Initialising the host")
 	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
+	output, err := allClients.Executor.WithSudo().RunWithStdout("bash", "-c", cmd)
 
 	if err != nil {
 		errStr := "Error: Unable to fetch host ID. " + err.Error()
@@ -132,7 +132,7 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 		insecureDownload = "-k"
 	}
 	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  /tmp/installer.sh`, insecureDownload, url)
-	_, err := exec.RunWithStdout("bash", "-c", cmd)
+	_, err := exec.WithSudo().RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}
@@ -140,13 +140,13 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 
 	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, ctx.Password)
 
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
+	_, err = exec.WithSudo().RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
 	if err != nil {
 		return err
 	}
 
 	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
-	_, err = exec.RunWithStdout("bash", "-c", cmd)
+	_, err = exec.WithSudo().RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return fmt.Errorf("Unable to run /tmp/installer.sh")
 	}
@@ -220,13 +220,13 @@ func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS strin
 	}
 
 	zap.S().Debug("Hostagent download completed successfully")
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
+	_, err = exec.WithSudo().RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
 	if err != nil {
 		return err
 	}
 
 	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
-	_, err = exec.RunWithStdout("bash", "-c", cmd)
+	_, err = exec.WithSudo().RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}

@@ -94,7 +94,7 @@ func (c *CentOS) checkSudo() (bool, error) {
 
 	users := strings.Split(result, ",")
 
-	currentUser, err := c.exec.RunWithStdout("bash", "-c", "echo $USER")
+	currentUser, err := c.exec.RunWithStdout("bash", "-c", "echo $USER | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
