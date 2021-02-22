@@ -58,6 +58,8 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 
 	checks := platform.Check()
 	result := true
+
+	fmt.Printf("\n\n")
 	for _, check := range checks {
 		if check.Result {
 			segment_str := "CheckNode: " + check.Name + " Status: " + checkPass

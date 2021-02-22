@@ -1,15 +1,15 @@
 package centos
 
 import (
-	"math"
-	"strconv"
-	"strings"
 	"fmt"
-	"regexp"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
+	"math"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 // CentOS reprents centos based host machine
@@ -27,7 +27,7 @@ func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := c.removePyCli()
-	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
+	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
 
 	result, err = c.checkPackages()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
@@ -179,9 +179,9 @@ func (c *CentOS) removePyCli() (bool, error) {
 }
 
 func (c *CentOS) Version() (string, error) {
-//using cat command content of os-release file is printed on terminal
-//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
-//using cut command required field (7.6.1810) is selected.
+	//using cat command content of os-release file is printed on terminal
+	//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
+	//using cut command required field (7.6.1810) is selected.
 	out, err := c.exec.RunWithStdout(
 		"bash",
 		"-c",

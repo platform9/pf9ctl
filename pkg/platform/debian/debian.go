@@ -1,14 +1,14 @@
 package debian
 
 import (
-	"math"
-	"strconv"
-	"strings"
 	"fmt"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
+	"math"
+	"strconv"
+	"strings"
 )
 
 // Debian represents debian based host machine
@@ -26,7 +26,7 @@ func (d *Debian) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := d.removePyCli()
-	checks = append(checks, platform.Check{"Python CLI Removal", result, err})
+	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
 
 	result, err = d.checkPackages()
 	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
@@ -178,10 +178,10 @@ func (d *Debian) removePyCli() (bool, error) {
 }
 
 func (d *Debian) Version() (string, error) {
-//using cat command content of os-release file is printed on terminal
-//using grep command os name and version are searched (pretty_name)
-//using cut command required field is selected
-//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
+	//using cat command content of os-release file is printed on terminal
+	//using grep command os name and version are searched (pretty_name)
+	//using cut command required field is selected
+	//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
 	out, err := d.exec.RunWithStdout(
 		"bash",
 		"-c",
