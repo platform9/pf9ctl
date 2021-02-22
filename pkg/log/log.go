@@ -10,12 +10,18 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// Returns the current log file location.
+func GetLogLocation(logFile string) string {
+	runLogLocation := fmt.Sprintf("%s-%s.%s", logFile[:strings.LastIndex(logFile, ".")], time.Now().Format("20060111"), logFile[strings.LastIndex(logFile, ".")+1:])
+	return runLogLocation
+}
+
 // ConfigureGlobalLog global uber zap logger, there are two modes possible.
 // the very first one is debug or not, used by CLI a debug mode is fantastic way
 // to print more information and a logFile where the logs would be saved
 func ConfigureGlobalLog(debug bool, logFile string) error {
 
-	runLogLocation := fmt.Sprintf("%s-%s.%s", logFile[:strings.LastIndex(logFile, ".")], time.Now().Format("2006010"), logFile[strings.LastIndex(logFile, ".")+1:])
+	runLogLocation := GetLogLocation(logFile)
 	// If the file doesn't exist, create it, or append to the file
 	f, err := os.OpenFile(runLogLocation, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
