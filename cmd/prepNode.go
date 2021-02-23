@@ -60,7 +60,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 	_, err = pmk.CheckNode(ctx, c)
 	if err != nil {
-		zap.S().Fatalf("Checknode - Failed: %s\n", err.Error())
+		zap.S().Fatalf("Pre-requisite check failed %s\n", err.Error())
 	}
 
 	if err := pmk.PrepNode(ctx, c); err != nil {
