@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var ErrConfigurationDetailsNotProvided = errors.New("config not set,....")
+
 // Config stores information to contact with the pf9 controller.
 type Config struct {
 	Fqdn          string        `json:"fqdn"`
@@ -45,7 +47,7 @@ func LoadConfig(loc string) (Config, error) {
 	if err != nil {
 
 		if os.IsNotExist(err) {
-			return Config{}, errors.New("Config absent, run `sudo pf9ctl config set`")
+			return Config{}, ErrConfigurationDetailsNotProvided
 		}
 		return Config{}, err
 	}
