@@ -1,7 +1,6 @@
 package pmk_test
 
 import (
-	"fmt"
 	"github.com/platform9/pf9ctl/cmd"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,7 @@ func TestLoadConfig(t *testing.T) {
 		"CheckFail": {
 			args: args{
 				loc: "",
-				err: fmt.Errorf("Config absent, run `sudo pf9ctl config set`"),
+				err: pmk.ErrConfigurationDetailsNotProvided,
 			},
 		},
 	}
