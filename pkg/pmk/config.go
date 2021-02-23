@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var ErrConfigurationDetailsNotProvided = errors.New("Config absent, run `sudo pf9ctl config set`")
+var ErrConfigurationDetailsNotProvided = errors.New("config not set,....")
 
 // Config stores information to contact with the pf9 controller.
 type Config struct {
