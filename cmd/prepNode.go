@@ -48,11 +48,11 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 	// TODO: there seems to be a bug, we will need multiple executors one per ip, so at this moment
 	// it will only work with one remote host
-	executor, err := getExecutor()
+	executorPair, err := getExecutors()
 	if err != nil {
 		zap.S().Fatalf("Error connecting to host %s", err.Error())
 	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+	c, err := pmk.NewClient(ctx.Fqdn, *executorPair, ctx.AllowInsecure, false)
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
@@ -83,8 +83,7 @@ func checkAndValidateRemote() bool {
 	return foundRemote
 }
 
-// getExecutor creates the right Executor
-func getExecutor() (cmdexec.Executor, error) {
+func getExecutors() (*cmdexec.ExecutorPair, error) {
 	if checkAndValidateRemote() {
 		var pKey []byte
 		var err error
@@ -94,8 +93,15 @@ func getExecutor() (cmdexec.Executor, error) {
 				zap.S().Fatalf("Unable to read the sshKey %s, %s", sshKey, err.Error())
 			}
 		}
-		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password)
+		return cmdexec.NewExecutorPair(cmdexec.ExecutorConfig{
+			ExecType:   cmdexec.Remote,
+			Host:       ips[0],
+			Password:   password,
+			Port:       22,
+			PrivateKey: pKey,
+			Username:   user,
+		})
 	}
 	zap.S().Debug("Using local executor")
-	return cmdexec.LocalExecutor{}, nil
+	return cmdexec.NewExecutorPair(cmdexec.ExecutorConfig{ExecType: cmdexec.Local})
 }

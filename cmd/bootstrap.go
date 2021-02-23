@@ -50,7 +50,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load config: %s", err.Error())
 	}
 
-	c, err := pmk.NewClient(ctx.Fqdn, cmdexec.LocalExecutor{}, ctx.AllowInsecure, false)
+	c, err := pmk.NewClient(ctx.Fqdn, cmdexec.ExecutorPair{}, ctx.AllowInsecure, false)
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients: %s", err.Error())
 	}

@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
@@ -35,11 +36,11 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
-	executor, err := getExecutor()
+	executors, err := getExecutors()
 	if err != nil {
 		zap.S().Fatalf("Error connecting to host %s", err.Error())
 	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+	c, err := pmk.NewClient(ctx.Fqdn, *executors, ctx.AllowInsecure, false)
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}

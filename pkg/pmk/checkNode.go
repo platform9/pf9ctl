@@ -23,7 +23,7 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 
 	zap.S().Debug("Received a call to check node.")
 
-	os, err := validatePlatform(allClients.Executor)
+	os, err := validatePlatform(allClients.ExecutorPair)
 	if err != nil {
 		return false, err
 	}
@@ -31,9 +31,9 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 	var platform platform.Platform
 	switch os {
 	case "debian":
-		platform = debian.NewDebian(allClients.Executor)
+		platform = debian.NewDebian(allClients.ExecutorPair)
 	case "redhat":
-		platform = centos.NewCentOS(allClients.Executor)
+		platform = centos.NewCentOS(allClients.ExecutorPair)
 	}
 
 	// Fetch the keystone token.

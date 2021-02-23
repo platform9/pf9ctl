@@ -3,6 +3,10 @@ package pmk
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/platform"
@@ -10,9 +14,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 // Sends an event to segment based on the input string and uses auth as keystone UUID property.
@@ -39,14 +40,14 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
-	hostOS, err := validatePlatform(allClients.Executor)
+	hostOS, err := validatePlatform(allClients.ExecutorPair)
 	if err != nil {
 		errStr := "Error: Invalid host OS. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth)
 		return fmt.Errorf(errStr)
 	}
 
-	present := pf9PackagesPresent(hostOS, allClients.Executor)
+	present := pf9PackagesPresent(hostOS, allClients.ExecutorPair)
 	if present {
 		errStr := "\n\nPlatform9 packages already present on the host." +
 			"\nPlease uninstall these packages if you want to prep the node again.\n" +
@@ -56,14 +57,14 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf(errStr)
 	}
 
-	err = setupNode(hostOS, allClients.Executor)
+	err = setupNode(hostOS, allClients.ExecutorPair.Sudoer)
 	if err != nil {
 		errStr := "Error: Unable to disable swap. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth)
 		return fmt.Errorf(errStr)
 	}
 
-	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
+	if err := installHostAgent(ctx, auth, hostOS, allClients.ExecutorPair.Sudoer); err != nil {
 		errStr := "Error: Unable to install hostagent. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth)
 		return fmt.Errorf(errStr)
@@ -72,7 +73,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	zap.S().Info("Initialising the host")
 	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
-	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
+	output, err := allClients.ExecutorPair.Sudoer.RunWithStdout("bash", "-c", cmd)
 
 	if err != nil {
 		errStr := "Error: Unable to fetch host ID. " + err.Error()
@@ -155,23 +156,23 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 	return nil
 }
 
-func validatePlatform(exec cmdexec.Executor) (string, error) {
+func validatePlatform(execs cmdexec.ExecutorPair) (string, error) {
 	zap.S().Debug("Received a call to validate platform")
 
-	strData, err := openOSReleaseFile(exec)
+	strData, err := openOSReleaseFile(execs.User)
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
 	var platform platform.Platform
 	switch {
 	case strings.Contains(strData, util.Centos) || strings.Contains(strData, util.Redhat):
-		platform = centos.NewCentOS(exec)
+		platform = centos.NewCentOS(execs)
 		osVersion, err := platform.Version()
 		if err == nil {
 			return osVersion, nil
 		}
 	case strings.Contains(strData, util.Ubuntu):
-		platform = debian.NewDebian(exec)
+		platform = debian.NewDebian(execs)
 		osVersion, err := platform.Version()
 		if err == nil {
 			return osVersion, nil
@@ -189,16 +190,16 @@ func openOSReleaseFile(exec cmdexec.Executor) (string, error) {
 	return strings.ToLower(string(data)), nil
 }
 
-func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
+func pf9PackagesPresent(hostOS string, exec cmdexec.ExecutorPair) bool {
 	var out string
 	if hostOS == "debian" {
-		out, _ = exec.RunWithStdout("bash",
+		out, _ = exec.User.RunWithStdout("bash",
 			"-c",
 			"dpkg -l | { grep -i 'pf9-' || true; }")
 	} else {
 		// not checking for redhat because if it has already passed validation
 		// it must be either debian or redhat based
-		out, _ = exec.RunWithStdout("bash",
+		out, _ = exec.User.RunWithStdout("bash",
 			"-c",
 			"yum list installed | { grep -i 'pf9-' || true; }")
 	}

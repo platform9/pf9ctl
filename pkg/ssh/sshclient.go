@@ -1,19 +1,22 @@
 // Copyright 2020 Platform9 Systems Inc.
 package ssh
+
 // The content of this files are shamelessly copied from the SSH Provider code base of cctl
 // the CCTL ssh-provider can't handle large files and hence this step was taken, perhaps
 // the original source should have been modified.
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-    "bufio"
+
 	"github.com/pkg/sftp"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 )
+
 // Client interface provides ways to run command and upload files to remote hosts
 type Client interface {
 	// RunCommand executes the remote command returning the stdout, stderr and any error associated with it
@@ -46,7 +49,7 @@ func NewClient(host string, port int, username string, privateKey []byte, passwo
 	} else {
 		authMethods[0] = ssh.Password(password)
 	}
-	
+
 	sshConfig := &ssh.ClientConfig{
 		User: string(username),
 		Auth: authMethods,
@@ -65,7 +68,6 @@ func NewClient(host string, port int, username string, privateKey []byte, passwo
 	}, nil
 }
 
-
 // RunCommand runs a command on the machine and returns stdout and stderr
 // separately
 func (c *client) RunCommand(cmd string) ([]byte, []byte, error) {
@@ -82,9 +84,9 @@ func (c *client) RunCommand(cmd string) ([]byte, []byte, error) {
 		return nil, nil, fmt.Errorf("unable to pipe stderr: %s", err)
 	}
 	// Prepend sudo if runAsSudo set to true
-	if runAsSudo {
-		cmd = fmt.Sprintf("sudo %s", cmd)
-	}
+	// if runAsSudo {
+	// 	cmd = fmt.Sprintf("sudo %s", cmd)
+	// }
 	err = session.Start(cmd)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to run command: %s", err)
@@ -102,9 +104,9 @@ func (c *client) RunCommand(cmd string) ([]byte, []byte, error) {
 		default:
 			retError = fmt.Errorf("command %s failed: %s", cmd, err)
 		}
-		zap.L().Error("Error ", zap.String("stdout", string(stdOut)), 
-										zap.String("stderr", string(stdErr)))
-			
+		zap.L().Error("Error ", zap.String("stdout", string(stdOut)),
+			zap.String("stderr", string(stdErr)))
+
 		return stdOut, stdErr, retError
 	}
 	return stdOut, stdErr, nil
@@ -147,10 +149,10 @@ func (c *client) UploadFile(localFile string, remoteFilePath string, mode os.Fil
 	return nil
 }
 
-func newProgressCBReader(totalSize int64, orig io.Reader, cb func(read int64, total int64) )  io.Reader {
+func newProgressCBReader(totalSize int64, orig io.Reader, cb func(read int64, total int64)) io.Reader {
 	progReader := &ProgressCBReader{
-		TotalSize:totalSize,
-		ReadCount:0,
+		TotalSize:  totalSize,
+		ReadCount:  0,
 		ProgressCB: cb,
 		OrigReader: orig,
 	}
@@ -160,14 +162,14 @@ func newProgressCBReader(totalSize int64, orig io.Reader, cb func(read int64, to
 // ProgressCBReader implements a reader that can call back
 // a function on  regular interval to report progress
 type ProgressCBReader struct {
-	TotalSize int64
-	ReadCount int64
+	TotalSize  int64
+	ReadCount  int64
 	ProgressCB func(read int64, total int64)
 	OrigReader io.Reader
 }
 
 func (r *ProgressCBReader) Read(p []byte) (int, error) {
-	read, err:= r.OrigReader.Read(p)
+	read, err := r.OrigReader.Read(p)
 	r.ReadCount = r.ReadCount + int64(read)
 	if r.ProgressCB != nil {
 		r.ProgressCB(r.ReadCount, r.TotalSize)

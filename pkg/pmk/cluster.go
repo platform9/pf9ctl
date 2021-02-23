@@ -46,7 +46,7 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 	}
 
 	cmd := `\"cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2\"`
-	output, err := c.Executor.RunWithStdout("bash", "-c", cmd)
+	output, err := c.ExecutorPair.Sudoer.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return fmt.Errorf("Unable to execute command: %w", err)
 	}

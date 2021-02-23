@@ -19,19 +19,25 @@ var (
 
 // CentOS reprents centos based host machine
 type CentOS struct {
-	exec cmdexec.Executor
+	execs cmdexec.ExecutorPair
 }
 
 // NewCentOS creates and returns a new instance of CentOS
-func NewCentOS(exec cmdexec.Executor) *CentOS {
-	return &CentOS{exec}
+func NewCentOS(execs cmdexec.ExecutorPair) *CentOS {
+	return &CentOS{execs}
 }
 
 // Check inspects if a host machine meets all the requirements to be a cluster node
 func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := c.removePyCli()
+	result, err := c.checkSudo()
+	checks = append(checks, platform.Check{"SudoCheck", result, err})
+	if !result {
+		return checks
+	}
+
+	result, err = c.removePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
 
 	result, err = c.checkExistingInstallation()
@@ -39,9 +45,6 @@ func (c *CentOS) Check() []platform.Check {
 
 	result, err = c.checkOSPackages()
 	checks = append(checks, platform.Check{"OS Packages Check", result, err})
-
-	result, err = c.checkSudo()
-	checks = append(checks, platform.Check{"SudoCheck", result, err})
 
 	result, err = c.checkCPU()
 	checks = append(checks, platform.Check{"CPUCheck", result, err})
@@ -60,7 +63,7 @@ func (c *CentOS) Check() []platform.Check {
 
 func (c *CentOS) checkExistingInstallation() (bool, error) {
 
-	out, err := c.exec.RunWithStdout("bash", "-c", "yum list installed | { grep -i 'pf9-' || true; }")
+	out, err := c.execs.User.RunWithStdout("bash", "-c", "yum list installed | { grep -i 'pf9-' || true; }")
 	if err != nil {
 		return false, nil
 	}
@@ -73,7 +76,7 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	errLines := []string{"Packages not found: "}
 
 	for _, p := range packages {
-		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
+		err := c.execs.User.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
 		if err != nil {
 			errLines = append(errLines, p)
 		}
@@ -86,21 +89,28 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 }
 
 func (c *CentOS) checkSudo() (bool, error) {
-	idS, err := c.exec.RunWithStdout("bash", "-c", "id -u | tr -d '\\n'")
+	result, err := c.execs.User.RunWithStdout("bash", "-c", "getent group wheel | cut -d: -f4 | tr -d '\\n'")
+
 	if err != nil {
 		return false, err
 	}
 
-	id, err := strconv.Atoi(idS)
+	users := strings.Split(result, ",")
+
+	currentUser, err := c.execs.User.RunWithStdout("bash", "-c", "echo $USER | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
 
-	return id == 0, nil
+	if currentUser == "root" {
+		return true, nil
+	}
+
+	return util.IsInSlice(currentUser, users), nil
 }
 
 func (c *CentOS) checkCPU() (bool, error) {
-	cpuS, err := c.exec.RunWithStdout("bash", "-c", "grep -c ^processor /proc/cpuinfo | tr -d '\\n'")
+	cpuS, err := c.execs.User.RunWithStdout("bash", "-c", "grep -c ^processor /proc/cpuinfo | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -116,7 +126,7 @@ func (c *CentOS) checkCPU() (bool, error) {
 }
 
 func (c *CentOS) checkMem() (bool, error) {
-	memS, err := c.exec.RunWithStdout("bash", "-c", "echo $(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024))) | tr -d '\\n'")
+	memS, err := c.execs.User.RunWithStdout("bash", "-c", "echo $(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024))) | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -132,7 +142,7 @@ func (c *CentOS) checkMem() (bool, error) {
 }
 
 func (c *CentOS) checkDisk() (bool, error) {
-	diskS, err := c.exec.RunWithStdout("bash", "-c", "df -k . --output=size | sed 1d | xargs | tr -d '\\n'")
+	diskS, err := c.execs.User.RunWithStdout("bash", "-c", "df -k . --output=size | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -148,7 +158,7 @@ func (c *CentOS) checkDisk() (bool, error) {
 
 	zap.S().Debug("Total disk space: ", disk)
 
-	availS, err := c.exec.RunWithStdout("bash", "-c", "df -k . --output=avail | sed 1d | xargs | tr -d '\\n'")
+	availS, err := c.execs.User.RunWithStdout("bash", "-c", "df -k . --output=avail | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -169,14 +179,14 @@ func (c *CentOS) checkPort() (bool, error) {
 	// For remote execution the command is wrapped under quotes ("") which creates
 	// problems for the awk command. To resolve this, $4 is escaped.
 	// Tweaks like this can be prevented by modifying the remote executor.
-	switch c.exec.(type) {
+	switch c.execs.User.(type) {
 	case cmdexec.LocalExecutor:
 		arg = "netstat -tupna | awk '{print $4}' | sed -e 's/.*://' | sort | uniq"
 	case *cmdexec.RemoteExecutor:
 		arg = "netstat -tupna | awk '{print \\$4}' | sed -e 's/.*://' | sort | uniq"
 	}
 
-	openPorts, err := c.exec.RunWithStdout("bash", "-c", arg)
+	openPorts, err := c.execs.Sudoer.RunWithStdout("bash", "-c", arg)
 	if err != nil {
 		return false, err
 	}
@@ -195,7 +205,7 @@ func (c *CentOS) checkPort() (bool, error) {
 
 func (c *CentOS) removePyCli() (bool, error) {
 
-	if _, err := c.exec.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
+	if _, err := c.execs.User.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
 		return false, err
 	}
 	zap.S().Debug("Removed Python CLI directory")
@@ -207,7 +217,7 @@ func (c *CentOS) Version() (string, error) {
 	//using cat command content of os-release file is printed on terminal
 	//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
 	//using cut command required field (7.6.1810) is selected.
-	out, err := c.exec.RunWithStdout(
+	out, err := c.execs.User.RunWithStdout(
 		"bash",
 		"-c",
 		"cat /etc/*release | grep '(Core)' | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")

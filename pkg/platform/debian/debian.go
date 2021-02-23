@@ -2,13 +2,14 @@ package debian
 
 import (
 	"fmt"
+	"math"
+	"strconv"
+	"strings"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
-	"math"
-	"strconv"
-	"strings"
 )
 
 var (
@@ -17,19 +18,25 @@ var (
 
 // Debian represents debian based host machine
 type Debian struct {
-	exec cmdexec.Executor
+	execs cmdexec.ExecutorPair
 }
 
 // NewDebian creates and returns a new instance of Debian
-func NewDebian(exec cmdexec.Executor) *Debian {
-	return &Debian{exec}
+func NewDebian(execs cmdexec.ExecutorPair) *Debian {
+	return &Debian{execs}
 }
 
 // Check inspects if a host machine meets all the requirements to be a cluster node
 func (d *Debian) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := d.removePyCli()
+	result, err := d.checkSudo()
+	checks = append(checks, platform.Check{"SudoCheck", result, err})
+	if !result {
+		return checks
+	}
+
+	result, err = d.removePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
 
 	result, err = d.checkExistingInstallation()
@@ -37,9 +44,6 @@ func (d *Debian) Check() []platform.Check {
 
 	result, err = d.checkOSPackages()
 	checks = append(checks, platform.Check{"OS Packages Check", result, err})
-
-	result, err = d.checkSudo()
-	checks = append(checks, platform.Check{"SudoCheck", result, err})
 
 	result, err = d.checkCPU()
 	checks = append(checks, platform.Check{"CPUCheck", result, err})
@@ -58,7 +62,7 @@ func (d *Debian) Check() []platform.Check {
 
 func (d *Debian) checkExistingInstallation() (bool, error) {
 
-	out, err := d.exec.RunWithStdout("bash", "-c", "dpkg -l | { grep -i 'pf9-' || true; }")
+	out, err := d.execs.User.RunWithStdout("bash", "-c", "dpkg -l | { grep -i 'pf9-' || true; }")
 	if err != nil {
 		return false, err
 	}
@@ -71,7 +75,7 @@ func (d *Debian) checkOSPackages() (bool, error) {
 	errLines := []string{"Packages not found: "}
 
 	for _, p := range packages {
-		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg -l %s", p))
+		err := d.execs.User.Run("bash", "-c", fmt.Sprintf("dpkg -l %s", p))
 		if err != nil {
 			errLines = append(errLines, p)
 		}
@@ -84,21 +88,29 @@ func (d *Debian) checkOSPackages() (bool, error) {
 }
 
 func (d *Debian) checkSudo() (bool, error) {
-	idS, err := d.exec.RunWithStdout("bash", "-c", "id -u | tr -d '\\n'")
+
+	result, err := d.execs.User.RunWithStdout("bash", "-c", "getent group sudo | cut -d: -f4 | tr -d '\\n'")
+
 	if err != nil {
 		return false, err
 	}
 
-	id, err := strconv.Atoi(idS)
+	users := strings.Split(result, ",")
+
+	currentUser, err := d.execs.User.RunWithStdout("bash", "-c", "echo $USER | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
 
-	return id == 0, nil
+	if currentUser == "root" {
+		return true, nil
+	}
+
+	return util.IsInSlice(currentUser, users), nil
 }
 
 func (d *Debian) checkCPU() (bool, error) {
-	cpuS, err := d.exec.RunWithStdout("bash", "-c", "grep -c ^processor /proc/cpuinfo | tr -d '\\n'")
+	cpuS, err := d.execs.User.RunWithStdout("bash", "-c", "grep -c ^processor /proc/cpuinfo | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -114,7 +126,7 @@ func (d *Debian) checkCPU() (bool, error) {
 }
 
 func (d *Debian) checkMem() (bool, error) {
-	memS, err := d.exec.RunWithStdout("bash", "-c", "echo $(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024))) | tr -d '\\n'")
+	memS, err := d.execs.User.RunWithStdout("bash", "-c", "echo $(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024))) | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -130,7 +142,7 @@ func (d *Debian) checkMem() (bool, error) {
 }
 
 func (d *Debian) checkDisk() (bool, error) {
-	diskS, err := d.exec.RunWithStdout("bash", "-c", "df -k . --output=size | sed 1d | xargs | tr -d '\\n'")
+	diskS, err := d.execs.User.RunWithStdout("bash", "-c", "df -k . --output=size | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -146,7 +158,7 @@ func (d *Debian) checkDisk() (bool, error) {
 
 	zap.S().Debug("Total disk space: ", disk)
 
-	availS, err := d.exec.RunWithStdout("bash", "-c", "df -k . --output=avail | sed 1d | xargs | tr -d '\\n'")
+	availS, err := d.execs.User.RunWithStdout("bash", "-c", "df -k . --output=avail | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -167,14 +179,14 @@ func (d *Debian) checkPort() (bool, error) {
 	// For remote execution the command is wrapped under quotes ("") which creates
 	// problems for the awk command. To resolve this, $4 is escaped.
 	// Tweaks like this can be prevented by modifying the remote executor.
-	switch d.exec.(type) {
+	switch d.execs.User.(type) {
 	case cmdexec.LocalExecutor:
 		arg = "netstat -tupna | awk '{print $4}' | sed -e 's/.*://' | sort | uniq"
 	case *cmdexec.RemoteExecutor:
 		arg = "netstat -tupna | awk '{print \\$4}' | sed -e 's/.*://' | sort | uniq"
 	}
 
-	openPorts, err := d.exec.RunWithStdout("bash", "-c", arg)
+	openPorts, err := d.execs.Sudoer.RunWithStdout("bash", "-c", arg)
 	if err != nil {
 		return false, err
 	}
@@ -193,7 +205,7 @@ func (d *Debian) checkPort() (bool, error) {
 
 func (d *Debian) removePyCli() (bool, error) {
 
-	if _, err := d.exec.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
+	if _, err := d.execs.User.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
 		return false, err
 	}
 	zap.S().Debug("Removed Python CLI directory")
@@ -206,7 +218,7 @@ func (d *Debian) Version() (string, error) {
 	//using grep command os name and version are searched (pretty_name)
 	//using cut command required field is selected
 	//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
-	out, err := d.exec.RunWithStdout(
+	out, err := d.execs.User.RunWithStdout(
 		"bash",
 		"-c",
 		"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")

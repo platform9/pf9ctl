@@ -3,6 +3,7 @@ package debian
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -59,7 +60,7 @@ func TestCPU(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &Debian{exec: tc.exec}
+			c := &Debian{execs: cmdexec.ExecutorPair{User: tc.exec}}
 			o, err := c.checkCPU()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -115,7 +116,7 @@ func TestRAM(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &Debian{exec: tc.exec}
+			c := &Debian{execs: cmdexec.ExecutorPair{User: tc.exec}}
 			o, err := c.checkMem()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -140,13 +141,19 @@ func TestSudo(t *testing.T) {
 		want
 	}{
 		//Success case. User should have sudo permission.
-		//If user id == 0 then user have sudo permission.
-		//Returning 0. Therefore test case should pass.
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "0", nil
+						if strings.Contains(args[1], "getent") {
+							return "user1,user2", nil
+						}
+
+						if strings.Contains(args[1], "echo") {
+							return "user1", nil
+						}
+
+						return "", fmt.Errorf("Invalid command")
 					},
 				},
 			},
@@ -155,12 +162,19 @@ func TestSudo(t *testing.T) {
 			},
 		},
 		//Failure case. User should have id other than zero
-		//Returning 100. Therefore test case should pass
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "100", nil
+						if strings.Contains(args[1], "getent") {
+							return "user1,user2", nil
+						}
+
+						if strings.Contains(args[1], "echo") {
+							return "user3", nil
+						}
+
+						return "", fmt.Errorf("Invalid command")
 					},
 				},
 			},
@@ -172,7 +186,7 @@ func TestSudo(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &Debian{exec: tc.exec}
+			c := &Debian{execs: cmdexec.ExecutorPair{User: tc.exec}}
 			o, err := c.checkSudo()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -228,7 +242,7 @@ func TestPort(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &Debian{exec: tc.exec}
+			c := &Debian{execs: cmdexec.ExecutorPair{Sudoer: tc.exec}}
 			o, err := c.checkPort()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -284,7 +298,7 @@ func TestDisk(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &Debian{exec: tc.exec}
+			c := &Debian{execs: cmdexec.ExecutorPair{User: tc.exec}}
 			o, err := c.checkDisk()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -340,7 +354,7 @@ func TestExistingInstallation(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &Debian{exec: tc.exec}
+			c := &Debian{execs: cmdexec.ExecutorPair{User: tc.exec}}
 			o, err := c.checkExistingInstallation()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
@@ -394,7 +408,7 @@ func TestOSPackages(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &Debian{exec: tc.exec}
+			c := &Debian{execs: cmdexec.ExecutorPair{User: tc.exec}}
 			o, err := c.checkOSPackages()
 
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
@@ -450,7 +464,7 @@ func TestRemovePyCli(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			c := &Debian{exec: tc.exec}
+			c := &Debian{execs: cmdexec.ExecutorPair{User: tc.exec}}
 			result, err := c.removePyCli()
 
 			assert.Equal(t, tc.want.err, err)
