@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
@@ -43,6 +44,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
+
+	defer c.Segment.Close()
 
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {

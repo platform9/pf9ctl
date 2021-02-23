@@ -56,6 +56,12 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
+	defer c.Segment.Close()
+
+	_, err = pmk.CheckNode(ctx, c)
+	if err != nil {
+		zap.S().Fatalf("Checknode - Failed: %s\n", err.Error())
+	}
 
 	if err := pmk.PrepNode(ctx, c); err != nil {
 		c.Segment.SendEvent("Prep Node - Failed", err)
