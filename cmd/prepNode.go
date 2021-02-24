@@ -3,14 +3,16 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
-	"io/ioutil"
-
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
 // prepNodeCmd represents the prepNode command
@@ -79,10 +81,17 @@ func checkAndValidateRemote() bool {
 	for _, ip := range ips {
 		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
 			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
-			if user == "" || (sshKey == "" && password == "") {
+			if user == "" {
+				fmt.Printf("Enter Username: ")
+				reader := bufio.NewReader(os.Stdin)
+				user, _ = reader.ReadString('\n')
+				user = strings.TrimSpace(user)
+			}
+			if sshKey == "" && password == "" {
 				fmt.Printf("Enter Password: ")
 				passwordBytes, _ := terminal.ReadPassword(0)
 				password = string(passwordBytes)
+				fmt.Printf("\n")
 			}
 			foundRemote = true
 			return foundRemote
