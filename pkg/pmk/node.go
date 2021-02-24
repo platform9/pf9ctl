@@ -3,6 +3,10 @@ package pmk
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/platform"
@@ -10,9 +14,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 // Sends an event to segment based on the input string and uses auth as keystone UUID property.
@@ -233,4 +234,9 @@ func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS strin
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
 	zap.S().Info("Hostagent installed successfully")
 	return nil
+}
+
+func checkSudo(exec cmdexec.Executor) bool {
+	_, err := exec.RunWithStdout("bash", "-c", "echo '$(logname) ALL=(ALL:ALL) NOPASSWD: ALL' | (EDITOR='tee -a' visudo)")
+	return err == nil
 }
