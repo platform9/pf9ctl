@@ -26,7 +26,7 @@ echo "##teamcity[setParameter name='env.UPLOAD_SPEC_PATH' value='${TEAMCITY_CHEC
 
 if [ ${TEAMCITY_BUILD_BRANCH} = master ]; then
     ln ${TEAMCITY_CHECKOUT_DIR}/src/github.com/platform9/pf9ctl/bin/pf9ctl ${TEAMCITY_CHECKOUT_DIR}/build/publish-to-artf/pf9ctl
-    ln ${TEAMCITY_CHECKOUT_DIR}/src/github.com/platform9/pf9ctl/pf9ctl_setup.sh ${TEAMCITY_CHECKOUT_DIR}/build/publish-to-artf/pf9ctl_setup.sh
+    ln ${TEAMCITY_CHECKOUT_DIR}/src/github.com/platform9/pf9ctl/pf9ctl_setup ${TEAMCITY_CHECKOUT_DIR}/build/publish-to-artf/pf9ctl_setup
 else
     echo "Not publishing files to artifactory since this is not built off master branch."
 fi
