@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
@@ -50,8 +51,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if !result {
-		fmt.Printf("Node not ready. See %s or use --verbose for logs \n", log.GetLogLocation(Pf9Log))
-		zap.S().Debugf("Node not ready. See %s or use --verbose for logs", log.GetLogLocation(Pf9Log))
+		fmt.Printf("\nPre-requisite check failed. See %s or use --verbose for logs \n", log.GetLogLocation(Pf9Log))
+		zap.S().Debugf("Pre-requisite check failed. See %s or use --verbose for logs", log.GetLogLocation(Pf9Log))
 	}
 	zap.S().Debug("==========Finished running check-node==========")
 }

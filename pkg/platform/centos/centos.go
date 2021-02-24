@@ -32,28 +32,28 @@ func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := c.removePyCli()
-	checks = append(checks, platform.Check{"Removal of existing CLI", result, err})
+	checks = append(checks, platform.Check{"Removal of existing CLI", result, err, util.PyCliErr})
 
 	result, err = c.checkExistingInstallation()
-	checks = append(checks, platform.Check{"Existing Installation Check", result, err})
+	checks = append(checks, platform.Check{"Existing Installation Check", result, err, util.ExisitngInstallationErr})
 
 	result, err = c.checkOSPackages()
-	checks = append(checks, platform.Check{"OS Packages Check", result, err})
+	checks = append(checks, platform.Check{"OS Packages Check", result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
 
 	result, err = c.checkSudo()
-	checks = append(checks, platform.Check{"SudoCheck", result, err})
+	checks = append(checks, platform.Check{"SudoCheck", result, err, util.SudoErr})
 
 	result, err = c.checkCPU()
-	checks = append(checks, platform.Check{"CPUCheck", result, err})
+	checks = append(checks, platform.Check{"CPUCheck", result, err, fmt.Sprintf("%s %s", util.CPUErr, err)})
 
 	result, err = c.checkDisk()
-	checks = append(checks, platform.Check{"DiskCheck", result, err})
+	checks = append(checks, platform.Check{"DiskCheck", result, err, fmt.Sprintf("%s %s", util.DiskErr, err)})
 
 	result, err = c.checkMem()
-	checks = append(checks, platform.Check{"MemoryCheck", result, err})
+	checks = append(checks, platform.Check{"MemoryCheck", result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
 
 	result, err = c.checkPort()
-	checks = append(checks, platform.Check{"PortCheck", result, err})
+	checks = append(checks, platform.Check{"PortCheck", result, err, util.PortErr})
 
 	return checks
 }
@@ -112,7 +112,10 @@ func (c *CentOS) checkCPU() (bool, error) {
 
 	zap.S().Debug("Number of CPUs found: ", cpu)
 
-	return cpu >= util.MinCPUs, nil
+	if cpu >= util.MinCPUs {
+		return true, nil
+	}
+	return false, fmt.Errorf("Number of CPUs found: %d", cpu)
 }
 
 func (c *CentOS) checkMem() (bool, error) {
@@ -128,7 +131,10 @@ func (c *CentOS) checkMem() (bool, error) {
 
 	zap.S().Debug("Total memory allocated in GiBs", mem)
 
-	return math.Ceil(mem/1024) >= util.MinMem, nil
+	if math.Ceil(mem/1024) >= util.MinMem {
+		return true, nil
+	}
+	return false, fmt.Errorf("Total memory found: %.0f", math.Ceil(mem/1024))
 }
 
 func (c *CentOS) checkDisk() (bool, error) {
@@ -143,7 +149,7 @@ func (c *CentOS) checkDisk() (bool, error) {
 	}
 
 	if math.Ceil(disk/util.GB) < util.MinDisk {
-		return false, nil
+		return false, fmt.Errorf("Disk Space found: %.0f", math.Ceil(disk/util.GB))
 	}
 
 	zap.S().Debug("Total disk space: ", disk)
@@ -160,7 +166,10 @@ func (c *CentOS) checkDisk() (bool, error) {
 
 	zap.S().Debug("Available disk space: ", avail)
 
-	return math.Ceil(avail/util.GB) >= util.MinAvailDisk, nil
+	if math.Ceil(avail/util.GB) >= util.MinAvailDisk {
+		return true, nil
+	}
+	return false, fmt.Errorf("Available disk space: %.0f GB", math.Trunc(avail/util.GB))
 }
 
 func (c *CentOS) checkPort() (bool, error) {
