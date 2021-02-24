@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
@@ -46,7 +47,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
-		zap.S().Fatalf("Unable to perform pre-requisite checks on this node. Error: %s", err.Error())
+		zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
 	}
 
 	if !result {

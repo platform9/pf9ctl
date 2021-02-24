@@ -237,6 +237,6 @@ func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS strin
 }
 
 func checkSudo(exec cmdexec.Executor) bool {
-	_, err := exec.RunWithStdout("bash", "-c", "echo '$(logname) ALL=(ALL:ALL) NOPASSWD: ALL' | (EDITOR='tee -a' visudo)")
+	_, err := exec.RunWithStdout("-l")
 	return err == nil
 }
