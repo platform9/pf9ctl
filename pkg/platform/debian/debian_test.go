@@ -109,7 +109,7 @@ func TestRAM(t *testing.T) {
 			},
 			want: want{
 				result: false,
-				err:    fmt.Errorf("Total memory found: 8"),
+				err:    fmt.Errorf("Total memory found: 8 GB"),
 			},
 		},
 	}
@@ -278,7 +278,7 @@ func TestDisk(t *testing.T) {
 			},
 			want: want{
 				result: false,
-				err:    fmt.Errorf("Disk Space found: 15"),
+				err:    fmt.Errorf("Disk Space found: 15 GB"),
 			},
 		},
 	}

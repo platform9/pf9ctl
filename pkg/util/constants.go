@@ -33,7 +33,7 @@ var (
 	SudoErr                 = "User running pf9ctl must have privilege (sudo) mode enabled."
 	OSPackagesErr           = "Some OS packages needed for the CLI not found"
 	CPUErr                  = "At least 2 CPUs are needed on host."
-	DiskErr                 = "At least 30 GB of disk space is needed on host."
+	DiskErr                 = "At least 30 GB of total disk space and 15 GB of free space is needed on host."
 	MemErr                  = "At least 12 GB of memory is needed on host."
 )
 

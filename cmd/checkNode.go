@@ -51,8 +51,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if !result {
-		fmt.Printf("\nPre-requisite check failed. See %s or use --verbose for logs \n", log.GetLogLocation(Pf9Log))
-		zap.S().Debugf("Pre-requisite check failed. See %s or use --verbose for logs", log.GetLogLocation(Pf9Log))
+		fmt.Printf("\nPre-requisite checks failed. See %s or use --verbose for logs \n", log.GetLogLocation(Pf9Log))
+		zap.S().Debugf("Pre-requisite checks failed. See %s or use --verbose for logs", log.GetLogLocation(Pf9Log))
 	}
 	zap.S().Debug("==========Finished running check-node==========")
 }

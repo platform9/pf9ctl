@@ -134,7 +134,7 @@ func (c *CentOS) checkMem() (bool, error) {
 	if math.Ceil(mem/1024) >= util.MinMem {
 		return true, nil
 	}
-	return false, fmt.Errorf("Total memory found: %.0f", math.Ceil(mem/1024))
+	return false, fmt.Errorf("Total memory found: %.0f GB", math.Ceil(mem/1024))
 }
 
 func (c *CentOS) checkDisk() (bool, error) {
@@ -149,7 +149,7 @@ func (c *CentOS) checkDisk() (bool, error) {
 	}
 
 	if math.Ceil(disk/util.GB) < util.MinDisk {
-		return false, fmt.Errorf("Disk Space found: %.0f", math.Ceil(disk/util.GB))
+		return false, fmt.Errorf("Disk Space found: %.0f GB", math.Ceil(disk/util.GB))
 	}
 
 	zap.S().Debug("Total disk space: ", disk)
