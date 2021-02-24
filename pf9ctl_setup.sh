@@ -38,7 +38,7 @@ debugging() {
     if [ -f "${log_file}" ]; then
 	echo "${output}" 2>&1 >> ${log_file}
     fi
-    echo "${output}"
+    #echo "${output}"
 }
 
 stdout_log() {
@@ -73,17 +73,29 @@ check_installation() {
 }
 
 download_cli_binary() {
-	sudo rm ${cli_exec}
-	cd ${pf9_bin} && sudo curl -O ${cli_path} -o ${log_file} 2>&1 && cd -
+	echo "Note: SUDO access required to run Platform9 CLI."
+	echo ""
+	echo "Downloading Platform9 CLI binary..."
+	sudo rm ${cli_exec} 2> /dev/null
+	cd ${pf9_bin} > /dev/null && sudo curl -s -O ${cli_path} -o ${log_file} 2>&1 && cd - > /dev/null
 	sudo chmod 555 ${cli_exec}
+	echo ""
+	echo "Platform9 CLI binary downloaded."
+	echo ""
+}
+
+print_pf9_logo() {
+cat << "EOF" 
+ ____  _       _    __                      ___
+|  _ \| | __ _| |_ / _| ___  _ __ _ __ ___ / _ \
+| |_) | |/ _` | __| |_ / _ \| '__| '_ ` _ \ (_) |
+|  __/| | (_| | |_|  _| (_) | |  | | | | | \__, |
+|_|   |_|\__,_|\__|_|  \___/|_|  |_| |_| |_| /_/
+
+EOF
 }
 
 ##main
-
-echo ""
-stdout_log "** SUDO REQUIRED FOR ALL COMMANDS **"
-stdout_log "Why is SUDO required?: The CLI performs operations like installing packages and configuring services. These require SUDO privileges to run successfully."
-echo ""
 
 pf9_basedir=$(dirname ~/pf9/.)
 log_file=${pf9_basedir}/log/cli_install.log
@@ -92,14 +104,18 @@ pf9_state_dirs="${pf9_bin} ${pf9_basedir}/db ${pf9_basedir}/log"
 cli_exec=${pf9_bin}/pf9ctl
 cli_path="https://pmkft-assets.s3-us-west-1.amazonaws.com/pf9ctl"
 
+print_pf9_logo
 initialize_basedir
 download_cli_binary
+echo "Installing Platform9 CLI..."
+echo ""
 refresh_symlink
 check_installation
 
+debugging "Platform9 CLI installation completed successfully."
+echo "Platform9 CLI installation completed successfully !"
 echo ""
-stdout_log "Platform9 CLI installation completed successfully"
 echo "To start building a Kubernetes cluster execute:"
 echo "        ${cli_exec} help"
 echo ""
-eval "${cli_exec}" help
+#eval "${cli_exec}" help
