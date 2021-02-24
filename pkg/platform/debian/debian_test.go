@@ -53,6 +53,7 @@ func TestCPU(t *testing.T) {
 			},
 			want: want{
 				result: false,
+				err:    fmt.Errorf("Number of CPUs found: 1"),
 			},
 		},
 	}
@@ -62,9 +63,8 @@ func TestCPU(t *testing.T) {
 			c := &Debian{exec: tc.exec}
 			o, err := c.checkCPU()
 
-			if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
+			assert.Equal(t, tc.err, err)
+
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
@@ -109,6 +109,7 @@ func TestRAM(t *testing.T) {
 			},
 			want: want{
 				result: false,
+				err:    fmt.Errorf("Total memory found: 8"),
 			},
 		},
 	}
@@ -118,9 +119,8 @@ func TestRAM(t *testing.T) {
 			c := &Debian{exec: tc.exec}
 			o, err := c.checkMem()
 
-			if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
+			assert.Equal(t, tc.err, err)
+
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
@@ -278,6 +278,7 @@ func TestDisk(t *testing.T) {
 			},
 			want: want{
 				result: false,
+				err:    fmt.Errorf("Disk Space found: 15"),
 			},
 		},
 	}
@@ -287,9 +288,7 @@ func TestDisk(t *testing.T) {
 			c := &Debian{exec: tc.exec}
 			o, err := c.checkDisk()
 
-			if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
+			assert.Equal(t, tc.err, err)
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
