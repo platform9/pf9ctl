@@ -72,7 +72,7 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf("%s : %s\n", check.Name, checkFail)
+			fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
 			result = false
 		}
 

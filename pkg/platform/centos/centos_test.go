@@ -53,6 +53,7 @@ func TestCPU(t *testing.T) {
 			},
 			want: want{
 				result: false,
+				err:    fmt.Errorf("Number of CPUs found: 1"),
 			},
 		},
 	}
@@ -62,12 +63,11 @@ func TestCPU(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
 			o, err := c.checkCPU()
 
-			if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
+
+			assert.Equal(t, tc.err, err)
 		})
 	}
 }
@@ -109,6 +109,7 @@ func TestRAM(t *testing.T) {
 			},
 			want: want{
 				result: false,
+				err:    fmt.Errorf("Total memory found: 8 GB"),
 			},
 		},
 	}
@@ -118,12 +119,11 @@ func TestRAM(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
 			o, err := c.checkMem()
 
-			if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
+
+			assert.Equal(t, tc.err, err)
 		})
 	}
 }
@@ -165,6 +165,7 @@ func TestDisk(t *testing.T) {
 			},
 			want: want{
 				result: false,
+				err:    fmt.Errorf("Disk Space found: 15 GB"),
 			},
 		},
 	}
@@ -174,12 +175,11 @@ func TestDisk(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
 			o, err := c.checkDisk()
 
-			if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}
+
+			assert.Equal(t, tc.err, err)
 		})
 	}
 }
