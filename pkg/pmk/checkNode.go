@@ -23,6 +23,11 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 
 	zap.S().Debug("Received a call to check node.")
 
+	isSudo := checkSudo(allClients.Executor)
+	if !isSudo {
+		return false, fmt.Errorf("User executing this CLI is not allowed to switch to privileged (sudo) mode")
+	}
+
 	os, err := validatePlatform(allClients.Executor)
 	if err != nil {
 		return false, err

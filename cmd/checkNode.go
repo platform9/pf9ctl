@@ -49,7 +49,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
-		zap.S().Fatalf("Unable to perform pre-requisite checks on this node. Error: %s", err.Error())
+		zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
 	}
 
 	if !result {

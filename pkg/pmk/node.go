@@ -233,3 +233,8 @@ func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS strin
 	zap.S().Info("Hostagent installed successfully")
 	return nil
 }
+
+func checkSudo(exec cmdexec.Executor) bool {
+	_, err := exec.RunWithStdout("-l")
+	return err == nil
+}
