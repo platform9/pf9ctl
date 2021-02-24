@@ -21,8 +21,6 @@ func sendSegmentEvent(allClients Client, eventStr string, auth keystone.Keystone
 	if err := allClients.Segment.SendEvent("Prep-node : "+eventStr, auth); err != nil {
 		zap.S().Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
 	}
-	// Segment events get posted from it's queue only after closing the client.
-	//allClients.Segment.Close()
 }
 
 // PrepNode sets up prerequisites for k8s stack

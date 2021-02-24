@@ -82,7 +82,5 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 		}
 	}
 
-	// Segment events get posted from it's queue only after closing the client.
-	//allClients.Segment.Close()
 	return result, nil
 }

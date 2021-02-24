@@ -60,7 +60,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	ch, err := pmk.CheckNode(ctx, c)
 	if err != nil {
-		zap.S().Fatalf("Pre-requisite check failed %s\n", err.Error())
+		zap.S().Fatalf("Pre-requisite check(s) failed %s\n", err.Error())
 	}
 	if ch {
 		if err := pmk.PrepNode(ctx, c); err != nil {
@@ -68,7 +68,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("Unable to prep node: %s\n", err.Error())
 		}
 	} else {
-		zap.S().Fatalf("Check node - Failed\n")
+		zap.S().Fatalf("Pre-requisite check(s) failed.\n")
 	}
 	zap.S().Debug("==========Finished running prep-node==========")
 }
