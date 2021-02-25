@@ -8,6 +8,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/qbert"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -45,7 +46,7 @@ var (
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("Received a call to bootstrap the node")
 
-	ctx, err := pmk.LoadConfig(Pf9DBLoc)
+	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load config: %s", err.Error())
 	}

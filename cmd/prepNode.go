@@ -5,14 +5,16 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/platform9/pf9ctl/pkg/cmdexec"
-	"github.com/platform9/pf9ctl/pkg/pmk"
-	"github.com/spf13/cobra"
-	"go.uber.org/zap"
-	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/util"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // prepNodeCmd represents the prepNode command
@@ -44,7 +46,7 @@ func init() {
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running prep-node==========")
-	ctx, err := pmk.LoadConfig(Pf9DBLoc)
+	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
 	}

@@ -8,6 +8,7 @@ import (
 
 	//homedir "github.com/mitchellh/go-homedir"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -24,7 +25,7 @@ var rootCmd = &cobra.Command{
 	http://pf9.io/cli_clhelp.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Initializing zap log with console and file logging support
-		if err := log.ConfigureGlobalLog(verbosity, Pf9Log); err != nil {
+		if err := log.ConfigureGlobalLog(verbosity, util.Pf9Log); err != nil {
 			return fmt.Errorf("log initialization failed: %s", err)
 		}
 		return nil
@@ -45,15 +46,15 @@ func Execute() {
 }
 
 func initializeBaseDirs() (err error) {
-	err = os.MkdirAll(Pf9Dir, 0700)
+	err = os.MkdirAll(util.Pf9Dir, 0700)
 	if err != nil {
 		return
 	}
-	err = os.MkdirAll(Pf9DBDir, 0700)
+	err = os.MkdirAll(util.Pf9DBDir, 0700)
 	if err != nil {
 		return
 	}
-	err = os.MkdirAll(Pf9LogDir, 0700)
+	err = os.MkdirAll(util.Pf9LogDir, 0700)
 	return
 }
 
