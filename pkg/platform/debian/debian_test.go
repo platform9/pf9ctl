@@ -1,16 +1,14 @@
 package debian
 
 import (
-	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/stretchr/testify/assert"
 )
-
-var errOSPackage = errors.New("Packages not found:  ntp curl")
 
 type args struct {
 	exec cmdexec.Executor
@@ -380,13 +378,16 @@ func TestOSPackages(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRun: func(name string, args ...string) error {
-						return fmt.Errorf("dpkg-query: no packages found matching ntp")
+						return fmt.Errorf("Package not found")
+					},
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "", fmt.Errorf("Error installing package")
 					},
 				},
 			},
 			want: want{
 				result: false,
-				err:    errOSPackage,
+				err:    fmt.Errorf("%s %s", packageInstallError, strings.Join(packages, " ")),
 			},
 		},
 	}
