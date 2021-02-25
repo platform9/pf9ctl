@@ -13,7 +13,8 @@ import (
 )
 
 var (
-	packages = [2]string{"ntp", "curl"}
+	packages            = []string{"ntp", "curl"}
+	packageInstallError = "Packages not found and could not be installed"
 )
 
 // Debian represents debian based host machine
@@ -69,12 +70,16 @@ func (d *Debian) checkExistingInstallation() (bool, error) {
 
 func (d *Debian) checkOSPackages() (bool, error) {
 
-	errLines := []string{"Packages not found: "}
+	errLines := []string{packageInstallError}
 
 	for _, p := range packages {
 		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg -l %s", p))
 		if err != nil {
-			errLines = append(errLines, p)
+			zap.S().Debugf("Package %s not found, trying to install", p)
+			if err = d.installOSPackages(p); err != nil {
+				errLines = append(errLines, p)
+			}
+			zap.S().Infof("Missing package %s installed", p)
 		}
 	}
 
@@ -227,4 +232,16 @@ func (d *Debian) Version() (string, error) {
 		return "debian", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
+}
+
+func (d *Debian) installOSPackages(p string) error {
+	zap.S().Debug("Trying apt update...")
+	_, err := d.exec.RunWithStdout("bash", "-c", "apt update")
+	if err != nil {
+		return err
+	}
+
+	zap.S().Debugf("Trying to install package %s", p)
+	_, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("apt install -y %s", p))
+	return nil
 }

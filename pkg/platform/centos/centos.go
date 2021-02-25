@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	packages = [2]string{"ntp", "curl"}
+	packages            = []string{"curl"}
+	packageInstallError = "Packages not found and could not be installed"
 )
 
 // CentOS reprents centos based host machine
@@ -70,12 +71,16 @@ func (c *CentOS) checkExistingInstallation() (bool, error) {
 
 func (c *CentOS) checkOSPackages() (bool, error) {
 
-	errLines := []string{"Packages not found: "}
+	errLines := []string{packageInstallError}
 
 	for _, p := range packages {
 		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
 		if err != nil {
-			errLines = append(errLines, p)
+			zap.S().Debugf("Package %s not found, trying to install", p)
+			if err = c.installOSPackages(p); err != nil {
+				errLines = append(errLines, p)
+			}
+			zap.S().Infof("Missing package %s installed", p)
 		}
 	}
 
@@ -228,4 +233,16 @@ func (c *CentOS) Version() (string, error) {
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
 
+}
+
+func (c *CentOS) installOSPackages(p string) error {
+	zap.S().Debug("Trying apt update...")
+	_, err := c.exec.RunWithStdout("bash", "-c", "yum update -y")
+	if err != nil {
+		return err
+	}
+
+	zap.S().Debugf("Trying to install package %s", p)
+	_, err = c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("yum -y install %s", p))
+	return nil
 }
