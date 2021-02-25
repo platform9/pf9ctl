@@ -3,16 +3,14 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 // configCmdCreate represents the config command
@@ -24,47 +22,8 @@ var configCmdCreate = &cobra.Command{
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Printf("Platform9 Account URL: ")
-	fqdn, _ := reader.ReadString('\n')
-	fqdn = strings.TrimSuffix(fqdn, "\n")
-
-	fmt.Printf("Username: ")
-	username, _ := reader.ReadString('\n')
-	username = strings.TrimSuffix(username, "\n")
-
-	fmt.Printf("Password: ")
-	passwordBytes, _ := terminal.ReadPassword(0)
-	password := string(passwordBytes)
-
-	fmt.Printf("\nRegion [RegionOne]: ")
-	region, _ := reader.ReadString('\n')
-	region = strings.TrimSuffix(region, "\n")
-
-	fmt.Printf("Tenant [service]: ")
-	service, _ := reader.ReadString('\n')
-	service = strings.TrimSuffix(service, "\n")
-
-	if region == "" {
-		region = "RegionOne"
-	}
-
-	if service == "" {
-		service = "service"
-	}
-
-	ctx := pmk.Config{
-		Fqdn:          fqdn,
-		Username:      username,
-		Password:      password,
-		Region:        region,
-		Tenant:        service,
-		WaitPeriod:    WaitPeriod,
-		AllowInsecure: false,
-	}
-
-	if err := pmk.StoreConfig(ctx, Pf9DBLoc); err != nil {
+	// invoked the configcreate command from pkg/pmk
+	if err := pmk.StoreConfig(pmk.ConfigCmdCreateRun(), util.Pf9DBLoc); err != nil {
 		zap.S().Errorf("Failed to store config: %s", err.Error())
 	}
 	zap.S().Debug("==========Finished running set config==========")
@@ -76,12 +35,12 @@ var configCmdGet = &cobra.Command{
 	Long:  `Print details of the stored config`,
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Debug("==========Running get config==========")
-		_, err := os.Stat(Pf9DBLoc)
+		_, err := os.Stat(util.Pf9DBLoc)
 		if err != nil || os.IsNotExist(err) {
 			zap.S().Fatal("Could not load config: ", err)
 		}
 
-		file, err := os.Open(Pf9DBLoc)
+		file, err := os.Open(util.Pf9DBLoc)
 		if err != nil {
 			zap.S().Fatal("Could not load config: ", err)
 		}

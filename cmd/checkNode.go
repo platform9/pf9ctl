@@ -7,6 +7,7 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -31,7 +32,7 @@ func init() {
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
-	ctx, err := pmk.LoadConfig(Pf9DBLoc)
+	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
@@ -53,8 +54,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if !result {
-		fmt.Printf("\nPre-requisite checks failed. See %s or use --verbose for logs \n", log.GetLogLocation(Pf9Log))
-		zap.S().Debugf("Pre-requisite checks failed. See %s or use --verbose for logs", log.GetLogLocation(Pf9Log))
+		fmt.Printf("\nPre-requisite checks failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		zap.S().Debugf("Pre-requisite checks failed. See %s or use --verbose for logs", log.GetLogLocation(util.Pf9Log))
 	}
 	zap.S().Debug("==========Finished running check-node==========")
 }

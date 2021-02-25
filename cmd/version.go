@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -17,7 +18,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Debug("Version called")
 		//Prints the current version of pf9ctl being used.
-		fmt.Println(Version)
+		fmt.Println(util.Version)
 	},
 }
 

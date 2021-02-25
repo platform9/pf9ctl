@@ -1,13 +1,18 @@
 package pmk
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var ErrConfigurationDetailsNotProvided = errors.New("config not set,....")
@@ -23,6 +28,23 @@ type Config struct {
 	AllowInsecure bool          `json:"allow_insecure"`
 }
 
+/*var (
+	homeDir, _ = os.UserHomeDir()
+	//Pf9Dir is the base pf9dir
+	Pf9Dir = filepath.Join(homeDir, "pf9")
+	//Pf9LogDir is the base path for creating log dir
+	Pf9LogDir = filepath.Join(Pf9Dir, "log")
+	// Pf9DBDir is the base dir for storing pf9 db config
+	Pf9DBDir = filepath.Join(Pf9Dir, "db")
+	// Pf9DBLoc represents location of the config file.
+	Pf9DBLoc = filepath.Join(Pf9DBDir, "config.json")
+	// Pf9Log represents location of the log.
+	Pf9Log = filepath.Join(Pf9LogDir, "pf9ctl.log")
+	// WaitPeriod is the sleep period for the cli
+	// before it starts with the operations.
+	WaitPeriod = time.Duration(60)
+)*/
+
 // StoreConfig simply updates the in-memory object
 func StoreConfig(ctx Config, loc string) error {
 	zap.S().Info("Storing configuration details")
@@ -37,6 +59,7 @@ func StoreConfig(ctx Config, loc string) error {
 
 	encoder := json.NewEncoder(f)
 	return encoder.Encode(ctx)
+
 }
 
 // LoadConfig returns the information for communication with PF9 controller.
@@ -47,7 +70,10 @@ func LoadConfig(loc string) (Config, error) {
 	if err != nil {
 
 		if os.IsNotExist(err) {
-			return Config{}, ErrConfigurationDetailsNotProvided
+			// to initiate the config create and store it
+			ctx := ConfigCmdCreateRun()
+			err := StoreConfig(ctx, util.Pf9DBLoc)
+			return ctx, err
 		}
 		return Config{}, err
 	}
@@ -65,4 +91,52 @@ func LoadConfig(loc string) (Config, error) {
 	ctx.Password = string(decodedBytePassword)
 
 	return ctx, err
+}
+
+// ConfigCmdCreatRun will initiate the config set and return a config given by user
+func ConfigCmdCreateRun() Config {
+
+	zap.S().Info("==========Running set config==========")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Printf("Platform9 Account URL: ")
+	fqdn, _ := reader.ReadString('\n')
+	fqdn = strings.TrimSuffix(fqdn, "\n")
+
+	fmt.Printf("Username: ")
+	username, _ := reader.ReadString('\n')
+	username = strings.TrimSuffix(username, "\n")
+
+	fmt.Printf("Password: ")
+	passwordBytes, _ := terminal.ReadPassword(0)
+	password := string(passwordBytes)
+
+	fmt.Printf("\nRegion [RegionOne]: ")
+	region, _ := reader.ReadString('\n')
+	region = strings.TrimSuffix(region, "\n")
+
+	fmt.Printf("Tenant [service]: ")
+	service, _ := reader.ReadString('\n')
+	service = strings.TrimSuffix(service, "\n")
+
+	if region == "" {
+		region = "RegionOne"
+	}
+
+	if service == "" {
+		service = "service"
+	}
+
+	ctx := Config{
+		Fqdn:          fqdn,
+		Username:      username,
+		Password:      password,
+		Region:        region,
+		Tenant:        service,
+		WaitPeriod:    time.Duration(60),
+		AllowInsecure: false,
+	}
+	return ctx
+
 }
