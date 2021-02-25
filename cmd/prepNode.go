@@ -79,16 +79,11 @@ func checkAndValidateRemote() bool {
 				user = strings.TrimSpace(user)
 			}
 			if sshKey == "" && password == "" {
-				/*fmt.Printf("Enter Password: ")
-				passwordBytes, _ := terminal.ReadPassword(0)
-				password = string(passwordBytes)*/
 				var choice int
 				fmt.Println("You can choose either password or sshKey")
-				//fmt.Println("Please enter your choice (password/ssh)")
 				fmt.Println("Enter 1 for password and 2 for sshKey")
 				fmt.Print("Enter Option : ")
 				fmt.Scanf("%d", &choice)
-				//choice = strings.ToLower(choice)
 				switch choice {
 					case 1:
 						fmt.Printf("Enter Password: ")
