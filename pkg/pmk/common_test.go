@@ -2,12 +2,14 @@ package pmk
 
 import (
 	"fmt"
-	"github.com/platform9/pf9ctl/pkg/cmdexec"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/stretchr/testify/assert"
 )
 
 const content = `UUID=device_UUID none swap defaults 0 0
@@ -22,50 +24,86 @@ UUID=device_UUID none somethingelse defaults 0 0
   
 `
 
+// TestFsTabEdit tests the
 func TestFsTabEdit(t *testing.T) {
-	logger, _ := zap.NewDevelopment()
-	zap.ReplaceGlobals(logger)
-
-	expectedContent := "#" + content
-	tmpFile, err := ioutil.TempFile("/tmp", "pf9ctl_common_test")
-	if err != nil {
-		t.Errorf("Error creating a tempfile %s", err)
+	type want struct {
+		err                 error
+		expectedFileContent string
 	}
-	defer os.Remove(tmpFile.Name())
-
-	_, err = tmpFile.Write([]byte(content))
-	if err != nil {
-		t.Errorf("Error writing to temp file %s", err)
+	type args struct {
+		exec cmdexec.Executor
 	}
-	err = tmpFile.Close()
-	if err != nil {
-		t.Errorf("Error writing to temp file %s", err)
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case, successfull substitution of linesin the file
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						o, err := exec.Command(name, args...).Output()
+						return string(o), err
+					},
+				},
+			},
+			want: want{
+				err:                 nil,
+				expectedFileContent: "#" + content,
+			},
+		},
+		//Failure case, file operation failure
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "", &os.PathError{}
+					},
+				},
+			},
+			want: want{
+				err:                 &os.PathError{},
+				expectedFileContent: content,
+			},
+		},
 	}
 
-	// also remove the .bak file we create
-	defer os.Remove(tmpFile.Name() + ".bak")
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			tmpFile, err := ioutil.TempFile("/tmp", "pf9ctl_common_test")
+			if err != nil {
+				t.Errorf("Error creating a tempfile %s", err)
+			}
+			defer os.Remove(tmpFile.Name())
 
-	executor := cmdexec.LocalExecutor{}
-	err = swapOffFstab(executor, tmpFile.Name())
-	if err != nil {
-		t.Errorf("Error editing fstab %s", err)
+			_, err = tmpFile.Write([]byte(content))
+			if err != nil {
+				t.Errorf("Error writing to temp file %s", err)
+			}
+			err = tmpFile.Close()
+			if err != nil {
+				t.Errorf("Error writing to temp file %s", err)
+			}
+			defer os.Remove(tmpFile.Name() + ".bak")
+
+			// Check the error, return in case of failure
+			err = swapOffFstab(tc.args.exec, tmpFile.Name())
+			assert.Equal(t, tc.want.err, err)
+
+			readContentBytes, err := ioutil.ReadFile(tmpFile.Name())
+			if err != nil {
+				t.Errorf("Error reading the tmpFile after editing the fstab")
+			}
+
+			readContent := string(readContentBytes)
+
+			// Check the file content
+			if diff := cmp.Diff(tc.want.expectedFileContent, readContent); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+
+		})
 	}
-
-	// now read the file and compare the content
-
-	readContentBytes, err := ioutil.ReadFile(tmpFile.Name())
-	if err != nil {
-		t.Errorf("Error reading the tmpFile after editing the fstab")
-	}
-
-	readContent := string(readContentBytes)
-
-	if readContent != expectedContent {
-		t.Log("Expected:", expectedContent)
-		t.Log("ReadContent:", readContent)
-		t.Errorf("Test failed,content mistmatch")
-	}
-
 }
 
 //SwapOff test case
