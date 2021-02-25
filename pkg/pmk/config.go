@@ -28,23 +28,6 @@ type Config struct {
 	AllowInsecure bool          `json:"allow_insecure"`
 }
 
-/*var (
-	homeDir, _ = os.UserHomeDir()
-	//Pf9Dir is the base pf9dir
-	Pf9Dir = filepath.Join(homeDir, "pf9")
-	//Pf9LogDir is the base path for creating log dir
-	Pf9LogDir = filepath.Join(Pf9Dir, "log")
-	// Pf9DBDir is the base dir for storing pf9 db config
-	Pf9DBDir = filepath.Join(Pf9Dir, "db")
-	// Pf9DBLoc represents location of the config file.
-	Pf9DBLoc = filepath.Join(Pf9DBDir, "config.json")
-	// Pf9Log represents location of the log.
-	Pf9Log = filepath.Join(Pf9LogDir, "pf9ctl.log")
-	// WaitPeriod is the sleep period for the cli
-	// before it starts with the operations.
-	WaitPeriod = time.Duration(60)
-)*/
-
 // StoreConfig simply updates the in-memory object
 func StoreConfig(ctx Config, loc string) error {
 	zap.S().Info("Storing configuration details")
