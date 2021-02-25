@@ -23,6 +23,11 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 
 	zap.S().Debug("Received a call to check node.")
 
+	isSudo := checkSudo(allClients.Executor)
+	if !isSudo {
+		return false, fmt.Errorf("User executing this CLI is not allowed to switch to privileged (sudo) mode")
+	}
+
 	os, err := validatePlatform(allClients.Executor)
 	if err != nil {
 		return false, err
@@ -72,7 +77,7 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf("%s : %s\n", check.Name, checkFail)
+			fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
 			result = false
 		}
 
@@ -82,7 +87,5 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 		}
 	}
 
-	// Segment events get posted from it's queue only after closing the client.
-	allClients.Segment.Close()
 	return result, nil
 }

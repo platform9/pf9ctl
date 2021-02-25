@@ -3,6 +3,10 @@ package pmk
 
 import (
 	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/platform"
@@ -10,9 +14,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
-	"net/http"
-	"strings"
-	"time"
 )
 
 // Sends an event to segment based on the input string and uses auth as keystone UUID property.
@@ -20,8 +21,6 @@ func sendSegmentEvent(allClients Client, eventStr string, auth keystone.Keystone
 	if err := allClients.Segment.SendEvent("Prep-node : "+eventStr, auth); err != nil {
 		zap.S().Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
 	}
-	// Segment events get posted from it's queue only after closing the client.
-	allClients.Segment.Close()
 }
 
 // PrepNode sets up prerequisites for k8s stack
@@ -233,4 +232,9 @@ func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS strin
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
 	zap.S().Info("Hostagent installed successfully")
 	return nil
+}
+
+func checkSudo(exec cmdexec.Executor) bool {
+	_, err := exec.RunWithStdout("-l")
+	return err == nil
 }
