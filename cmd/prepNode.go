@@ -88,9 +88,24 @@ func checkAndValidateRemote() bool {
 				user = strings.TrimSpace(user)
 			}
 			if sshKey == "" && password == "" {
-				fmt.Printf("Enter Password: ")
-				passwordBytes, _ := terminal.ReadPassword(0)
-				password = string(passwordBytes)
+				var choice int
+				fmt.Println("You can choose either password or sshKey")
+				fmt.Println("Enter 1 for password and 2 for sshKey")
+				fmt.Print("Enter Option : ")
+				fmt.Scanf("%d", &choice)
+				switch choice {
+					case 1:
+						fmt.Printf("Enter Password: ")
+						passwordBytes, _ := terminal.ReadPassword(0)
+						password = string(passwordBytes)
+					case 2:
+						fmt.Printf("Enter sshKey: ")
+						reader := bufio.NewReader(os.Stdin)
+						sshKey, _ = reader.ReadString('\n')
+						sshKey = strings.TrimSpace(sshKey)
+					default:
+						zap.S().Fatalf("Wrong choice please try again")
+				}
 				fmt.Printf("\n")
 			}
 			foundRemote = true
