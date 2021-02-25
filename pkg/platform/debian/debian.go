@@ -77,9 +77,11 @@ func (d *Debian) checkOSPackages() (bool, error) {
 		if err != nil {
 			zap.S().Debugf("Package %s not found, trying to install", p)
 			if err = d.installOSPackages(p); err != nil {
+				zap.S().Debugf("Error installing package %s: %s", p, err)
 				errLines = append(errLines, p)
+			} else {
+				zap.S().Infof("Missing package %s installed", p)
 			}
-			zap.S().Infof("Missing package %s installed", p)
 		}
 	}
 
@@ -236,12 +238,12 @@ func (d *Debian) Version() (string, error) {
 
 func (d *Debian) installOSPackages(p string) error {
 	zap.S().Debug("Trying apt update...")
-	_, err := d.exec.RunWithStdout("bash", "-c", "apt update")
+	_, err := d.exec.RunWithStdout("bash", "-c", "apt update -qq")
 	if err != nil {
 		return err
 	}
 
 	zap.S().Debugf("Trying to install package %s", p)
-	_, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("apt install -y %s", p))
+	_, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("apt install -qq -y %s", p))
 	return nil
 }

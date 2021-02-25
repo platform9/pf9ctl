@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	packages            = []string{"curl"}
+	packages            = []string{"ntp", "curl"}
 	packageInstallError = "Packages not found and could not be installed"
 )
 
@@ -78,9 +78,11 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 		if err != nil {
 			zap.S().Debugf("Package %s not found, trying to install", p)
 			if err = c.installOSPackages(p); err != nil {
+				zap.S().Debugf("Error installing package %s: %s", p, err)
 				errLines = append(errLines, p)
+			} else {
+				zap.S().Infof("Missing package %s installed", p)
 			}
-			zap.S().Infof("Missing package %s installed", p)
 		}
 	}
 
@@ -236,13 +238,13 @@ func (c *CentOS) Version() (string, error) {
 }
 
 func (c *CentOS) installOSPackages(p string) error {
-	zap.S().Debug("Trying apt update...")
-	_, err := c.exec.RunWithStdout("bash", "-c", "yum update -y")
+	zap.S().Debug("Trying yum update...")
+	_, err := c.exec.RunWithStdout("bash", "-c", "yum update -y -q")
 	if err != nil {
 		return err
 	}
 
 	zap.S().Debugf("Trying to install package %s", p)
-	_, err = c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("yum -y install %s", p))
+	_, err = c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("yum -q -y install %s", p))
 	return nil
 }
