@@ -54,6 +54,7 @@ func LoadConfig(loc string) (Config, error) {
 
 		if os.IsNotExist(err) {
 			// to initiate the config create and store it
+			zap.S().Info("Existing config not found, prompting for new config.")
 			ctx := ConfigCmdCreateRun()
 			err := StoreConfig(ctx, util.Pf9DBLoc)
 			return ctx, err
