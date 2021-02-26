@@ -96,6 +96,15 @@ cat << "EOF"
 EOF
 }
 
+checkOS_version() {
+    cat /etc/*release &>/dev/null
+    if [ $? != 0 ];
+    then
+        echo "This OS is not supported."
+        exit
+    fi
+}
+
 ##main
 
 pf9_basedir=$(dirname ~/pf9/.)
@@ -105,6 +114,7 @@ pf9_state_dirs="${pf9_bin} ${pf9_basedir}/db ${pf9_basedir}/log"
 cli_exec=${pf9_bin}/pf9ctl
 cli_path="https://pmkft-assets.s3-us-west-1.amazonaws.com/pf9ctl"
 
+checkOS_version
 print_pf9_logo
 initialize_basedir
 download_cli_binary
