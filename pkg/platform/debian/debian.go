@@ -71,11 +71,13 @@ func (d *Debian) checkExistingInstallation() (bool, error) {
 func (d *Debian) checkOSPackages() (bool, error) {
 
 	errLines := []string{packageInstallError}
+	zap.S().Info("Checking OS Packages")
 
 	for _, p := range packages {
 		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg -l %s", p))
 		if err != nil {
 			zap.S().Debugf("Package %s not found, trying to install", p)
+			zap.S().Info("Installing missing packages, this may take a few minutes")
 			if err = d.installOSPackages(p); err != nil {
 				zap.S().Debugf("Error installing package %s: %s", p, err)
 				errLines = append(errLines, p)
