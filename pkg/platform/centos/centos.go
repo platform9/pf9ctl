@@ -203,7 +203,7 @@ func (c *CentOS) checkPort() (bool, error) {
 
 	if len(intersection) != 0 {
 		zap.S().Debug("Ports required but not available: ", intersection)
-		ports_list := strings.Join(intersection[:], ",")
+		ports_list := strings.Join(intersection[:], ", ")
 		return false, fmt.Errorf("Following port(s) should not be in use: %s", ports_list)
 	}
 
