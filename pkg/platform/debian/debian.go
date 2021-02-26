@@ -53,7 +53,7 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"MemoryCheck", result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
 
 	result, err = d.checkPort()
-	checks = append(checks, platform.Check{"PortCheck", result, err, err.Error()})
+	checks = append(checks, platform.Check{"PortCheck", result, err, fmt.Sprintf("%s", err)})
 
 	return checks
 }
