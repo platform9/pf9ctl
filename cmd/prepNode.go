@@ -62,18 +62,27 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 	defer c.Segment.Close()
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	ch, err := pmk.CheckNode(ctx, c)
+	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
-		zap.S().Fatalf("Pre-requisite check(s) failed %s\n", err.Error())
+		zap.S().Fatalf("\nPre-requisite check(s) failed %s\n", err.Error())
 	}
-	if ch {
-		if err := pmk.PrepNode(ctx, c); err != nil {
-			c.Segment.SendEvent("Prep Node - Failed", err)
-			zap.S().Fatalf("Unable to prep node: %s\n", err.Error())
-		}
+	if result == pmk.RequiredFail {
+		fmt.Println("\nRequired pre-requisite check(s) failed.")
+		return
 	} else {
-		zap.S().Fatalf("Pre-requisite check(s) failed.\n")
+		fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
+		reader := bufio.NewReader(os.Stdin)
+		char, _, _ := reader.ReadRune()
+		if char != 'y' {
+			return
+		}
 	}
+
+	if err := pmk.PrepNode(ctx, c); err != nil {
+		c.Segment.SendEvent("Prep Node - Failed", err)
+		zap.S().Fatalf("Unable to prep node: %s\n", err.Error())
+	}
+
 	zap.S().Debug("==========Finished running prep-node==========")
 }
 
@@ -96,17 +105,17 @@ func checkAndValidateRemote() bool {
 				fmt.Print("Enter Option : ")
 				fmt.Scanf("%d", &choice)
 				switch choice {
-					case 1:
-						fmt.Printf("Enter password for remote host: ")
-						passwordBytes, _ := terminal.ReadPassword(0)
-						password = string(passwordBytes)
-					case 2:
-						fmt.Printf("Enter private sshKey: ")
-						reader := bufio.NewReader(os.Stdin)
-						sshKey, _ = reader.ReadString('\n')
-						sshKey = strings.TrimSpace(sshKey)
-					default:
-						zap.S().Fatalf("Wrong choice please try again")
+				case 1:
+					fmt.Printf("Enter password for remote host: ")
+					passwordBytes, _ := terminal.ReadPassword(0)
+					password = string(passwordBytes)
+				case 2:
+					fmt.Printf("Enter private sshKey: ")
+					reader := bufio.NewReader(os.Stdin)
+					sshKey, _ = reader.ReadString('\n')
+					sshKey = strings.TrimSpace(sshKey)
+				default:
+					zap.S().Fatalf("Wrong choice please try again")
 				}
 				fmt.Printf("\n")
 			}
