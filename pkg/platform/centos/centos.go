@@ -33,28 +33,28 @@ func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
 	result, err := c.removePyCli()
-	checks = append(checks, platform.Check{"Removal of existing CLI", result, err, util.PyCliErr})
+	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
 	result, err = c.checkExistingInstallation()
-	checks = append(checks, platform.Check{"Existing Installation Check", result, err, util.ExisitngInstallationErr})
+	checks = append(checks, platform.Check{"Existing Installation Check", true, result, err, util.ExisitngInstallationErr})
 
 	result, err = c.checkOSPackages()
-	checks = append(checks, platform.Check{"OS Packages Check", result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
+	checks = append(checks, platform.Check{"OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
 
 	result, err = c.checkSudo()
-	checks = append(checks, platform.Check{"SudoCheck", result, err, util.SudoErr})
+	checks = append(checks, platform.Check{"SudoCheck", true, result, err, util.SudoErr})
 
 	result, err = c.checkCPU()
-	checks = append(checks, platform.Check{"CPUCheck", result, err, fmt.Sprintf("%s %s", util.CPUErr, err)})
+	checks = append(checks, platform.Check{"CPUCheck", false, result, err, fmt.Sprintf("%s %s", util.CPUErr, err)})
 
 	result, err = c.checkDisk()
-	checks = append(checks, platform.Check{"DiskCheck", result, err, fmt.Sprintf("%s %s", util.DiskErr, err)})
+	checks = append(checks, platform.Check{"DiskCheck", false, result, err, fmt.Sprintf("%s %s", util.DiskErr, err)})
 
 	result, err = c.checkMem()
-	checks = append(checks, platform.Check{"MemoryCheck", result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
+	checks = append(checks, platform.Check{"MemoryCheck", false, result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
 
 	result, err = c.checkPort()
-	checks = append(checks, platform.Check{"PortCheck", result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
 	return checks
 }

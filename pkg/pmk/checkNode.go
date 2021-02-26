@@ -18,19 +18,27 @@ const (
 	checkFail = "FAIL"
 )
 
+type CheckNodeResult string
+
+const (
+	PASS         CheckNodeResult = "pass"
+	RequiredFail CheckNodeResult = "requiredFail"
+	OptionalFail CheckNodeResult = "optionalFail"
+)
+
 // CheckNode checks the prerequisites for k8s stack
-func CheckNode(ctx Config, allClients Client) (bool, error) {
+func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 
 	zap.S().Debug("Received a call to check node.")
 
 	isSudo := checkSudo(allClients.Executor)
 	if !isSudo {
-		return false, fmt.Errorf("User executing this CLI is not allowed to switch to privileged (sudo) mode")
+		return RequiredFail, fmt.Errorf("User executing this CLI is not allowed to switch to privileged (sudo) mode")
 	}
 
 	os, err := validatePlatform(allClients.Executor)
 	if err != nil {
-		return false, err
+		return RequiredFail, err
 	}
 
 	var platform platform.Platform
@@ -56,13 +64,14 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 		// So parsing the err to check for certificate expiration.
 		if strings.Contains(strings.ToLower(err.Error()), util.CertsExpireErr) {
 
-			return false, fmt.Errorf("Possible clock skew detected. Check the system time and retry.")
+			return RequiredFail, fmt.Errorf("Possible clock skew detected. Check the system time and retry.")
 		}
-		return false, fmt.Errorf("Unable to obtain keystone credentials: %s", err.Error())
+		return RequiredFail, fmt.Errorf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 
 	checks := platform.Check()
-	result := true
+	mandatoryCheck := true
+	optionalCheck := true
 
 	fmt.Printf("\n\n")
 	for _, check := range checks {
@@ -78,14 +87,24 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
 			fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
-			result = false
+			if check.Mandatory {
+				mandatoryCheck = false
+			} else {
+				optionalCheck = false
+			}
 		}
 
 		if check.Err != nil {
 			zap.S().Debugf("Error in %s : %s", check.Name, check.Err)
-			result = false
 		}
 	}
 
-	return result, nil
+	if !mandatoryCheck {
+		return RequiredFail, nil
+	} else if !optionalCheck {
+		return OptionalFail, nil
+	} else {
+		return PASS, nil
+	}
+
 }
