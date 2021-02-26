@@ -97,9 +97,9 @@ EOF
 
 checkOS_version() {
     cat /etc/*release &>/dev/null
-    if [ $? -eq 1 ];
+    if [ $? != 0 ];
     then
-        echo "This OS is not supported"
+        echo "This OS is not supported."
         exit
     fi
 }
