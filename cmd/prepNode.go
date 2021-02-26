@@ -84,7 +84,7 @@ func checkAndValidateRemote() bool {
 		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
 			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
 			if user == "" {
-				fmt.Printf("Enter remote machines username: ")
+				fmt.Printf("Enter username for remote host: ")
 				reader := bufio.NewReader(os.Stdin)
 				user, _ = reader.ReadString('\n')
 				user = strings.TrimSpace(user)
@@ -97,11 +97,11 @@ func checkAndValidateRemote() bool {
 				fmt.Scanf("%d", &choice)
 				switch choice {
 					case 1:
-						fmt.Printf("Enter remote machines password: ")
+						fmt.Printf("Enter password for remote host: ")
 						passwordBytes, _ := terminal.ReadPassword(0)
 						password = string(passwordBytes)
 					case 2:
-						fmt.Printf("Enter sshKey: ")
+						fmt.Printf("Enter private sshKey: ")
 						reader := bufio.NewReader(os.Stdin)
 						sshKey, _ = reader.ReadString('\n')
 						sshKey = strings.TrimSpace(sshKey)
