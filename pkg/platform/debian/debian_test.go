@@ -227,7 +227,7 @@ func TestPort(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &Debian{exec: tc.exec}
-			o, err := c.checkPort()
+			o, _, err := c.checkPort()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)

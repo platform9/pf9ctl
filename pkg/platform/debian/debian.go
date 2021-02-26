@@ -52,8 +52,8 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkMem()
 	checks = append(checks, platform.Check{"MemoryCheck", result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
 
-	result, err = d.checkPort()
-	checks = append(checks, platform.Check{"PortCheck", result, err, util.PortErr})
+	result, ports, err := d.checkPort()
+	checks = append(checks, platform.Check{"PortCheck", result, err, util.PortErr + "[" + ports + "]"})
 
 	return checks
 }
@@ -178,7 +178,7 @@ func (d *Debian) checkDisk() (bool, error) {
 	return false, fmt.Errorf("Available disk space: %.0f GB", math.Trunc(avail/util.GB))
 }
 
-func (d *Debian) checkPort() (bool, error) {
+func (d *Debian) checkPort() (bool, string, error) {
 	var arg string
 
 	// For remote execution the command is wrapped under quotes ("") which creates
@@ -193,7 +193,7 @@ func (d *Debian) checkPort() (bool, error) {
 
 	openPorts, err := d.exec.RunWithStdout("bash", "-c", arg)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	openPortsArray := strings.Split(string(openPorts), "\n")
@@ -202,10 +202,11 @@ func (d *Debian) checkPort() (bool, error) {
 
 	if len(intersection) != 0 {
 		zap.S().Debug("Ports required but not available: ", intersection)
-		return false, nil
+                ports_list := strings.Join(intersection[:], ",")
+                return false, ports_list, nil
 	}
 
-	return true, nil
+	return true, "", nil
 }
 
 func (d *Debian) removePyCli() (bool, error) {
