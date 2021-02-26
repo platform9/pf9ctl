@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -65,8 +64,7 @@ var (
 )
 
 func init() {
-	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "8285"}
-	PortErr = fmt.Sprintf("Ports required to be available %s", RequiredPorts)
+	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "8285", "3306"}
 }
 
 //This is the current version of cli.

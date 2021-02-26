@@ -54,7 +54,7 @@ func (c *CentOS) Check() []platform.Check {
 	checks = append(checks, platform.Check{"MemoryCheck", result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
 
 	result, err = c.checkPort()
-	checks = append(checks, platform.Check{"PortCheck", result, err, util.PortErr})
+	checks = append(checks, platform.Check{"PortCheck", result, err, err.Error()})
 
 	return checks
 }
@@ -205,7 +205,8 @@ func (c *CentOS) checkPort() (bool, error) {
 
 	if len(intersection) != 0 {
 		zap.S().Debug("Ports required but not available: ", intersection)
-		return false, nil
+		ports_list := strings.Join(intersection[:], ", ")
+		return false, fmt.Errorf("Following port(s) should not be in use: %s", ports_list)
 	}
 
 	return true, nil
