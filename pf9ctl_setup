@@ -74,6 +74,7 @@ check_installation() {
 
 download_cli_binary() {
 	echo "Note: SUDO access required to run Platform9 CLI."
+    echo "      You might be prompted for your SUDO password."
 	echo ""
 	echo "Downloading Platform9 CLI binary..."
 	sudo rm ${cli_exec} 2> /dev/null
@@ -116,6 +117,6 @@ debugging "Platform9 CLI installation completed successfully."
 echo "Platform9 CLI installation completed successfully !"
 echo ""
 echo "To start building a Kubernetes cluster execute:"
-echo "        ${cli_exec} help"
+echo "        pf9ctl help"
 echo ""
 #eval "${cli_exec}" help
