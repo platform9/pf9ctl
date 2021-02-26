@@ -72,6 +72,7 @@ func (c *CentOS) checkExistingInstallation() (bool, error) {
 func (c *CentOS) checkOSPackages() (bool, error) {
 
 	errLines := []string{packageInstallError}
+	zap.S().Info("Checking OS Packages")
 
 	for _, p := range packages {
 		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))

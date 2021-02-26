@@ -71,6 +71,7 @@ func (d *Debian) checkExistingInstallation() (bool, error) {
 func (d *Debian) checkOSPackages() (bool, error) {
 
 	errLines := []string{packageInstallError}
+	zap.S().Info("Checking OS Packages")
 
 	for _, p := range packages {
 		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg -l %s", p))
