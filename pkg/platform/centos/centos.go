@@ -77,6 +77,7 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	for _, p := range packages {
 		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
 		if err != nil {
+			zap.S().Info("Installing missing packages, this may take a few minutes")
 			zap.S().Debugf("Package %s not found, trying to install", p)
 			if err = c.installOSPackages(p); err != nil {
 				zap.S().Debugf("Error installing package %s: %s", p, err)
