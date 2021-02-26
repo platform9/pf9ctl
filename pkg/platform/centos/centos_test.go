@@ -246,7 +246,6 @@ func TestSudo(t *testing.T) {
 func TestPort(t *testing.T) {
 	type want struct {
 		result bool
-		err    error
 	}
 
 	cases := map[string]struct {
@@ -286,11 +285,8 @@ func TestPort(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, _, err := c.checkPort()
+			o, _ := c.checkPort()
 
-			if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("r: -want, +got:\n%s", diff)
-			}
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
 			}

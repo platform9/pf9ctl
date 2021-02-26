@@ -53,8 +53,8 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.checkMem()
 	checks = append(checks, platform.Check{"MemoryCheck", result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
 
-	result, ports, err := c.checkPort()
-	checks = append(checks, platform.Check{"PortCheck", result, err, util.PortErr + "[" + ports + "]"})
+	result, err = c.checkPort()
+	checks = append(checks, platform.Check{"PortCheck", result, err, err.Error()})
 
 	return checks
 }
@@ -179,7 +179,7 @@ func (c *CentOS) checkDisk() (bool, error) {
 	return false, fmt.Errorf("Available disk space: %.0f GB", math.Trunc(avail/util.GB))
 }
 
-func (c *CentOS) checkPort() (bool, string, error) {
+func (c *CentOS) checkPort() (bool, error) {
 	var arg string
 
 	// For remote execution the command is wrapped under quotes ("") which creates
@@ -194,7 +194,7 @@ func (c *CentOS) checkPort() (bool, string, error) {
 
 	openPorts, err := c.exec.RunWithStdout("bash", "-c", arg)
 	if err != nil {
-		return false,"", err
+		return false, err
 	}
 
 	openPortsArray := strings.Split(string(openPorts), "\n")
@@ -204,10 +204,10 @@ func (c *CentOS) checkPort() (bool, string, error) {
 	if len(intersection) != 0 {
 		zap.S().Debug("Ports required but not available: ", intersection)
 		ports_list := strings.Join(intersection[:], ",")
-		return false, ports_list, nil
+		return false, fmt.Errorf("Following port(s) should not be in use: %s", ports_list)
 	}
 
-	return true, "", nil
+	return true, nil
 }
 
 func (c *CentOS) removePyCli() (bool, error) {
