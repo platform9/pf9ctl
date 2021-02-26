@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -46,26 +47,56 @@ func init() {
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running prep-node==========")
-	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
-	if err != nil {
-		zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
+
+	var (
+		ctx  pmk.Config
+		c    pmk.Client
+		err  error
+		auth keystone.KeystoneAuth
+		flag = true
+	)
+
+	for flag {
+		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
+		if err != nil {
+			zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
+		}
+		// TODO: there seems to be a bug, we will need multiple executors one per ip, so at this moment
+		// it will only work with one remote host
+		executor, err := getExecutor()
+		if err != nil {
+			zap.S().Fatalf("Error connecting to host %s", err.Error())
+		}
+		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+		if err != nil {
+			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+		}
+		defer c.Segment.Close()
+
+		zap.S().Debug("==========Validating the User Credentials==========")
+
+		auth, err = c.Keystone.GetAuth(
+			ctx.Username,
+			ctx.Password,
+			ctx.Tenant,
+		)
+
+		if err != nil {
+			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+		} else {
+			if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
+				zap.S().Errorf("Failed to store config: %s", err.Error())
+			}
+			flag = false
+		}
 	}
-	// TODO: there seems to be a bug, we will need multiple executors one per ip, so at this moment
-	// it will only work with one remote host
-	executor, err := getExecutor()
-	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s", err.Error())
-	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-	if err != nil {
-		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-	}
-	defer c.Segment.Close()
+
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	ch, err := pmk.CheckNode(ctx, c)
+	ch, err := pmk.CheckNode(ctx, c, auth)
 	if err != nil {
 		zap.S().Fatalf("Pre-requisite check(s) failed %s\n", err.Error())
 	}
+
 	if ch {
 		if err := pmk.PrepNode(ctx, c); err != nil {
 			c.Segment.SendEvent("Prep Node - Failed", err)
@@ -96,17 +127,17 @@ func checkAndValidateRemote() bool {
 				fmt.Print("Enter Option : ")
 				fmt.Scanf("%d", &choice)
 				switch choice {
-					case 1:
-						fmt.Printf("Enter password for remote host: ")
-						passwordBytes, _ := terminal.ReadPassword(0)
-						password = string(passwordBytes)
-					case 2:
-						fmt.Printf("Enter private sshKey: ")
-						reader := bufio.NewReader(os.Stdin)
-						sshKey, _ = reader.ReadString('\n')
-						sshKey = strings.TrimSpace(sshKey)
-					default:
-						zap.S().Fatalf("Wrong choice please try again")
+				case 1:
+					fmt.Printf("Enter password for remote host: ")
+					passwordBytes, _ := terminal.ReadPassword(0)
+					password = string(passwordBytes)
+				case 2:
+					fmt.Printf("Enter private sshKey: ")
+					reader := bufio.NewReader(os.Stdin)
+					sshKey, _ = reader.ReadString('\n')
+					sshKey = strings.TrimSpace(sshKey)
+				default:
+					zap.S().Fatalf("Wrong choice please try again")
 				}
 				fmt.Printf("\n")
 			}

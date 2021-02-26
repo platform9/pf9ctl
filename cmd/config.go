@@ -23,7 +23,43 @@ var configCmdCreate = &cobra.Command{
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
 	// invoked the configcreate command from pkg/pmk
-	if err := pmk.StoreConfig(pmk.ConfigCmdCreateRun(), util.Pf9DBLoc); err != nil {
+
+	var (
+		flag = true
+		ctx  pmk.Config
+	)
+
+	for flag {
+		ctx, _ = pmk.ConfigCmdCreateRun()
+		executor, err := getExecutor()
+		if err != nil {
+			zap.S().Fatalf("Error connecting to host %s", err.Error())
+		}
+		c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+		if err != nil {
+			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+		}
+
+		defer c.Segment.Close()
+
+		zap.S().Debug("==========Validating the User Credentials==========")
+
+		_, err = c.Keystone.GetAuth(
+			ctx.Username,
+			ctx.Password,
+			ctx.Tenant,
+		)
+
+		if err != nil {
+			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+		} else {
+			if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
+				zap.S().Errorf("Failed to store config: %s", err.Error())
+			}
+			flag = false
+		}
+	}
+	if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
 		zap.S().Errorf("Failed to store config: %s", err.Error())
 	}
 	zap.S().Debug("==========Finished running set config==========")

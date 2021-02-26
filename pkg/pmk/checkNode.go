@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
@@ -19,7 +20,7 @@ const (
 )
 
 // CheckNode checks the prerequisites for k8s stack
-func CheckNode(ctx Config, allClients Client) (bool, error) {
+func CheckNode(ctx Config, allClients Client, auth keystone.KeystoneAuth) (bool, error) {
 
 	zap.S().Debug("Received a call to check node.")
 
@@ -43,11 +44,11 @@ func CheckNode(ctx Config, allClients Client) (bool, error) {
 
 	// Fetch the keystone token.
 	// This is used as a reference to the segment event.
-	auth, err := allClients.Keystone.GetAuth(
+	/*auth, err := allClients.Keystone.GetAuth(
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
-	)
+	)*/
 
 	if err != nil {
 		// Certificate expiration is detected by the http library and

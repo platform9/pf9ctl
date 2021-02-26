@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -32,27 +33,53 @@ func init() {
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
-	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
-	if err != nil {
-		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
-	}
 
-	executor, err := getExecutor()
-	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s", err.Error())
-	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-	if err != nil {
-		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-	}
+	var (
+		ctx  pmk.Config
+		c    pmk.Client
+		err  error
+		auth keystone.KeystoneAuth
+		flag = true
+	)
 
-	defer c.Segment.Close()
+	for flag {
+		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
+		if err != nil {
+			zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+		}
 
-	result, err := pmk.CheckNode(ctx, c)
+		executor, err := getExecutor()
+		if err != nil {
+			zap.S().Fatalf("Error connecting to host %s", err.Error())
+		}
+		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+		if err != nil {
+			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+		}
+
+		defer c.Segment.Close()
+
+		zap.S().Debug("==========Validating the User Credentials==========")
+
+		auth, err = c.Keystone.GetAuth(
+			ctx.Username,
+			ctx.Password,
+			ctx.Tenant,
+		)
+
+		if err != nil {
+			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+		} else {
+			if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
+				zap.S().Errorf("Failed to store config: %s", err.Error())
+			}
+			flag = false
+		}
+	}
+	result, err := pmk.CheckNode(ctx, c, auth)
 	if err != nil {
 		zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
 	}
-
 	if !result {
 		fmt.Printf("\nPre-requisite checks failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 		zap.S().Debugf("Pre-requisite checks failed. See %s or use --verbose for logs", log.GetLogLocation(util.Pf9Log))

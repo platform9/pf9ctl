@@ -10,12 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/platform9/pf9ctl/pkg/util"
+	//"github.com/platform9/pf9ctl/pkg/util"
+
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 var ErrConfigurationDetailsNotProvided = errors.New("config not set,....")
+
+var allClients Client
 
 // Config stores information to contact with the pf9 controller.
 type Config struct {
@@ -37,9 +40,7 @@ func StoreConfig(ctx Config, loc string) error {
 	if err != nil {
 		return err
 	}
-
 	defer f.Close()
-
 	encoder := json.NewEncoder(f)
 	return encoder.Encode(ctx)
 
@@ -55,8 +56,7 @@ func LoadConfig(loc string) (Config, error) {
 		if os.IsNotExist(err) {
 			// to initiate the config create and store it
 			zap.S().Info("Existing config not found, prompting for new config.")
-			ctx := ConfigCmdCreateRun()
-			err := StoreConfig(ctx, util.Pf9DBLoc)
+			ctx, err := ConfigCmdCreateRun()
 			return ctx, err
 		}
 		return Config{}, err
@@ -78,7 +78,7 @@ func LoadConfig(loc string) (Config, error) {
 }
 
 // ConfigCmdCreatRun will initiate the config set and return a config given by user
-func ConfigCmdCreateRun() Config {
+func ConfigCmdCreateRun() (Config, error) {
 
 	zap.S().Info("==========Running set config==========")
 
@@ -121,6 +121,41 @@ func ConfigCmdCreateRun() Config {
 		WaitPeriod:    time.Duration(60),
 		AllowInsecure: false,
 	}
-	return ctx
-
+	return ctx, nil
 }
+
+/*
+func ValidateCmdRun() (Config, Client) {
+
+	ctx, err := LoadConfig(util.Pf9DBLoc)
+	if err != nil {
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	}
+
+	executor, err := GetExecutor()
+	if err != nil {
+		zap.S().Fatalf("Error connecting to host %s", err.Error())
+	}
+	c, err := NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+	if err != nil {
+		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+	}
+
+	defer c.Segment.Close()
+
+	_, err = c.Keystone.GetAuth(
+		ctx.Username,
+		ctx.Password,
+		ctx.Tenant,
+	)
+
+	if err != nil {
+		zap.S().Fatalf("Invalid credentials(): %s", err.Error())
+	} else {
+		if err := StoreConfig(ctx, util.Pf9DBLoc); err != nil {
+			zap.S().Errorf("Failed to store config: %s", err.Error())
+		}
+	}
+   return ctx, c
+}
+*/
