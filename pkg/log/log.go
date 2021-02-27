@@ -12,7 +12,7 @@ import (
 
 // Returns the current log file location.
 func GetLogLocation(logFile string) string {
-	runLogLocation := fmt.Sprintf("%s-%s.%s", logFile[:strings.LastIndex(logFile, ".")], time.Now().Format("2006012"), logFile[strings.LastIndex(logFile, ".")+1:])
+	runLogLocation := fmt.Sprintf("%s-%s.%s", logFile[:strings.LastIndex(logFile, ".")], time.Now().Format("20060102"), logFile[strings.LastIndex(logFile, ".")+1:])
 	return runLogLocation
 }
 
