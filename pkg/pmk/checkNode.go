@@ -50,14 +50,6 @@ func CheckNode(ctx Config, allClients Client, auth keystone.KeystoneAuth) (Check
 		platform = centos.NewCentOS(allClients.Executor)
 	}
 
-	// Fetch the keystone token.
-	// This is used as a reference to the segment event.
-	/*auth, err := allClients.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-	)*/
-
 	if err != nil {
 		// Certificate expiration is detected by the http library and
 		// only error object gets populated, which means that the http

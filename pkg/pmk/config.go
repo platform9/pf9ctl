@@ -123,39 +123,3 @@ func ConfigCmdCreateRun() (Config, error) {
 	}
 	return ctx, nil
 }
-
-/*
-func ValidateCmdRun() (Config, Client) {
-
-	ctx, err := LoadConfig(util.Pf9DBLoc)
-	if err != nil {
-		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
-	}
-
-	executor, err := GetExecutor()
-	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s", err.Error())
-	}
-	c, err := NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-	if err != nil {
-		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-	}
-
-	defer c.Segment.Close()
-
-	_, err = c.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-	)
-
-	if err != nil {
-		zap.S().Fatalf("Invalid credentials(): %s", err.Error())
-	} else {
-		if err := StoreConfig(ctx, util.Pf9DBLoc); err != nil {
-			zap.S().Errorf("Failed to store config: %s", err.Error())
-		}
-	}
-   return ctx, c
-}
-*/

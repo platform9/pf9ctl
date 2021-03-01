@@ -39,10 +39,11 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		c    pmk.Client
 		err  error
 		auth keystone.KeystoneAuth
-		flag = true
+		// This flag helps us to loop-back the config set until the user enters valid credentials.
+		credentialsFlag = true
 	)
 
-	for flag {
+	for credentialsFlag {
 		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
 		if err != nil {
 			zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -61,19 +62,20 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 		zap.S().Debug("==========Validating the User Credentials==========")
 
+		// Validating the credentials enterd (Username, Password, Service) by user using config setting.
 		auth, err = c.Keystone.GetAuth(
 			ctx.Username,
 			ctx.Password,
 			ctx.Tenant,
 		)
-
+		// If the credentials are invalid we will loop-back the config set before storing it till the credentials entered are valid.
 		if err != nil {
-			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
 		} else {
 			if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
 				zap.S().Errorf("Failed to store config: %s", err.Error())
 			}
-			flag = false
+			credentialsFlag = false
 		}
 	}
 	result, err := pmk.CheckNode(ctx, c, auth)
