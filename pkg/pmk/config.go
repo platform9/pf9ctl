@@ -52,7 +52,7 @@ func StoreConfig(ctx Config, loc string) error {
 }
 
 // LoadConfig returns the information for communication with PF9 controller.
-func LoadConfig(loc string) (Config, bool, error) {
+func LoadConfig(loc string) (Config, error) {
 	zap.S().Info("Loading configuration details")
 
 	f, err := os.Open(loc)
@@ -61,11 +61,11 @@ func LoadConfig(loc string) (Config, bool, error) {
 		if os.IsNotExist(err) {
 			// to initiate the config create and store it
 			zap.S().Info("Existing config not found, prompting for new config.")
-			ctx, IfNewConfig, err = ConfigCmdCreateRun()
+			ctx, err = ConfigCmdCreateRun()
 
-			return ctx, IfNewConfig, err
+			return ctx, err
 		}
-		return Config{}, IfNewConfig, err
+		return Config{}, err
 	}
 
 	defer f.Close()
@@ -76,15 +76,15 @@ func LoadConfig(loc string) (Config, bool, error) {
 	// Decoding base64 encoded password
 	decodedBytePassword, err := base64.StdEncoding.DecodeString(ctx.Password)
 	if err != nil {
-		return ctx, IfNewConfig, err
+		return ctx, err
 	}
 	ctx.Password = string(decodedBytePassword)
 
-	return ctx, IfNewConfig, err
+	return ctx, err
 }
 
 // ConfigCmdCreatRun will initiate the config set and return a config given by user
-func ConfigCmdCreateRun() (Config, bool, error) {
+func ConfigCmdCreateRun() (Config, error) {
 
 	zap.S().Info("==========Running set config==========")
 
@@ -128,5 +128,5 @@ func ConfigCmdCreateRun() (Config, bool, error) {
 		AllowInsecure: false,
 	}
 	IfNewConfig = true
-	return ctx, IfNewConfig, nil
+	return ctx, nil
 }

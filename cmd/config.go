@@ -27,7 +27,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 
 	for credentialsFlag {
 		// invoked the configcreate command from pkg/pmk
-		ctx, pmk.IfNewConfig, _ = pmk.ConfigCmdCreateRun()
+		ctx, _ = pmk.ConfigCmdCreateRun()
 
 		executor, err := getExecutor()
 		if err != nil {

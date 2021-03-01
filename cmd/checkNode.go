@@ -67,7 +67,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 func configLoadAndValidate() (pmk.Config, pmk.Client, keystone.KeystoneAuth, bool) {
 
-	ctx, pmk.IfNewConfig, err = pmk.LoadConfig(util.Pf9DBLoc)
+	ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
