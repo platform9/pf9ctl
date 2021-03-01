@@ -92,19 +92,29 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	ch, err := pmk.CheckNode(ctx, c, auth)
+	result, err := pmk.CheckNode(ctx, c, auth)
+
 	if err != nil {
-		zap.S().Fatalf("Pre-requisite check(s) failed %s\n", err.Error())
+		zap.S().Fatalf("\nPre-requisite check(s) failed %s\n", err.Error())
 	}
 
-	if ch {
-		if err := pmk.PrepNode(ctx, c); err != nil {
-			c.Segment.SendEvent("Prep Node - Failed", err)
-			zap.S().Fatalf("Unable to prep node: %s\n", err.Error())
-		}
+	if result == pmk.RequiredFail {
+		fmt.Println("\nRequired pre-requisite check(s) failed.")
+		return
 	} else {
-		zap.S().Fatalf("Pre-requisite check(s) failed.\n")
+		fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
+		reader := bufio.NewReader(os.Stdin)
+		char, _, _ := reader.ReadRune()
+		if char != 'y' {
+			return
+		}
 	}
+
+	if err := pmk.PrepNode(ctx, c); err != nil {
+		c.Segment.SendEvent("Prep Node - Failed", err)
+		zap.S().Fatalf("Unable to prep node: %s\n", err.Error())
+	}
+
 	zap.S().Debug("==========Finished running prep-node==========")
 }
 

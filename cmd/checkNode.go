@@ -80,9 +80,11 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
 	}
-	if !result {
-		fmt.Printf("\nPre-requisite checks failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
-		zap.S().Debugf("Pre-requisite checks failed. See %s or use --verbose for logs", log.GetLogLocation(util.Pf9Log))
+	if result == pmk.RequiredFail {
+		fmt.Printf("\nRequired pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+	} else if result == pmk.OptionalFail {
+		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	}
+
 	zap.S().Debug("==========Finished running check-node==========")
 }
