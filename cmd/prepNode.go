@@ -10,9 +10,7 @@ import (
 	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
-	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/pmk"
-	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
@@ -48,50 +46,16 @@ func init() {
 func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running prep-node==========")
 
-	var (
-		ctx  pmk.Config
-		c    pmk.Client
-		err  error
-		auth keystone.KeystoneAuth
-		// This flag helps us to loop-back the config set until the user enters valid credentials.
-		credentialsFlag = true
-	)
+	// This flag helps us to loop-back the config set until the user enters valid credentials.
+	credentialsFlag = true
 
+	// Loading the config if exists or creating config and storing it if valid.
 	for credentialsFlag {
-		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
-		if err != nil {
-			zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
-		}
-		// TODO: there seems to be a bug, we will need multiple executors one per ip, so at this moment
-		// it will only work with one remote host
-		executor, err := getExecutor()
-		if err != nil {
-			zap.S().Fatalf("Error connecting to host %s", err.Error())
-		}
-		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-		if err != nil {
-			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-		}
-		defer c.Segment.Close()
-
-		zap.S().Debug("==========Validating the User Credentials==========")
-		// Validating the credentials enterd (Username, Password, Service) by user using config setting
-
-		auth, err = c.Keystone.GetAuth(
-			ctx.Username,
-			ctx.Password,
-			ctx.Tenant,
-		)
-		// If the credentials are invalid we will loop-back the config set before storing it till the credentials entered are valid.
-		if err != nil {
-			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
-		} else {
-			if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
-				zap.S().Errorf("Failed to store config: %s", err.Error())
-			}
-			credentialsFlag = false
-		}
+		zap.S().Debug("Loading the config if exist or setting config and validating the user credentials")
+		ctx, c, auth, credentialsFlag = configLoadAndValidate()
 	}
+
+	defer c.Segment.Close()
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(ctx, c, auth)

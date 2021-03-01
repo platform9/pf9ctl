@@ -18,7 +18,12 @@ import (
 
 var ErrConfigurationDetailsNotProvided = errors.New("config not set,....")
 
-var allClients Client
+var (
+	allClients Client
+	// This flag is set true when we set confing for first time
+	IfNewConfig = false
+	ctx         Config
+)
 
 // Config stores information to contact with the pf9 controller.
 type Config struct {
@@ -47,7 +52,7 @@ func StoreConfig(ctx Config, loc string) error {
 }
 
 // LoadConfig returns the information for communication with PF9 controller.
-func LoadConfig(loc string) (Config, error) {
+func LoadConfig(loc string) (Config, bool, error) {
 	zap.S().Info("Loading configuration details")
 
 	f, err := os.Open(loc)
@@ -56,10 +61,11 @@ func LoadConfig(loc string) (Config, error) {
 		if os.IsNotExist(err) {
 			// to initiate the config create and store it
 			zap.S().Info("Existing config not found, prompting for new config.")
-			ctx, err := ConfigCmdCreateRun()
-			return ctx, err
+			ctx, IfNewConfig, err = ConfigCmdCreateRun()
+
+			return ctx, IfNewConfig, err
 		}
-		return Config{}, err
+		return Config{}, IfNewConfig, err
 	}
 
 	defer f.Close()
@@ -70,15 +76,15 @@ func LoadConfig(loc string) (Config, error) {
 	// Decoding base64 encoded password
 	decodedBytePassword, err := base64.StdEncoding.DecodeString(ctx.Password)
 	if err != nil {
-		return ctx, err
+		return ctx, IfNewConfig, err
 	}
 	ctx.Password = string(decodedBytePassword)
 
-	return ctx, err
+	return ctx, IfNewConfig, err
 }
 
 // ConfigCmdCreatRun will initiate the config set and return a config given by user
-func ConfigCmdCreateRun() (Config, error) {
+func ConfigCmdCreateRun() (Config, bool, error) {
 
 	zap.S().Info("==========Running set config==========")
 
@@ -121,5 +127,6 @@ func ConfigCmdCreateRun() (Config, error) {
 		WaitPeriod:    time.Duration(60),
 		AllowInsecure: false,
 	}
-	return ctx, nil
+	IfNewConfig = true
+	return ctx, IfNewConfig, nil
 }
