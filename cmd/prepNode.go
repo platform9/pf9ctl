@@ -46,26 +46,23 @@ func init() {
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running prep-node==========")
+
 	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
 	}
-	// TODO: there seems to be a bug, we will need multiple executors one per ip, so at this moment
-	// it will only work with one remote host
-	executor, err := getExecutor()
-	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s", err.Error())
-	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-	if err != nil {
-		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-	}
+
+	// Validate the user credentials entered during config set and will bail out if invalid
+	c = validateUserCredentials(ctx)
+
 	defer c.Segment.Close()
+
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
 		zap.S().Fatalf("\nPre-requisite check(s) failed %s\n", err.Error())
 	}
+
 	if result == pmk.RequiredFail {
 		fmt.Println("\nRequired pre-requisite check(s) failed.")
 		return

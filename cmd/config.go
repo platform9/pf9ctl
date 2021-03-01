@@ -23,7 +23,14 @@ var configCmdCreate = &cobra.Command{
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
 	// invoked the configcreate command from pkg/pmk
-	if err := pmk.StoreConfig(pmk.ConfigCmdCreateRun(), util.Pf9DBLoc); err != nil {
+	ctx := pmk.ConfigCmdCreateRun()
+
+	// Validate the user credentials entered during config set and will bail out if invalid
+	c = validateUserCredentials(ctx)
+
+	defer c.Segment.Close()
+
+	if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
 		zap.S().Errorf("Failed to store config: %s", err.Error())
 	}
 	zap.S().Debug("==========Finished running set config==========")

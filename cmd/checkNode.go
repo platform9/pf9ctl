@@ -20,6 +20,12 @@ var checkNodeCmd = &cobra.Command{
 	Run: checkNodeRun,
 }
 
+var (
+	ctx pmk.Config
+	err error
+	c   pmk.Client
+)
+
 func init() {
 	checkNodeCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
 	checkNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes")
@@ -32,19 +38,12 @@ func init() {
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
-	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
+	ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
-
-	executor, err := getExecutor()
-	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s", err.Error())
-	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-	if err != nil {
-		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-	}
+	// Validate the user credentials entered during config set and will bail out if invalid
+	c = validateUserCredentials(ctx)
 
 	defer c.Segment.Close()
 
@@ -60,4 +59,28 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	zap.S().Debug("==========Finished running check-node==========")
+}
+
+// This function will validate the user credentials entered during config set and bail out if invalid
+func validateUserCredentials(pmk.Config) pmk.Client {
+
+	executor, err := getExecutor()
+	if err != nil {
+		zap.S().Fatalf("Error connecting to host %s", err.Error())
+	}
+	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+	if err != nil {
+		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+	}
+
+	_, err = c.Keystone.GetAuth(
+		ctx.Username,
+		ctx.Password,
+		ctx.Tenant,
+	)
+
+	if err != nil {
+		zap.S().Fatalf("Invalid Credentials (Username/Password/Service), run 'pf9ctl config set' !!")
+	}
+	return c
 }
