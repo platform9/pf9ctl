@@ -25,8 +25,11 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	// invoked the configcreate command from pkg/pmk
 	ctx := pmk.ConfigCmdCreateRun()
 
+	// Create a New Client
+	c = createNewClient(ctx)
+
 	// Validate the user credentials entered during config set and will bail out if invalid
-	c = validateUserCredentials(ctx)
+	validateUserCredentials(ctx, c)
 
 	defer c.Segment.Close()
 

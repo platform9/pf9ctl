@@ -52,8 +52,11 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
 	}
 
+	// Create a New Client
+	c = createNewClient(ctx)
+
 	// Validate the user credentials entered during config set and will bail out if invalid
-	c = validateUserCredentials(ctx)
+	validateUserCredentials(ctx, c)
 
 	defer c.Segment.Close()
 
