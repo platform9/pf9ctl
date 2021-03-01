@@ -80,7 +80,7 @@ func validateUserCredentials(pmk.Config) pmk.Client {
 	)
 
 	if err != nil {
-		zap.S().Fatalf("Invalid Credentials (Username/Password/Service), run 'pf9ctl config set' !!")
+		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
 	}
 	return c
 }
