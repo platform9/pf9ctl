@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	packages            = []string{"ntp", "curl"}
+	packages            = []string{"ntp", "curl", "uuid-runtime"}
 	packageInstallError = "Packages not found and could not be installed"
 )
 

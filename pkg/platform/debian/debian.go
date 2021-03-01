@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	packages            = []string{"ntp", "curl"}
+	packages            = []string{"ntp", "curl", "uuid-runtime"}
 	packageInstallError = "Packages not found and could not be installed"
 )
 
@@ -74,7 +74,7 @@ func (d *Debian) checkOSPackages() (bool, error) {
 	zap.S().Info("Checking OS Packages")
 
 	for _, p := range packages {
-		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg -l %s", p))
+		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg-query -s %s", p))
 		if err != nil {
 			zap.S().Debugf("Package %s not found, trying to install", p)
 			zap.S().Info("Installing missing packages, this may take a few minutes")
