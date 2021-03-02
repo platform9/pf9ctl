@@ -32,7 +32,8 @@ func init() {
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
-	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
+
+	ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
@@ -41,12 +42,18 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.S().Fatalf("Error connecting to host %s", err.Error())
 	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+
+	c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 	}
 
 	defer c.Segment.Close()
+
+	// Validate the user credentials entered during config set and will bail out if invalid
+	if err := validateUserCredentials(ctx, c); err != nil {
+		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
+	}
 
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
