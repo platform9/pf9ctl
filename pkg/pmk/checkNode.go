@@ -69,6 +69,10 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		return RequiredFail, fmt.Errorf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 
+	if err = allClients.Segment.SendEvent("Starting CheckNode", auth); err != nil {
+		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+	}
+
 	checks := platform.Check()
 	mandatoryCheck := true
 	optionalCheck := true
@@ -97,6 +101,10 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		if check.Err != nil {
 			zap.S().Debugf("Error in %s : %s", check.Name, check.Err)
 		}
+	}
+
+	if err = allClients.Segment.SendEvent("CheckNode complete", auth); err != nil {
+		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 
 	if !mandatoryCheck {
