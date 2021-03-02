@@ -43,7 +43,10 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	}
 
 	// Validate the user credentials entered during config set and will bail out if invalid
-	validateUserCredentials(ctx, c)
+
+	if err := validateUserCredentials(ctx, c); err != nil {
+		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
+	}
 
 	defer c.Segment.Close()
 
@@ -99,15 +102,12 @@ func init() {
 }
 
 // This function will validate the user credentials entered during config set and bail out if invalid
-func validateUserCredentials(pmk.Config, pmk.Client) {
+func validateUserCredentials(pmk.Config, pmk.Client) error {
 
 	_, err = c.Keystone.GetAuth(
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
 	)
-
-	if err != nil {
-		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
-	}
+	return err
 }

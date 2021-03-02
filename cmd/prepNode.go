@@ -65,7 +65,9 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	defer c.Segment.Close()
 
 	// Validate the user credentials entered during config set and will bail out if invalid
-	validateUserCredentials(ctx, c)
+	if err := validateUserCredentials(ctx, c); err != nil {
+		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
+	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(ctx, c)
