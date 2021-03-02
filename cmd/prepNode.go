@@ -69,7 +69,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if result == pmk.RequiredFail {
 		fmt.Println("\nRequired pre-requisite check(s) failed.")
 		return
-	} else {
+	} else if result == pmk.OptionalFail {
 		fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
 		reader := bufio.NewReader(os.Stdin)
 		char, _, _ := reader.ReadRune()
