@@ -17,7 +17,7 @@ BIN_DIR := $(shell pwd)/bin
 BIN := pf9ctl
 REPO := pf9ctl
 PACKAGE_GOPATH := /go/src/github.com/platform9/$(REPO)
-LDFLAGS := $(shell source ./version.sh ; KUBE_ROOT=. ; KUBE_GIT_VERSION=${VERSION_OVERRIDE} ; kube::version::ldflags)
+LDFLAGS := $(shell source ./version.sh; KUBE_ROOT=.; KUBE_GIT_VERSION=${VERSION_OVERRIDE}; kube::version::ldflags)
 GIT_STORAGE_MOUNT := $(shell source ./git_utils.sh; container_git_storage_mount)
 CONT_USER := $(shell id -u)
 CONT_GRP := $(shell id -g)
@@ -44,5 +44,5 @@ clean:
 build:
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o $(BIN_DIR)/$(BIN) main.go
 
-test:
+
 	go test -v ./...
