@@ -17,11 +17,15 @@ import (
 )
 
 // Sends an event to segment based on the input string and uses auth as keystone UUID property.
-func sendSegmentEvent(allClients Client, eventStr string, auth keystone.KeystoneAuth) {
+func sendSegmentEvent(allClients Client, eventStr string, auth keystone.KeystoneAuth, closeSegment bool) {
 	if err := allClients.Segment.SendEvent("Prep-node : "+eventStr, auth); err != nil {
 		zap.S().Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
 	}
-	allClients.Segment.Close()
+
+	// Close the segment for error path. Cmd level closure does not work due to FatalF.
+	if closeSegment {
+		defer allClients.Segment.Close()
+	}
 }
 
 // PrepNode sets up prerequisites for k8s stack
@@ -39,10 +43,12 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
 
+	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
+
 	hostOS, err := validatePlatform(allClients.Executor)
 	if err != nil {
 		errStr := "Error: Invalid host OS. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth)
+		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
@@ -52,45 +58,49 @@ func PrepNode(ctx Config, allClients Client) error {
 			"\nPlease uninstall these packages if you want to prep the node again.\n" +
 			"Instructions to uninstall these are at:" +
 			"\nhttps://docs.platform9.com/kubernetes/pmk-cli-unistall-hostagent"
-		sendSegmentEvent(allClients, "Error: Platform9 packages already present.", auth)
+		sendSegmentEvent(allClients, "Error: Platform9 packages already present.", auth, true)
 		return fmt.Errorf(errStr)
 	}
 
+	sendSegmentEvent(allClients, "Disabling swap - 1", auth, false)
 	err = setupNode(hostOS, allClients.Executor)
 	if err != nil {
 		errStr := "Error: Unable to disable swap. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth)
+		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
+	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
 	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
 		errStr := "Error: Unable to install hostagent. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth)
+		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
-	zap.S().Info("Initialising the host")
+	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
+	zap.S().Info("Initialising host")
 	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 
 	if err != nil {
 		errStr := "Error: Unable to fetch host ID. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth)
+		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
+	sendSegmentEvent(allClients, "Authorising host - 4", auth, false)
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token); err != nil {
-		errStr := "Error: Unable to authorize host. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth)
+		errStr := "Error: Unable to authorise host. " + err.Error()
+		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
 	zap.S().Info("Host successfully attached to the Platform9 control-plane")
-	sendSegmentEvent(allClients, "Successful", auth)
+	sendSegmentEvent(allClients, "Successful", auth, false)
 
 	return nil
 }
