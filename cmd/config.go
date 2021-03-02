@@ -20,13 +20,27 @@ var configCmdCreate = &cobra.Command{
 	Long:  `Create or get PF9 controller config used by this CLI`,
 }
 
+var (
+	ctx pmk.Config
+	err error
+	c   pmk.Client
+)
+
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
-	// invoked the configcreate command from pkg/pmk
-	ctx := pmk.ConfigCmdCreateRun()
 
-	// Create a New Client
-	c = createNewClient(ctx)
+	// invoked the configcreate command from pkg/pmk
+	ctx = pmk.ConfigCmdCreateRun()
+
+	executor, err := getExecutor()
+	if err != nil {
+		zap.S().Fatalf("Error connecting to host %s", err.Error())
+	}
+
+	c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+	if err != nil {
+		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+	}
 
 	// Validate the user credentials entered during config set and will bail out if invalid
 	validateUserCredentials(ctx, c)
@@ -36,6 +50,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
 		zap.S().Errorf("Failed to store config: %s", err.Error())
 	}
+
 	zap.S().Debug("==========Finished running set config==========")
 }
 
@@ -81,4 +96,18 @@ func init() {
 	rootCmd.AddCommand(configCmdCreate)
 	configCmdCreate.AddCommand(configCmdGet)
 	configCmdCreate.AddCommand(configCmdSet)
+}
+
+// This function will validate the user credentials entered during config set and bail out if invalid
+func validateUserCredentials(pmk.Config, pmk.Client) {
+
+	_, err = c.Keystone.GetAuth(
+		ctx.Username,
+		ctx.Password,
+		ctx.Tenant,
+	)
+
+	if err != nil {
+		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
+	}
 }

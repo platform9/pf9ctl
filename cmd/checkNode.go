@@ -20,12 +20,6 @@ var checkNodeCmd = &cobra.Command{
 	Run: checkNodeRun,
 }
 
-var (
-	ctx pmk.Config
-	err error
-	c   pmk.Client
-)
-
 func init() {
 	checkNodeCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
 	checkNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes")
@@ -38,17 +32,26 @@ func init() {
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
+
 	ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
-	// Create a New Client
-	c = createNewClient(ctx)
+
+	executor, err := getExecutor()
+	if err != nil {
+		zap.S().Fatalf("Error connecting to host %s", err.Error())
+	}
+
+	c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+	if err != nil {
+		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+	}
+
+	defer c.Segment.Close()
 
 	// Validate the user credentials entered during config set and will bail out if invalid
 	validateUserCredentials(ctx, c)
-
-	defer c.Segment.Close()
 
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
@@ -62,33 +65,4 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	zap.S().Debug("==========Finished running check-node==========")
-}
-
-// This function will validate the user credentials entered during config set and bail out if invalid
-func validateUserCredentials(pmk.Config, pmk.Client) {
-
-	_, err = c.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-	)
-
-	if err != nil {
-		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
-	}
-}
-
-// This function will create a new Client
-func createNewClient(pmk.Config) pmk.Client {
-
-	executor, err := getExecutor()
-	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s", err.Error())
-	}
-	c, err := pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-	if err != nil {
-		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-	}
-
-	return c
 }
