@@ -80,7 +80,7 @@ func LoadConfig(loc string) (Config, error) {
 // ConfigCmdCreatRun will initiate the config set and return a config given by user
 func ConfigCmdCreateRun() Config {
 
-	zap.S().Info("==========Running set config==========")
+	zap.S().Debug("==========Running set config==========")
 
 	reader := bufio.NewReader(os.Stdin)
 
