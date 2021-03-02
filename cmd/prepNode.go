@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -79,8 +80,9 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if err := pmk.PrepNode(ctx, c); err != nil {
+		fmt.Printf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
 		c.Segment.SendEvent("Prep Node - Failed", err)
-		zap.S().Fatalf("Unable to prep node: %s\n", err.Error())
+		zap.S().Debugf("Unable to prep node: %s\n", err.Error())
 	}
 
 	zap.S().Debug("==========Finished running prep-node==========")
