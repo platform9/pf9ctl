@@ -47,6 +47,8 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		platform = debian.NewDebian(allClients.Executor)
 	case "redhat":
 		platform = centos.NewCentOS(allClients.Executor)
+	default:
+		return RequiredFail, fmt.Errorf("This OS is not supported. Supported operating systems are: Ubuntu (16.04, 18.04) & CentOS 7.x")
 	}
 
 	// Fetch the keystone token.
