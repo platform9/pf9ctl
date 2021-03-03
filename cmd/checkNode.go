@@ -40,7 +40,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	executor, err := getExecutor()
 	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s", err.Error())
+		zap.S().Debug("Error connecting to host %s", err.Error())
+		zap.S().Fatalf(" Invalid (Username/Password/IP)")
 	}
 
 	c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
