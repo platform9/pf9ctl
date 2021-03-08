@@ -24,34 +24,43 @@ var (
 	ctx pmk.Config
 	err error
 	c   pmk.Client
+	// This flag is used to loop back if user enters invalid credentials during config set.
+	credentialFlag bool
 )
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
+	credentialFlag = true
+	for credentialFlag {
+		// invoked the configcreate command from pkg/pmk
+		ctx, _ = pmk.ConfigCmdCreateRun()
 
-	// invoked the configcreate command from pkg/pmk
-	ctx = pmk.ConfigCmdCreateRun()
+		executor, err := getExecutor()
+		if err != nil {
+			zap.S().Fatalf("Error connecting to host %s", err.Error())
+		}
 
-	executor, err := getExecutor()
-	if err != nil {
-		zap.S().Fatalf("Error connecting to host %s", err.Error())
-	}
+		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+		if err != nil {
+			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+		}
 
-	c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-	if err != nil {
-		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-	}
+		// Validate the user credentials entered during config set and will bail out if invalid
 
-	// Validate the user credentials entered during config set and will bail out if invalid
+		if err := validateUserCredentials(ctx, c); err != nil {
+			//zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
+			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
 
-	if err := validateUserCredentials(ctx, c); err != nil {
-		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
+		} else {
+			break
+		}
 	}
 
 	defer c.Segment.Close()
 
 	if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
 		zap.S().Errorf("Failed to store config: %s", err.Error())
+
 	}
 
 	zap.S().Debug("==========Finished running set config==========")

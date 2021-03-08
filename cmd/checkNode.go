@@ -32,29 +32,45 @@ func init() {
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
+	// This flag is used to loop back if user enters invalid credentials during config set.
+	credentialFlag = true
 
-	ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
-	if err != nil {
-		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
-	}
+	for credentialFlag {
 
-	executor, err := getExecutor()
-	if err != nil {
-		zap.S().Debug("Error connecting to host %s", err.Error())
-		zap.S().Fatalf(" Invalid (Username/Password/IP)")
-	}
+		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
+		if err != nil {
+			zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+		}
 
-	c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-	if err != nil {
-		zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+		executor, err := getExecutor()
+		if err != nil {
+			zap.S().Debug("Error connecting to host %s", err.Error())
+			zap.S().Fatalf(" Invalid (Username/Password/IP)")
+		}
+
+		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
+		if err != nil {
+			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
+		}
+
+		// Validate the user credentials entered during config set and will loop back again if invalid
+		if err := validateUserCredentials(ctx, c); err != nil {
+			//zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
+			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
+		} else {
+			// We will store the set config if its set for first time using check-node
+			if pmk.IsNewConfig {
+				if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
+					zap.S().Errorf("Failed to store config: %s", err.Error())
+				} else {
+					pmk.IsNewConfig = false
+				}
+			}
+			credentialFlag = false
+		}
 	}
 
 	defer c.Segment.Close()
-
-	// Validate the user credentials entered during config set and will bail out if invalid
-	if err := validateUserCredentials(ctx, c); err != nil {
-		zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
-	}
 
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
