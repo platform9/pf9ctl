@@ -30,7 +30,9 @@ var (
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
+
 	credentialFlag = true
+
 	for credentialFlag {
 		// invoked the configcreate command from pkg/pmk
 		ctx, _ = pmk.ConfigCmdCreateRun()
@@ -52,7 +54,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
 
 		} else {
-			break
+			credentialFlag = false
 		}
 	}
 
