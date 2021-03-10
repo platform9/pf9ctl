@@ -10,12 +10,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 var ErrConfigurationDetailsNotProvided = errors.New("config not set,....")
+
+var IsNewConfig bool
 
 // Config stores information to contact with the pf9 controller.
 type Config struct {
@@ -55,8 +56,12 @@ func LoadConfig(loc string) (Config, error) {
 		if os.IsNotExist(err) {
 			// to initiate the config create and store it
 			zap.S().Info("Existing config not found, prompting for new config.")
-			ctx := ConfigCmdCreateRun()
-			err := StoreConfig(ctx, util.Pf9DBLoc)
+
+			ctx, err := ConfigCmdCreateRun()
+
+			// It is set true when we are setting config for the first time using check-node/prep-node
+			IsNewConfig = true
+			//err := StoreConfig(ctx, util.Pf9DBLoc)
 			return ctx, err
 		}
 		return Config{}, err
@@ -78,7 +83,7 @@ func LoadConfig(loc string) (Config, error) {
 }
 
 // ConfigCmdCreatRun will initiate the config set and return a config given by user
-func ConfigCmdCreateRun() Config {
+func ConfigCmdCreateRun() (Config, error) {
 
 	zap.S().Debug("==========Running set config==========")
 
@@ -121,6 +126,6 @@ func ConfigCmdCreateRun() Config {
 		WaitPeriod:    time.Duration(60),
 		AllowInsecure: false,
 	}
-	return ctx
+	return ctx, nil
 
 }
