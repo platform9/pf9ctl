@@ -4,7 +4,8 @@ package pmk
 
 import (
 	"time"
-
+	"os"
+	"strconv"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gopkg.in/segmentio/analytics-go.v3"
@@ -28,7 +29,9 @@ type NoopSegment struct {
 
 func NewSegment(fqdn string, noTracking bool) Segment {
 	// mock out segment if the user wants no Tracking
-	if noTracking {
+	envCheck := os.Getenv("PF9CTL_SEGMENT_EVENTS_DISABLE")
+	segmentEventDisabled , _:= strconv.ParseBool(envCheck)
+	if noTracking || segmentEventDisabled {
 		return NoopSegment{}
 	}
 	client := analytics.New(segmentWriteKey)
