@@ -3,4 +3,4 @@
 # pf9ctl
 CLI tool for Platform9 management. This is under heavy development, please use with care.
 
-To disable the segment event set environment variable. export PF9CTL_SEGMENT_EVENTS_DISABLE=1
+To disable the segment event set environment variable. PF9CTL_SEGMENT_EVENTS_DISABLE=1
