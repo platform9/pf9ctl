@@ -48,7 +48,6 @@ func (c SegmentImpl) SendEvent(name string, data interface{}) error {
 	zap.S().Debug("Sending Segment Event: ", name)
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
-		zap.S().Debug("Sending Segment data: ", data_struct.UserID)
 		return c.client.Enqueue(analytics.Track{
 			UserId:     data_struct.UserID,
 			Event:      name,
@@ -66,7 +65,6 @@ func (c SegmentImpl) SendGroupTraits(name string, data interface{}) error {
 	zap.S().Debug("Sending Group Trait: ", name)
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
-		zap.S().Debug("Sending Segment data: ", data_struct.UserID)
 		return c.client.Enqueue(analytics.Group{
 			UserId:  data_struct.UserID,
 			GroupId: name,
