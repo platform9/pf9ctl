@@ -271,7 +271,7 @@ func (d *Debian) Version() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if strings.Contains(string(out), "16") || strings.Contains(string(out), "18") {
+	if strings.Contains(string(out), "16") || strings.Contains(string(out), "18") || strings.Contains(string(out), "20") {
 		return "debian", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
