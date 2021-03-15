@@ -14,7 +14,8 @@ import (
 )
 
 var (
-	packages            = []string{"ntp", "curl"}
+	// If selinux is enabled on any system then some packages might not be present.
+	packages            = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils"}
 	packageInstallError = "Packages not found and could not be installed"
 )
 
