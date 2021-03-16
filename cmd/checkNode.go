@@ -55,8 +55,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will loop back again if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
-			//zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
-			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
+			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+			fmt.Println("\nx Invalid credentials entered (Username/Password/Tenant)")
 		} else {
 			// We will store the set config if its set for first time using check-node
 			if pmk.IsNewConfig {

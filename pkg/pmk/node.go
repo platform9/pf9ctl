@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/platform"
@@ -15,6 +16,9 @@ import (
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
+
+// This variable is assigned with StatusCode during hostagent installation
+var HostAgent int
 
 // Sends an event to segment based on the input string and uses auth as keystone UUID property.
 func sendSegmentEvent(allClients Client, eventStr string, auth keystone.KeystoneAuth, closeSegment bool) {
@@ -30,6 +34,11 @@ func sendSegmentEvent(allClients Client, eventStr string, auth keystone.Keystone
 
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(ctx Config, allClients Client) error {
+	// Building our new spinner
+	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	s.Color("red")
+	s.Start() // Start the spinner
+	defer s.Stop()
 
 	zap.S().Debug("Received a call to start preping node(s).")
 
@@ -44,6 +53,8 @@ func PrepNode(ctx Config, allClients Client) error {
 	}
 
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
+	s.Suffix = ": Starting prep-node"
+	time.Sleep(4 * time.Second)
 
 	hostOS, err := validatePlatform(allClients.Executor)
 	if err != nil {
@@ -63,6 +74,9 @@ func PrepNode(ctx Config, allClients Client) error {
 	}
 
 	sendSegmentEvent(allClients, "Disabling swap - 1", auth, false)
+	s.Suffix = ":Disabling swap and removing swap in fstab"
+	time.Sleep(2 * time.Second)
+
 	err = setupNode(hostOS, allClients.Executor)
 	if err != nil {
 		errStr := "Error: Unable to disable swap. " + err.Error()
@@ -70,15 +84,37 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf(errStr)
 	}
 
+	s.Stop()
+	fmt.Println("✓ Disabled swap and removed swap in fstab")
+	s.Restart()
+
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
+	s.Suffix = " :Downloading the Hostagent (this might take a few minutes...)"
+	time.Sleep(2 * time.Second)
 	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
 		errStr := "Error: Unable to install hostagent. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
+	s.Suffix = " :Platform9 packages installed successfully"
+
+	switch HostAgent {
+	case 404:
+		s.Suffix = " :Platform9 packages installed successfully"
+		s.Stop()
+		fmt.Println("✓ Platform9 packages installed successfully")
+	case 200:
+		s.Suffix = " :Hostagent installed successfully"
+		s.Stop()
+		fmt.Println("✓ Hostagent installed successfully")
+	}
+	s.Restart()
+
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
-	zap.S().Info("Initialising host")
+	s.Suffix = " :Initialising host"
+	time.Sleep(4 * time.Second)
+	zap.S().Debug("Initialising host")
 	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
@@ -89,6 +125,10 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf(errStr)
 	}
 
+	s.Stop()
+	fmt.Println("✓ Initialised host successfully")
+	s.Restart()
+	s.Suffix = " :Authorising host"
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
@@ -99,8 +139,13 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf(errStr)
 	}
 
-	zap.S().Info("Host successfully attached to the Platform9 control-plane")
+	zap.S().Debug("Host successfully attached to the Platform9 control-plane")
+	s.Suffix = ":Host successfully attached to the Platform9 control-plane"
+	time.Sleep(2 * time.Second)
 	sendSegmentEvent(allClients, "Successful", auth, false)
+	s.Stop()
+
+	fmt.Println("✓ Host successfully attached to the Platform9 control-plane")
 
 	return nil
 }
@@ -119,7 +164,7 @@ func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exe
 	if err != nil {
 		return fmt.Errorf("Unable to send a request to clientL %w", err)
 	}
-
+	HostAgent = resp.StatusCode
 	switch resp.StatusCode {
 	case 404:
 		return installHostAgentLegacy(ctx, auth, hostOS, exec)
@@ -131,7 +176,7 @@ func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exe
 }
 
 func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	zap.S().Info("Downloading the installer (this might take a few minutes...)")
+	zap.S().Debug("Downloading the installer (this might take a few minutes...)")
 
 	url := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
@@ -161,7 +206,7 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	zap.S().Info("Platform9 packages installed successfully")
+	zap.S().Debug("Platform9 packages installed successfully")
 	return nil
 }
 
@@ -217,7 +262,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 }
 
 func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	zap.S().Info("Downloading Hostagent Installer Legacy")
+	zap.S().Debug("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
@@ -241,7 +286,7 @@ func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS strin
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	zap.S().Info("Hostagent installed successfully")
+	zap.S().Debug("Hostagent installed successfully")
 	return nil
 }
 

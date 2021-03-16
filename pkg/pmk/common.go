@@ -21,14 +21,14 @@ func setupNode(hostOS string, exec cmdexec.Executor) (err error) {
 }
 
 func swapOff(exec cmdexec.Executor) error {
-	zap.S().Info("Disabling swap")
+	zap.S().Debug("Disabling swap")
 
 	_, err := exec.RunWithStdout("bash", "-c", "swapoff -a")
 	return err
 }
 
 func swapOffFstab(exec cmdexec.Executor, file string) error {
-	zap.S().Info("Removing swap in fstab")
+	zap.S().Debug("Removing swap in fstab")
 	// match the 3rd column to have 'swap' and make sure the line isn't commented out already
 	search := `^[[:space:]]*([^#][^[:space:]]+)[[:space:]]+([^[:space:]]+)[[:space:]]+(swap)[[:space:]](.*)$`
 	replace := `#\1 \2 \3 \4`

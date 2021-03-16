@@ -5,7 +5,9 @@ package pmk
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
@@ -28,6 +30,13 @@ const (
 
 // CheckNode checks the prerequisites for k8s stack
 func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
+	// Building our new spinner
+	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	s.Color("red")
+	s.Start() // Start the spinner
+	defer s.Stop()
+	s.Suffix = " :Checking Pre-Requisite Checks"
+	time.Sleep(4 * time.Second)
 
 	zap.S().Debug("Received a call to check node.")
 
@@ -75,7 +84,15 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 
+	s.Suffix = " : Checking Pre-Requisite Checks, OS packages, Install's if required packages missing"
 	checks := platform.Check()
+	s.Stop()
+
+	//We will print console if any missing os packages installed
+	if debian.MissingPkgsInstalledDebian || centos.MissingPkgsInstalledCentos {
+		fmt.Println("\n✓ Missing package(s) installed successfully")
+	}
+
 	mandatoryCheck := true
 	optionalCheck := true
 
@@ -86,13 +103,17 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf("%s : %s\n", check.Name, checkPass)
+			fmt.Printf("✓ %s\n", check.Name)
+			//fmt.Printf("%s : %s\n", check.Name, checkPass)
+
 		} else {
 			segment_str := "CheckNode: " + check.Name + " Status: " + checkFail
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
+			fmt.Printf("x %s - %s\n", check.Name, check.UserErr)
+
+			//fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
 			if check.Mandatory {
 				mandatoryCheck = false
 			} else {
@@ -107,6 +128,12 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 
 	if err = allClients.Segment.SendEvent("CheckNode complete", auth); err != nil {
 		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+	}
+
+	if mandatoryCheck {
+		fmt.Println("\n✓ Completed Pre-Requisite Checks successfully\n")
+	} else {
+		fmt.Println("\nx Required pre-requisite check(s) failed ")
 	}
 
 	if !mandatoryCheck {

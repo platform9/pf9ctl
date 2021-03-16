@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	packages            = []string{"ntp", "curl", "uuid-runtime"}
-	packageInstallError = "Packages not found and could not be installed"
+	packages                   = []string{"ntp", "curl", "uuid-runtime"}
+	packageInstallError        = "Packages not found and could not be installed"
+	MissingPkgsInstalledDebian bool
 )
 
 // Debian represents debian based host machine
@@ -69,20 +70,23 @@ func (d *Debian) checkExistingInstallation() (bool, error) {
 }
 
 func (d *Debian) checkOSPackages() (bool, error) {
+	// This Flag will be set if we install missing packages
 
 	errLines := []string{packageInstallError}
-	zap.S().Info("Checking OS Packages")
+
+	zap.S().Debug("Checking OS Packages")
 
 	for _, p := range packages {
 		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg-query -s %s", p))
 		if err != nil {
 			zap.S().Debugf("Package %s not found, trying to install", p)
-			zap.S().Info("Installing missing packages, this may take a few minutes")
+			zap.S().Debug("Installing missing packages, this may take a few minutes")
 			if err = d.installOSPackages(p); err != nil {
 				zap.S().Debugf("Error installing package %s: %s", p, err)
 				errLines = append(errLines, p)
 			} else {
-				zap.S().Infof("Missing package %s installed", p)
+				MissingPkgsInstalledDebian = true
+				zap.S().Debugf("Missing package %s installed", p)
 			}
 		}
 	}
@@ -90,6 +94,7 @@ func (d *Debian) checkOSPackages() (bool, error) {
 	if len(errLines) > 1 {
 		return false, fmt.Errorf(strings.Join(errLines, " "))
 	}
+
 	return true, nil
 }
 

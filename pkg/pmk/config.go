@@ -31,7 +31,8 @@ type Config struct {
 
 // StoreConfig simply updates the in-memory object
 func StoreConfig(ctx Config, loc string) error {
-	zap.S().Info("Storing configuration details")
+	zap.S().Debug("Storing configuration details")
+
 	// obscure the password
 	ctx.Password = base64.StdEncoding.EncodeToString([]byte(ctx.Password))
 	f, err := os.Create(loc)
@@ -42,26 +43,29 @@ func StoreConfig(ctx Config, loc string) error {
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
+	fmt.Println("\n✓ Stored configuration details Succesfully")
 	return encoder.Encode(ctx)
 
 }
 
 // LoadConfig returns the information for communication with PF9 controller.
 func LoadConfig(loc string) (Config, error) {
-	zap.S().Info("Loading configuration details")
+
+	zap.S().Debug("Loading configuration details")
 
 	f, err := os.Open(loc)
 	if err != nil {
 
 		if os.IsNotExist(err) {
-			// to initiate the config create and store it
-			zap.S().Info("Existing config not found, prompting for new config.")
+			fmt.Println("x Existing config not found, prompting for new config")
+
+			zap.S().Debug("Existing config not found, prompting for new config.")
 
 			ctx, err := ConfigCmdCreateRun()
 
 			// It is set true when we are setting config for the first time using check-node/prep-node
 			IsNewConfig = true
-			//err := StoreConfig(ctx, util.Pf9DBLoc)
+
 			return ctx, err
 		}
 		return Config{}, err
@@ -78,7 +82,8 @@ func LoadConfig(loc string) (Config, error) {
 		return ctx, err
 	}
 	ctx.Password = string(decodedBytePassword)
-
+	//s.Stop()
+	fmt.Println("✓ Loaded Config Successfully")
 	return ctx, err
 }
 
@@ -88,8 +93,7 @@ func ConfigCmdCreateRun() (Config, error) {
 	zap.S().Debug("==========Running set config==========")
 
 	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Printf("Platform9 Account URL: ")
+	fmt.Printf("Platform9 Account URL:")
 	fqdn, _ := reader.ReadString('\n')
 	fqdn = strings.TrimSuffix(fqdn, "\n")
 

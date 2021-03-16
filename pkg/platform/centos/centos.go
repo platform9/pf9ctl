@@ -14,8 +14,9 @@ import (
 )
 
 var (
-	packages            = []string{"ntp", "curl"}
-	packageInstallError = "Packages not found and could not be installed"
+	packages                   = []string{"ntp", "curl"}
+	packageInstallError        = "Packages not found and could not be installed"
+	MissingPkgsInstalledCentos bool
 )
 
 // CentOS reprents centos based host machine
@@ -70,26 +71,32 @@ func (c *CentOS) checkExistingInstallation() (bool, error) {
 }
 
 func (c *CentOS) checkOSPackages() (bool, error) {
+	// This Flag will be set if we install missing packages
+	var packageInstalled bool
 
 	errLines := []string{packageInstallError}
-	zap.S().Info("Checking OS Packages")
+	zap.S().Debug("Checking OS Packages")
 
 	for _, p := range packages {
 		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
 		if err != nil {
-			zap.S().Info("Installing missing packages, this may take a few minutes")
+			zap.S().Debug("Installing missing packages, this may take a few minutes")
 			zap.S().Debugf("Package %s not found, trying to install", p)
 			if err = c.installOSPackages(p); err != nil {
 				zap.S().Debugf("Error installing package %s: %s", p, err)
 				errLines = append(errLines, p)
 			} else {
-				zap.S().Infof("Missing package %s installed", p)
+				MissingPkgsInstalledCentos = true
+				zap.S().Debugf("Missing package %s installed", p)
 			}
 		}
 	}
 
 	if len(errLines) > 1 {
 		return false, fmt.Errorf(strings.Join(errLines, " "))
+	}
+	if packageInstalled {
+		fmt.Printf("✓ Missing package(s) installed")
 	}
 	return true, nil
 }
