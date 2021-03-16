@@ -3,10 +3,12 @@
 package pmk
 
 import (
-	"time"
+	"fmt"
 	"os"
 	"strconv"
-	"github.com/google/uuid"
+	"time"
+
+	"github.com/platform9/pf9ctl/pkg/keystone"
 	"go.uber.org/zap"
 	"gopkg.in/segmentio/analytics-go.v3"
 )
@@ -30,7 +32,7 @@ type NoopSegment struct {
 func NewSegment(fqdn string, noTracking bool) Segment {
 	// mock out segment if the user wants no Tracking
 	envCheck := os.Getenv("PF9CTL_SEGMENT_EVENTS_DISABLE")
-	segmentEventDisabled , _:= strconv.ParseBool(envCheck)
+	segmentEventDisabled, _ := strconv.ParseBool(envCheck)
 	if noTracking || segmentEventDisabled {
 		return NoopSegment{}
 	}
@@ -43,26 +45,37 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 }
 
 func (c SegmentImpl) SendEvent(name string, data interface{}) error {
-	zap.S().Debug("Sending Segment Event: %s", name)
-	return c.client.Enqueue(analytics.Track{
-		AnonymousId: uuid.New().String(),
-		Event:       name,
-		Properties:  analytics.NewProperties().Set("data", data),
-		Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
-			"session_id": time.Now().Unix(),
-		}),
-	})
+	zap.S().Debug("Sending Segment Event: ", name)
+	data_struct, ok := data.(keystone.KeystoneAuth)
+	if ok {
+		return c.client.Enqueue(analytics.Track{
+			UserId:     data_struct.UserID,
+			Event:      name,
+			Properties: analytics.NewProperties().Set("data", data),
+			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
+				"session_id": time.Now().Unix(),
+			}),
+		})
+	} else {
+		return fmt.Errorf("Unable to fetch keystone info")
+	}
 }
 
 func (c SegmentImpl) SendGroupTraits(name string, data interface{}) error {
-	return c.client.Enqueue(analytics.Group{
-		AnonymousId: uuid.New().String(),
-		GroupId:     name,
-		Traits:      analytics.NewTraits().Set("data", data),
-		Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
-			"session_id": time.Now().Unix(),
-		}),
-	})
+	zap.S().Debug("Sending Group Trait: ", name)
+	data_struct, ok := data.(keystone.KeystoneAuth)
+	if ok {
+		return c.client.Enqueue(analytics.Group{
+			UserId:  data_struct.UserID,
+			GroupId: name,
+			Traits:  analytics.NewTraits().Set("data", data),
+			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
+				"session_id": time.Now().Unix(),
+			}),
+		})
+	} else {
+		return fmt.Errorf("Unable to fetch keystone info")
+	}
 }
 
 func (c SegmentImpl) Close() {
