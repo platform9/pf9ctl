@@ -71,8 +71,6 @@ func (c *CentOS) checkExistingInstallation() (bool, error) {
 }
 
 func (c *CentOS) checkOSPackages() (bool, error) {
-	// This Flag will be set if we install missing packages
-	var packageInstalled bool
 
 	errLines := []string{packageInstallError}
 	zap.S().Debug("Checking OS Packages")
@@ -94,9 +92,6 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 
 	if len(errLines) > 1 {
 		return false, fmt.Errorf(strings.Join(errLines, " "))
-	}
-	if packageInstalled {
-		fmt.Printf("✓ Missing package(s) installed")
 	}
 	return true, nil
 }
