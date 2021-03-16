@@ -100,11 +100,11 @@ func PrepNode(ctx Config, allClients Client) error {
 	s.Suffix = " :Platform9 packages installed successfully"
 
 	switch HostAgent {
-	case 404:
+	case 200:
 		s.Suffix = " :Platform9 packages installed successfully"
 		s.Stop()
 		fmt.Println("✓ Platform9 packages installed successfully")
-	case 200:
+	case 404:
 		s.Suffix = " :Hostagent installed successfully"
 		s.Stop()
 		fmt.Println("✓ Hostagent installed successfully")
