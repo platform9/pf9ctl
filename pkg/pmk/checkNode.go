@@ -33,10 +33,6 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
-	s.Start() // Start the spinner
-	defer s.Stop()
-	s.Suffix = " :Checking Pre-Requisite Checks"
-	time.Sleep(4 * time.Second)
 
 	zap.S().Debug("Received a call to check node.")
 
@@ -84,7 +80,10 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 
+	s.Start() // Start the spinner
+	defer s.Stop()
 	s.Suffix = " : Checking Pre-Requisite Checks, OS packages, Install's if required packages missing"
+	time.Sleep(2 * time.Second)
 	checks := platform.Check()
 	s.Stop()
 
