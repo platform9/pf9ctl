@@ -131,8 +131,6 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 
 	if mandatoryCheck {
 		fmt.Println("\n✓ Completed Pre-Requisite Checks successfully\n")
-	} else {
-		fmt.Println("\nx Required pre-requisite check(s) failed ")
 	}
 
 	if !mandatoryCheck {

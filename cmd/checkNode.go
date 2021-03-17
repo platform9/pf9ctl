@@ -78,7 +78,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		fmt.Printf("\nRequired pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		fmt.Printf("\nx Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	} else if result == pmk.OptionalFail {
 		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	}
