@@ -17,13 +17,26 @@ import (
 )
 
 // Sends an event to segment based on the input string and uses auth as keystone UUID property.
-func sendSegmentEvent(allClients Client, eventStr string, auth keystone.KeystoneAuth, closeSegment bool) {
-	if err := allClients.Segment.SendEvent("Prep-node : "+eventStr, auth); err != nil {
+func sendSegmentEvent(allClients Client, eventStr string, auth keystone.KeystoneAuth, isError bool) {
+
+	var errorStr, suffixStr, status string
+
+	if isError {
+		status = "FAIL"
+		errorStr = eventStr
+		suffixStr = "Prep-node : ERROR"
+	} else {
+		status = "PASS"
+		errorStr = ""
+		suffixStr = "Prep-node : " + eventStr
+	}
+
+	if err := allClients.Segment.SendEvent(suffixStr, auth, status, errorStr); err != nil {
 		zap.S().Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
 	}
 
 	// Close the segment for error path. Cmd level closure does not work due to FatalF.
-	if closeSegment {
+	if isError{
 		defer allClients.Segment.Close()
 	}
 }
