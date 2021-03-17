@@ -71,7 +71,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		return RequiredFail, fmt.Errorf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 
-	if err = allClients.Segment.SendEvent("Starting CheckNode", auth); err != nil {
+	if err = allClients.Segment.SendEvent("Starting CheckNode", auth, checkPass, ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 
@@ -82,14 +82,14 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	fmt.Printf("\n\n")
 	for _, check := range checks {
 		if check.Result {
-			segment_str := "CheckNode: " + check.Name + " Status: " + checkPass
-			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
+			segment_str := "CheckNode: " + check.Name
+			if err := allClients.Segment.SendEvent(segment_str, auth, checkPass, ""); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
 			fmt.Printf("%s : %s\n", check.Name, checkPass)
 		} else {
-			segment_str := "CheckNode: " + check.Name + " Status: " + checkFail
-			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
+			segment_str := "CheckNode: " + check.Name
+			if err := allClients.Segment.SendEvent(segment_str, auth, checkFail, check.UserErr); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
 			fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
@@ -105,7 +105,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		}
 	}
 
-	if err = allClients.Segment.SendEvent("CheckNode complete", auth); err != nil {
+	if err = allClients.Segment.SendEvent("CheckNode complete", auth, checkPass, ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 

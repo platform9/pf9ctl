@@ -16,7 +16,7 @@ import (
 const segmentWriteKey = "P6DycMCALprZrUwWL9ZzRLlfMQwL5Xyl"
 
 type Segment interface {
-	SendEvent(string, interface{}) error
+	SendEvent(string, interface{}, string, string) error
 	SendGroupTraits(string, interface{}) error
 	Close()
 }
@@ -44,14 +44,17 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 	}
 }
 
-func (c SegmentImpl) SendEvent(name string, data interface{}) error {
+func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err string) error {
 	zap.S().Debug("Sending Segment Event: ", name)
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
 		return c.client.Enqueue(analytics.Track{
 			UserId:     data_struct.UserID,
 			Event:      name,
-			Properties: analytics.NewProperties().Set("data", data),
+			Properties: analytics.NewProperties().
+					Set("keystoneData", data).
+					Set("status", status).
+					Set("errorMsg", err),
 			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
 				"session_id": time.Now().Unix(),
 			}),
@@ -83,7 +86,7 @@ func (c SegmentImpl) Close() {
 }
 
 // The Noop Implementation of Segment
-func (c NoopSegment) SendEvent(name string, data interface{}) error {
+func (c NoopSegment) SendEvent(name string, data interface{}, status string, err string) error {
 	return nil
 }
 

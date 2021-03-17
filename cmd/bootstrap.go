@@ -74,11 +74,11 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	err = pmk.Bootstrap(ctx, c, payload)
 	if err != nil {
-		c.Segment.SendEvent("Bootstrap - Cluster creation failed", err)
+		c.Segment.SendEvent("Bootstrap : Cluster creation failed", err, "FAIL", "")
 		zap.S().Fatalf("Unable to bootstrap the cluster. Error: %s", err.Error())
 	}
 
-	if err := c.Segment.SendEvent("Bootstrap - Cluster creation succeeded", payload); err != nil {
+	if err := c.Segment.SendEvent("Bootstrap : Cluster creation succeeded", payload, "PASS", ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for Bootstrap. Error: %s", err.Error())
 	}
 }
