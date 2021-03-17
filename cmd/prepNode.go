@@ -50,7 +50,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag = true
 	// To bail out if loop runs recursively more than thrice
-	loopCounter := 0
+	pmk.LoopCounter = 1
 
 	for credentialFlag {
 		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
@@ -73,12 +73,24 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will bail out if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
-			//zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
-			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
-			loopCounter += 1
-			if loopCounter >= 3 {
-				// If any invalid credentials are present in config then to bail out the recursive loop
-				zap.S().Fatalf("Invalid credentials entered/exists (Username/Password/Tenant), run -- pf9ctl config set")
+
+			if pmk.LoopCounter <= 2 {
+				if !pmk.OldConfigExist {
+					zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
+				} else {
+					zap.S().Info("Invalid credentials found (Username/Password/Tenant)")
+				}
+			}
+			// If config exists but credentials are invalid
+			if (pmk.LoopCounter == 1) && (pmk.OldConfigExist) {
+				pmk.InvalidExistingConfig = true
+			}
+
+			pmk.LoopCounter += 1
+
+			if pmk.LoopCounter >= 4 {
+				// If any invalid credentials extered multiple times in config then to bail out the recursive loop
+				zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant), run -- pf9ctl config set")
 			}
 		} else {
 			// We will store the set config if its set for first time using check-node

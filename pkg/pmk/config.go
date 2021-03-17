@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -14,9 +13,12 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-var ErrConfigurationDetailsNotProvided = errors.New("config not set,....")
-
-var IsNewConfig bool
+var (
+	IsNewConfig           bool
+	OldConfigExist        bool
+	LoopCounter           int
+	InvalidExistingConfig bool
+)
 
 // Config stores information to contact with the pf9 controller.
 type Config struct {
@@ -51,11 +53,16 @@ func LoadConfig(loc string) (Config, error) {
 	zap.S().Info("Loading configuration details")
 
 	f, err := os.Open(loc)
-	if err != nil {
+	// We will execute it if no config found or if config found but have invalid credentials
+	if err != nil || (err == nil && InvalidExistingConfig) {
 
-		if os.IsNotExist(err) {
+		if os.IsNotExist(err) || InvalidExistingConfig {
 			// to initiate the config create and store it
-			zap.S().Info("Existing config not found, prompting for new config.")
+			if InvalidExistingConfig {
+				zap.S().Info("Invalid existing config found, prompting for new config.")
+			} else {
+				zap.S().Info("Existing config not found, prompting for new config.")
+			}
 
 			ctx, err := ConfigCmdCreateRun()
 
@@ -66,7 +73,9 @@ func LoadConfig(loc string) (Config, error) {
 		}
 		return Config{}, err
 	}
-
+	if LoopCounter == 1 {
+		OldConfigExist = true
+	}
 	defer f.Close()
 
 	ctx := Config{WaitPeriod: time.Duration(60), AllowInsecure: false}
