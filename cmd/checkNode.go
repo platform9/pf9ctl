@@ -68,12 +68,15 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 			// If config exists but credentials are invalid
 			if (pmk.LoopCounter == 1) && (pmk.OldConfigExist) {
 				pmk.InvalidExistingConfig = true
+				pmk.LoopCounter += 1
+			} else {
+				pmk.LoopCounter += 1
 			}
 
-			pmk.LoopCounter += 1
-
-			if pmk.LoopCounter >= 4 {
+			if pmk.LoopCounter >= 4 && !(pmk.InvalidExistingConfig) {
 				// If any invalid credentials extered multiple times in config then to bail out the recursive loop
+				zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant), run -- pf9ctl config set")
+			} else if pmk.LoopCounter >= 5 && pmk.InvalidExistingConfig {
 				zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant), run -- pf9ctl config set")
 			}
 
