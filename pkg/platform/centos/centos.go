@@ -57,7 +57,30 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.checkPort()
 	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
+	result, err = c.checkKubernetesCluster()
+	checks = append(checks, platform.Check{"Existing k8s cluster check", true, result, err, fmt.Sprintf("%s", err)})
+
 	return checks
+}
+
+func (c *CentOS) checkKubernetesCluster() (bool, error) {
+	for _, proc := range util.ProcessesList {
+		_, err := c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -A | grep -i %s", proc))
+
+		if err != nil {
+			return true, nil
+		} else if c.checkDocker(); err != nil {
+			return true, nil
+		} else {
+			return false, fmt.Errorf("Found K8s cluster running on node")
+		}
+	}
+	return true, nil
+}
+
+func (c *CentOS) checkDocker() error {
+	_, err := c.exec.RunWithStdout("bash", "-c", "docker ps | grep -i 'kube-proxy' ")
+	return err
 }
 
 func (c *CentOS) checkExistingInstallation() (bool, error) {
