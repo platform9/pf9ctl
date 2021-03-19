@@ -477,7 +477,7 @@ func TestCheckKubernetesCluster(t *testing.T) {
 			},
 			want: want{
 				result: false,
-				err:    fmt.Errorf("Found K8s cluster running on node"),
+				err:    errKubernetesClusterAlreadyRunning,
 			},
 		},
 		//Failure case. If node running any k8s cluster.
@@ -486,7 +486,7 @@ func TestCheckKubernetesCluster(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1", fmt.Errorf("Found K8s cluster running")
+						return "1", errKubernetesClusterAlreadyRunning
 					},
 				},
 			},
@@ -537,12 +537,12 @@ func TestCheckDocker(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1", fmt.Errorf("Found K8s cluster running")
+						return "1", errKubernetesClusterAlreadyRunning
 					},
 				},
 			},
 			want: want{
-				err: fmt.Errorf("Found K8s cluster running"),
+				err: errKubernetesClusterAlreadyRunning,
 			},
 		},
 	}

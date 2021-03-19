@@ -1,6 +1,7 @@
 package debian
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -13,8 +14,9 @@ import (
 )
 
 var (
-	packages            = []string{"ntp", "curl", "uuid-runtime"}
-	packageInstallError = "Packages not found and could not be installed"
+	packages                           = []string{"ntp", "curl", "uuid-runtime"}
+	packageInstallError                = "Packages not found and could not be installed"
+	errKubernetesClusterAlreadyRunning = errors.New("A Kubernetes cluster is already running on node")
 )
 
 // Debian represents debian based host machine
@@ -56,13 +58,14 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkKubernetesCluster()
-	checks = append(checks, platform.Check{"Existing k8s cluster check", true, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Existing Kubernetes cluster check", true, result, err, fmt.Sprintf("%s", err)})
 
 	return checks
 }
 
 func (d *Debian) checkKubernetesCluster() (bool, error) {
 	for _, proc := range util.ProcessesList {
+		//Checking if kubernetes process is running on the host or not
 		_, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -A | grep -i %s", proc))
 
 		if err != nil {
@@ -70,13 +73,14 @@ func (d *Debian) checkKubernetesCluster() (bool, error) {
 		} else if d.checkDocker(); err != nil {
 			return true, nil
 		} else {
-			return false, fmt.Errorf("Found K8s cluster running on node")
+			return false, errKubernetesClusterAlreadyRunning
 		}
 	}
 	return true, nil
 }
 
 func (d *Debian) checkDocker() error {
+	//Checking kube-proxy. Every node in kubernetes cluster runs kube-proxy.
 	_, err := d.exec.RunWithStdout("bash", "-c", "docker ps | grep -i 'kube-proxy' ")
 	return err
 }

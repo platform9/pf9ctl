@@ -1,6 +1,7 @@
 package centos
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -15,8 +16,9 @@ import (
 
 var (
 	// If selinux is enabled on any system then some packages might not be present.
-	packages            = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils"}
-	packageInstallError = "Packages not found and could not be installed"
+	packages                           = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils"}
+	packageInstallError                = "Packages not found and could not be installed"
+	errKubernetesClusterAlreadyRunning = errors.New("A Kubernetes cluster is already running on node")
 )
 
 // CentOS reprents centos based host machine
@@ -58,13 +60,14 @@ func (c *CentOS) Check() []platform.Check {
 	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.checkKubernetesCluster()
-	checks = append(checks, platform.Check{"Existing k8s cluster check", true, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Existing Kubernetes cluster check", true, result, err, fmt.Sprintf("%s", err)})
 
 	return checks
 }
 
 func (c *CentOS) checkKubernetesCluster() (bool, error) {
 	for _, proc := range util.ProcessesList {
+		//Checking if kubernetes process is running on the host or not
 		_, err := c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -A | grep -i %s", proc))
 
 		if err != nil {
@@ -72,13 +75,14 @@ func (c *CentOS) checkKubernetesCluster() (bool, error) {
 		} else if c.checkDocker(); err != nil {
 			return true, nil
 		} else {
-			return false, fmt.Errorf("Found K8s cluster running on node")
+			return false, errKubernetesClusterAlreadyRunning
 		}
 	}
 	return true, nil
 }
 
 func (c *CentOS) checkDocker() error {
+	//Checking kube-proxy. Every node in kubernetes cluster runs kube-proxy.
 	_, err := c.exec.RunWithStdout("bash", "-c", "docker ps | grep -i 'kube-proxy' ")
 	return err
 }
