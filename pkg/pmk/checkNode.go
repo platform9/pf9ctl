@@ -82,7 +82,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 
 	s.Start() // Start the spinner
 	defer s.Stop()
-	s.Suffix = " : Checking Pre-Requisite Checks, OS packages, Install's if required packages missing"
+	s.Suffix = "Running pre-requisite checks and installing any missing OS packages"
 	time.Sleep(2 * time.Second)
 	checks := platform.Check()
 	s.Stop()
