@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TwinProduction/go-color"
 	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/keystone"
@@ -37,8 +38,6 @@ func PrepNode(ctx Config, allClients Client) error {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
-	s.Start() // Start the spinner
-	defer s.Stop()
 
 	zap.S().Debug("Received a call to start preping node(s).")
 
@@ -51,10 +50,10 @@ func PrepNode(ctx Config, allClients Client) error {
 	if err != nil {
 		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
 	}
-
+	s.Start() // Start the spinner
+	defer s.Stop()
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
-	s.Suffix = ": Starting prep-node"
-	time.Sleep(4 * time.Second)
+	s.Suffix = " Starting prep-node"
 
 	hostOS, err := validatePlatform(allClients.Executor)
 	if err != nil {
@@ -74,8 +73,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	}
 
 	sendSegmentEvent(allClients, "Disabling swap - 1", auth, false)
-	s.Suffix = ":Disabling swap and removing swap in fstab"
-	time.Sleep(2 * time.Second)
+	s.Suffix = " Disabling swap and removing swap in fstab"
 
 	err = setupNode(hostOS, allClients.Executor)
 	if err != nil {
@@ -85,35 +83,33 @@ func PrepNode(ctx Config, allClients Client) error {
 	}
 
 	s.Stop()
-	fmt.Println("✓ Disabled swap and removed swap in fstab")
+	fmt.Println(color.Green + "✓ " + color.Reset + "Disabled swap and removed swap in fstab")
 	s.Restart()
 
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
-	s.Suffix = " :Downloading the Hostagent (this might take a few minutes...)"
-	time.Sleep(2 * time.Second)
+	s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
 	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
 		errStr := "Error: Unable to install hostagent. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
-	s.Suffix = " :Platform9 packages installed successfully"
+	s.Suffix = " Platform9 packages installed successfully"
 
 	switch HostAgent {
 	case 200:
-		s.Suffix = " :Platform9 packages installed successfully"
+		s.Suffix = " Platform9 packages installed successfully"
 		s.Stop()
-		fmt.Println("✓ Platform9 packages installed successfully")
+		fmt.Println(color.Green + "✓ " + color.Reset + "Platform9 packages installed successfully")
 	case 404:
-		s.Suffix = " :Hostagent installed successfully"
+		s.Suffix = " Hostagent installed successfully"
 		s.Stop()
-		fmt.Println("✓ Hostagent installed successfully")
+		fmt.Println(color.Green + "✓ " + color.Reset + "Hostagent installed successfully")
 	}
 	s.Restart()
 
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
-	s.Suffix = " :Initialising host"
-	time.Sleep(4 * time.Second)
+	s.Suffix = " Initialising host"
 	zap.S().Debug("Initialising host")
 	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
@@ -126,9 +122,9 @@ func PrepNode(ctx Config, allClients Client) error {
 	}
 
 	s.Stop()
-	fmt.Println("✓ Initialised host successfully")
+	fmt.Println(color.Green + "✓ " + color.Reset + "Initialised host successfully")
 	s.Restart()
-	s.Suffix = " :Authorising host"
+	s.Suffix = " Authorising host"
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
@@ -140,12 +136,11 @@ func PrepNode(ctx Config, allClients Client) error {
 	}
 
 	zap.S().Debug("Host successfully attached to the Platform9 control-plane")
-	s.Suffix = ":Host successfully attached to the Platform9 control-plane"
-	time.Sleep(2 * time.Second)
+	s.Suffix = " Host successfully attached to the Platform9 control-plane"
 	sendSegmentEvent(allClients, "Successful", auth, false)
 	s.Stop()
 
-	fmt.Println("✓ Host successfully attached to the Platform9 control-plane")
+	fmt.Println(color.Green + "✓ " + color.Reset + "Host successfully attached to the Platform9 control-plane")
 
 	return nil
 }

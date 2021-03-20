@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TwinProduction/go-color"
 	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
@@ -82,27 +83,27 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 
 	s.Start() // Start the spinner
 	defer s.Stop()
-	s.Suffix = "Running pre-requisite checks and installing any missing OS packages"
-	time.Sleep(2 * time.Second)
+	s.Suffix = " Running pre-requisite checks and installing any missing OS packages"
 	checks := platform.Check()
 	s.Stop()
 
 	//We will print console if any missing os packages installed
 	if debian.MissingPkgsInstalledDebian || centos.MissingPkgsInstalledCentos {
-		fmt.Println("\n✓ Missing package(s) installed successfully")
+		fmt.Printf(color.Green + "✓ " + color.Reset + "Missing package(s) installed successfully")
 	}
 
 	mandatoryCheck := true
 	optionalCheck := true
 
-	fmt.Printf("\n\n")
+	fmt.Printf("\n")
 	for _, check := range checks {
 		if check.Result {
 			segment_str := "CheckNode: " + check.Name + " Status: " + checkPass
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf("✓ %s\n", check.Name)
+			fmt.Printf(color.Green+"✓ "+color.Reset+"%s\n", check.Name)
+			//fmt.Printf("✓ %s\n", check.Name)
 			//fmt.Printf("%s : %s\n", check.Name, checkPass)
 
 		} else {
@@ -110,7 +111,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf("x %s - %s\n", check.Name, check.UserErr)
+			fmt.Printf(color.Red+"x "+color.Reset+"%s - %s\n", check.Name, check.UserErr)
 
 			//fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
 			if check.Mandatory {
@@ -130,7 +131,8 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	}
 
 	if mandatoryCheck {
-		fmt.Println("\n✓ Completed Pre-Requisite Checks successfully\n")
+		fmt.Printf(color.Green + "✓ " + color.Reset + "Completed Pre-Requisite Checks successfully\n")
+		//fmt.Printf("Completed Pre-Requisite Checks successfully\n")
 	}
 
 	if !mandatoryCheck {
