@@ -89,13 +89,12 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 
 	//We will print console if any missing os packages installed
 	if debian.MissingPkgsInstalledDebian || centos.MissingPkgsInstalledCentos {
-		fmt.Printf(color.Green("✓ ") + "Missing package(s) installed successfully")
+		fmt.Printf(color.Green("✓ ") + "Missing package(s) installed successfully\n")
 	}
 
 	mandatoryCheck := true
 	optionalCheck := true
 
-	fmt.Printf("\n")
 	for _, check := range checks {
 		if check.Result {
 			segment_str := "CheckNode: " + check.Name
@@ -129,10 +128,9 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	if err = allClients.Segment.SendEvent("CheckNode complete", auth, checkPass, ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
-
+	fmt.Printf("\n")
 	if mandatoryCheck {
-		fmt.Printf(color.Green("✓ ") + "Completed Pre-Requisite Checks successfully\n")
-		//fmt.Printf("Completed Pre-Requisite Checks successfully\n")
+		fmt.Println(color.Green("✓ ") + "Completed Pre-Requisite Checks successfully\n")
 	}
 
 	if !mandatoryCheck {
