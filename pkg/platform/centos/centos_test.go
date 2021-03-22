@@ -481,7 +481,7 @@ func TestCheckKubernetesCluster(t *testing.T) {
 			},
 			want: want{
 				result: false,
-				err:    errKubernetesClusterAlreadyRunning,
+				err:    k8sPresentError,
 			},
 		},
 		//Failure case. If node running any k8s cluster.
@@ -490,7 +490,7 @@ func TestCheckKubernetesCluster(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1", errKubernetesClusterAlreadyRunning
+						return "1", k8sPresentError
 					},
 				},
 			},
@@ -534,6 +534,9 @@ func TestCheckDocker(t *testing.T) {
 					},
 				},
 			},
+			want: want{
+				err: k8sPresentError,
+			},
 		},
 		//Failure case. If node running any container-runtime (Docker).
 		//Returning 1 exit status. Therefore test case should pass.
@@ -541,12 +544,12 @@ func TestCheckDocker(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1", errKubernetesClusterAlreadyRunning
+						return "1", k8sPresentError
 					},
 				},
 			},
 			want: want{
-				err: errKubernetesClusterAlreadyRunning,
+				err: k8sPresentError,
 			},
 		},
 	}

@@ -8,7 +8,7 @@ import (
 
 var RequiredPorts []string
 var PortErr string
-var ProcessesList []string
+var ProcessesList []string //Kubernetes clusters processes list
 
 const (
 
@@ -66,7 +66,7 @@ var (
 
 func init() {
 	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "8285", "3306"}
-	ProcessesList = []string{"kubelet", "kube-proxy", "apiserver", "scheduler", "etcd", "controller"}
+	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "etcd", "kube-controller"}
 }
 
 //This is the current version of cli.
