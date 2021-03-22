@@ -59,7 +59,7 @@ func LoadConfig(loc string) (Config, error) {
 		if os.IsNotExist(err) || InvalidExistingConfig {
 			// to initiate the config create and store it
 			if InvalidExistingConfig {
-				zap.S().Info("Invalid existing config found, prompting for new config.")
+				zap.S().Info("Existing config is invalid, prompting for new config.")
 			} else {
 				zap.S().Info("Existing config not found, prompting for new config.")
 			}
@@ -73,7 +73,7 @@ func LoadConfig(loc string) (Config, error) {
 		}
 		return Config{}, err
 	}
-	if LoopCounter == 1 {
+	if LoopCounter == 0 {
 		OldConfigExist = true
 	}
 	defer f.Close()
