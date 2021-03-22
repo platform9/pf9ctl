@@ -21,6 +21,12 @@ import (
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
 
+const (
+	// Response Status Codes
+	HostAgentCertless = 200
+	HostAgentLegacy   = 404
+)
+
 // Sends an event to segment based on the input string and uses auth as keystone UUID property.
 func sendSegmentEvent(allClients Client, eventStr string, auth keystone.KeystoneAuth, isError bool) {
 
@@ -41,7 +47,7 @@ func sendSegmentEvent(allClients Client, eventStr string, auth keystone.Keystone
 	}
 
 	// Close the segment for error path. Cmd level closure does not work due to FatalF.
-	if isError{
+	if isError {
 		defer allClients.Segment.Close()
 	}
 }
@@ -109,12 +115,11 @@ func PrepNode(ctx Config, allClients Client) error {
 
 	s.Suffix = " Platform9 packages installed successfully"
 
-	switch HostAgent {
-	case 200:
+	if HostAgent == HostAgentCertless {
 		s.Suffix = " Platform9 packages installed successfully"
 		s.Stop()
 		fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
-	case 404:
+	} else if HostAgent == HostAgentLegacy {
 		s.Suffix = " Hostagent installed successfully"
 		s.Stop()
 		fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")

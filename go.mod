@@ -3,7 +3,6 @@ module github.com/platform9/pf9ctl
 go 1.14
 
 require (
-	github.com/TwinProduction/go-color v1.0.0
 	github.com/briandowns/spinner v1.12.0
 	github.com/fatih/color v1.10.0
 	github.com/google/go-cmp v0.2.0

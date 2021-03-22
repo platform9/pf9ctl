@@ -102,8 +102,6 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
 			fmt.Printf(color.Green("✓ ")+"%s\n", check.Name)
-			//fmt.Printf("✓ %s\n", check.Name)
-			//fmt.Printf("%s : %s\n", check.Name, checkPass)
 
 		} else {
 			segment_str := "CheckNode: " + check.Name
@@ -112,7 +110,6 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 			}
 			fmt.Printf(color.Red("x ")+"%s - %s\n", check.Name, check.UserErr)
 
-			//fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
 			if check.Mandatory {
 				mandatoryCheck = false
 			} else {
