@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TwinProduction/go-color"
 	"github.com/briandowns/spinner"
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
@@ -89,7 +89,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 
 	//We will print console if any missing os packages installed
 	if debian.MissingPkgsInstalledDebian || centos.MissingPkgsInstalledCentos {
-		fmt.Printf(color.Green + "✓ " + color.Reset + "Missing package(s) installed successfully")
+		fmt.Printf(color.Green("✓ ") + "Missing package(s) installed successfully")
 	}
 
 	mandatoryCheck := true
@@ -102,7 +102,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf(color.Green+"✓ "+color.Reset+"%s\n", check.Name)
+			fmt.Printf(color.Green("✓ ")+"%s\n", check.Name)
 			//fmt.Printf("✓ %s\n", check.Name)
 			//fmt.Printf("%s : %s\n", check.Name, checkPass)
 
@@ -111,7 +111,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 			if err := allClients.Segment.SendEvent(segment_str, auth); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf(color.Red+"x "+color.Reset+"%s - %s\n", check.Name, check.UserErr)
+			fmt.Printf(color.Red("x ")+"%s - %s\n", check.Name, check.UserErr)
 
 			//fmt.Printf("%s : %s - %s\n", check.Name, checkFail, check.UserErr)
 			if check.Mandatory {
@@ -131,7 +131,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	}
 
 	if mandatoryCheck {
-		fmt.Printf(color.Green + "✓ " + color.Reset + "Completed Pre-Requisite Checks successfully\n")
+		fmt.Printf(color.Green("✓ ") + "Completed Pre-Requisite Checks successfully\n")
 		//fmt.Printf("Completed Pre-Requisite Checks successfully\n")
 	}
 

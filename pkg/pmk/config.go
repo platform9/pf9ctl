@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TwinProduction/go-color"
+	"github.com/platform9/pf9ctl/pkg/color"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -44,7 +44,7 @@ func StoreConfig(ctx Config, loc string) error {
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
-	fmt.Println(color.Green + "✓ " + color.Reset + "Stored configuration details Succesfully")
+	fmt.Println(color.Green("✓ ") + "Stored configuration details Succesfully")
 	return encoder.Encode(ctx)
 
 }
@@ -58,7 +58,7 @@ func LoadConfig(loc string) (Config, error) {
 	if err != nil {
 
 		if os.IsNotExist(err) {
-			fmt.Println(color.Green + " " + color.Reset + "Existing config not found, prompting for new config")
+			fmt.Println(color.Red("x ") + "Existing config not found, prompting for new config")
 
 			zap.S().Debug("Existing config not found, prompting for new config.")
 
@@ -84,7 +84,7 @@ func LoadConfig(loc string) (Config, error) {
 	}
 	ctx.Password = string(decodedBytePassword)
 	//s.Stop()
-	fmt.Println(color.Green + "✓ " + color.Reset + "Loaded Config Successfully")
+	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	return ctx, err
 }
 

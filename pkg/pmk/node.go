@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TwinProduction/go-color"
 	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
@@ -83,7 +83,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	}
 
 	s.Stop()
-	fmt.Println(color.Green + "✓ " + color.Reset + "Disabled swap and removed swap in fstab")
+	fmt.Println(color.Green("✓ ") + "Disabled swap and removed swap in fstab")
 	s.Restart()
 
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
@@ -100,11 +100,11 @@ func PrepNode(ctx Config, allClients Client) error {
 	case 200:
 		s.Suffix = " Platform9 packages installed successfully"
 		s.Stop()
-		fmt.Println(color.Green + "✓ " + color.Reset + "Platform9 packages installed successfully")
+		fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
 	case 404:
 		s.Suffix = " Hostagent installed successfully"
 		s.Stop()
-		fmt.Println(color.Green + "✓ " + color.Reset + "Hostagent installed successfully")
+		fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
 	}
 	s.Restart()
 
@@ -122,7 +122,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	}
 
 	s.Stop()
-	fmt.Println(color.Green + "✓ " + color.Reset + "Initialised host successfully")
+	fmt.Println(color.Green("✓ ") + "Initialised host successfully")
 	s.Restart()
 	s.Suffix = " Authorising host"
 	hostID := strings.TrimSuffix(output, "\n")
@@ -140,7 +140,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	sendSegmentEvent(allClients, "Successful", auth, false)
 	s.Stop()
 
-	fmt.Println(color.Green + "✓ " + color.Reset + "Host successfully attached to the Platform9 control-plane")
+	fmt.Println(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
 
 	return nil
 }

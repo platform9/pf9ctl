@@ -5,7 +5,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/TwinProduction/go-color"
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -57,7 +57,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		// Validate the user credentials entered during config set and will loop back again if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
 			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
-			fmt.Println(color.Red + "x " + color.Reset + "Invalid credentials entered (Username/Password/Tenant)")
+			fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 		} else {
 			// We will store the set config if its set for first time using check-node
 			if pmk.IsNewConfig {
@@ -79,7 +79,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		fmt.Printf(color.Red+"x "+color.Reset+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		fmt.Printf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	} else if result == pmk.OptionalFail {
 		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	}
