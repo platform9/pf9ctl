@@ -49,6 +49,8 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running prep-node==========")
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag = true
+	// To bail out if loop runs recursively more than thrice
+	pmk.LoopCounter = 0
 
 	for credentialFlag {
 		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
@@ -71,8 +73,9 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will bail out if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
-			//zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
-			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
+			// Check if invalid config exits or no config found, then bail out if loop backed thrice.
+			err = configValidation(pmk.LoopCounter)
+
 		} else {
 			// We will store the set config if its set for first time using check-node
 			if pmk.IsNewConfig {
@@ -85,7 +88,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 			credentialFlag = false
 		}
 	}
-
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {

@@ -28,6 +28,8 @@ var (
 	credentialFlag bool
 )
 
+const MaxLoopNoConfig = 3
+
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
 
@@ -121,4 +123,30 @@ func validateUserCredentials(pmk.Config, pmk.Client) error {
 		ctx.Tenant,
 	)
 	return err
+}
+
+func configValidation(int) error {
+
+	if pmk.LoopCounter <= MaxLoopNoConfig-1 {
+		if !pmk.OldConfigExist {
+			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
+		} else {
+			zap.S().Info("Invalid credentials found (Username/Password/Tenant)")
+		}
+	}
+	// If existing initial config is Invalid
+	if (pmk.LoopCounter == 0) && (pmk.OldConfigExist) {
+		pmk.InvalidExistingConfig = true
+		pmk.LoopCounter += 1
+	} else {
+		// If user enteres invalid credentials during new config pormpt.
+		pmk.LoopCounter += 1
+	}
+	// If any invalid credentials extered multiple times in new config prompt then to bail out the recursive loop (thrice)
+	if pmk.LoopCounter >= MaxLoopNoConfig && !(pmk.InvalidExistingConfig) {
+		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant), run -- pf9ctl config set")
+	} else if pmk.LoopCounter >= MaxLoopNoConfig+1 && pmk.InvalidExistingConfig {
+		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant), run -- pf9ctl config set")
+	}
+	return nil
 }
