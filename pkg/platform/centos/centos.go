@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	packages                   = []string{"ntp", "curl"}
-	packageInstallError        = "Packages not found and could not be installed"
+	packages            = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils"}
+	packageInstallError = "Packages not found and could not be installed"
 	MissingPkgsInstalledCentos bool
+
 )
 
 // CentOS reprents centos based host machine

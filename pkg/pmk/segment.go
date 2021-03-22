@@ -3,10 +3,12 @@
 package pmk
 
 import (
-	"time"
+	"fmt"
 	"os"
 	"strconv"
-	"github.com/google/uuid"
+	"time"
+
+	"github.com/platform9/pf9ctl/pkg/keystone"
 	"go.uber.org/zap"
 	"gopkg.in/segmentio/analytics-go.v3"
 )
@@ -14,7 +16,7 @@ import (
 const segmentWriteKey = "P6DycMCALprZrUwWL9ZzRLlfMQwL5Xyl"
 
 type Segment interface {
-	SendEvent(string, interface{}) error
+	SendEvent(string, interface{}, string, string) error
 	SendGroupTraits(string, interface{}) error
 	Close()
 }
@@ -30,7 +32,7 @@ type NoopSegment struct {
 func NewSegment(fqdn string, noTracking bool) Segment {
 	// mock out segment if the user wants no Tracking
 	envCheck := os.Getenv("PF9CTL_SEGMENT_EVENTS_DISABLE")
-	segmentEventDisabled , _:= strconv.ParseBool(envCheck)
+	segmentEventDisabled, _ := strconv.ParseBool(envCheck)
 	if noTracking || segmentEventDisabled {
 		return NoopSegment{}
 	}
@@ -42,27 +44,41 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 	}
 }
 
-func (c SegmentImpl) SendEvent(name string, data interface{}) error {
-	zap.S().Debug("Sending Segment Event: %s", name)
-	return c.client.Enqueue(analytics.Track{
-		AnonymousId: uuid.New().String(),
-		Event:       name,
-		Properties:  analytics.NewProperties().Set("data", data),
-		Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
-			"session_id": time.Now().Unix(),
-		}),
-	})
+func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err string) error {
+	zap.S().Debug("Sending Segment Event: ", name)
+	data_struct, ok := data.(keystone.KeystoneAuth)
+	if ok {
+		return c.client.Enqueue(analytics.Track{
+			UserId:     data_struct.UserID,
+			Event:      name,
+			Properties: analytics.NewProperties().
+					Set("keystoneData", data).
+					Set("status", status).
+					Set("errorMsg", err),
+			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
+				"session_id": time.Now().Unix(),
+			}),
+		})
+	} else {
+		return fmt.Errorf("Unable to fetch keystone info")
+	}
 }
 
 func (c SegmentImpl) SendGroupTraits(name string, data interface{}) error {
-	return c.client.Enqueue(analytics.Group{
-		AnonymousId: uuid.New().String(),
-		GroupId:     name,
-		Traits:      analytics.NewTraits().Set("data", data),
-		Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
-			"session_id": time.Now().Unix(),
-		}),
-	})
+	zap.S().Debug("Sending Group Trait: ", name)
+	data_struct, ok := data.(keystone.KeystoneAuth)
+	if ok {
+		return c.client.Enqueue(analytics.Group{
+			UserId:  data_struct.UserID,
+			GroupId: name,
+			Traits:  analytics.NewTraits().Set("data", data),
+			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
+				"session_id": time.Now().Unix(),
+			}),
+		})
+	} else {
+		return fmt.Errorf("Unable to fetch keystone info")
+	}
 }
 
 func (c SegmentImpl) Close() {
@@ -70,7 +86,7 @@ func (c SegmentImpl) Close() {
 }
 
 // The Noop Implementation of Segment
-func (c NoopSegment) SendEvent(name string, data interface{}) error {
+func (c NoopSegment) SendEvent(name string, data interface{}, status string, err string) error {
 	return nil
 }
 

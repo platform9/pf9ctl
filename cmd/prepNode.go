@@ -108,7 +108,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 	if err := pmk.PrepNode(ctx, c); err != nil {
 		fmt.Printf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
-		c.Segment.SendEvent("Prep Node - Failed", err)
+		c.Segment.SendEvent("Prep Node : Fail", err, "FAIL", "")
 		zap.S().Debugf("Unable to prep node: %s\n", err.Error())
 	}
 
