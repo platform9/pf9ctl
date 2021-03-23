@@ -454,3 +454,108 @@ func TestRemovePyCli(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckKubernetesCluster(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Node should not have any k8s cluster running
+		//Returning 0 exit code. Therefore test case should pass.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+				err:    k8sPresentError,
+			},
+		},
+		//Failure case. If node running any k8s cluster.
+		//Returning 1 exit status. Therefore test case should pass.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", k8sPresentError
+					},
+				},
+			},
+			want: want{
+				result: true,
+				err:    nil,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &Debian{exec: tc.exec}
+			o, err := c.checkKubernetesCluster()
+
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+				t.Errorf("r: -want, +got:\n%s", diff)
+			}
+
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}
+
+func TestCheckDocker(t *testing.T) {
+	type want struct {
+		err error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. Node should not have any container-runtime (Docker) running
+		//Returning 0 exit code. Therefore test case should pass.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				err: k8sPresentError,
+			},
+		},
+		//Failure case. If node running any container-runtime (Docker).
+		//Returning 1 exit status. Therefore test case should pass.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", k8sPresentError
+					},
+				},
+			},
+			want: want{
+				err: k8sPresentError,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &Debian{exec: tc.exec}
+			err := c.checkDocker()
+
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}

@@ -35,6 +35,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag = true
+	// To bail out if loop runs recursively more than thrice
+	pmk.LoopCounter = 0
 
 	for credentialFlag {
 
@@ -56,8 +58,9 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will loop back again if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
-			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
-			fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+
+			// Check if invalid config exits or no config found, then bail out if loop backed than maxLoop.
+			err = configValidation(pmk.LoopCounter)
 		} else {
 			// We will store the set config if its set for first time using check-node
 			if pmk.IsNewConfig {

@@ -2,9 +2,10 @@ package pmk
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type args struct {

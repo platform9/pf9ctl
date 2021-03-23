@@ -1,6 +1,7 @@
 package centos
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"regexp"
@@ -14,10 +15,10 @@ import (
 )
 
 var (
-	packages            = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils"}
-	packageInstallError = "Packages not found and could not be installed"
+	packages                   = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils"}
+	packageInstallError        = "Packages not found and could not be installed"
 	MissingPkgsInstalledCentos bool
-
+	k8sPresentError            = errors.New("A Kubernetes cluster is already running on node")
 )
 
 // CentOS reprents centos based host machine
@@ -58,7 +59,38 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.checkPort()
 	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
+	result, err = c.checkKubernetesCluster()
+	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
+
 	return checks
+}
+
+func (c *CentOS) checkKubernetesCluster() (bool, error) {
+	for _, proc := range util.ProcessesList {
+		//Checking if kubernetes process is running on the host or not
+		_, err := c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -A | grep -i %s", proc))
+
+		if err != nil {
+			return true, nil
+		} else if c.checkDocker(); err != nil {
+			return true, nil
+		} else {
+			return false, k8sPresentError
+		}
+	}
+	return true, nil
+}
+
+func (c *CentOS) checkDocker() error {
+	//Checking kube-proxy. Every node in kubernetes cluster runs kube-proxy.
+	var err error
+	for _, proc := range util.ProcessesList {
+		_, err = c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("docker ps | grep -i %s", proc))
+		if err == nil {
+			return k8sPresentError
+		}
+	}
+	return err
 }
 
 func (c *CentOS) checkExistingInstallation() (bool, error) {
