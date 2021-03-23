@@ -1,17 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"archive/zip"
+	"fmt"
 	"io"
 	"io/ioutil"
-	"os/user"
+	"log"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
-	"log"
-	"strconv"
 )
 
 //This function takes a source string and destination string as parameters.
@@ -114,130 +114,129 @@ func CopyDir(src string, dst string) (err error) {
 
 //This function will take the absolute path as an input and convert it into the relative path
 func expand(path string) (string, error) {
-    if len(path) == 0 || path[0] != '~' {
-        return path, nil
-    }
+	if len(path) == 0 || path[0] != '~' {
+		return path, nil
+	}
 
-    usr, err := user.Current()
-    if err != nil {
-        return "", err
-    }
-    return filepath.Join(usr.HomeDir, path[1:]),nil 
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(usr.HomeDir, path[1:]), nil
 }
 
 //This fucntion recursively archives all the files present in the directory given.
 //Parameters: 1. Source Directory
 //            2. Destination Directory
 func RecursiveZip(pathToZip, destinationPath string) error {
-    destinationFile, err := os.Create(destinationPath)
-    if err != nil {
-        return err
-    }
-    myZip := zip.NewWriter(destinationFile)
-    err = filepath.Walk(pathToZip, func(filePath string, info os.FileInfo, err error) error {
-        if info.IsDir() {
-            return nil
-        }
+	destinationFile, err := os.Create(destinationPath)
+	if err != nil {
+		return err
+	}
+	myZip := zip.NewWriter(destinationFile)
+	err = filepath.Walk(pathToZip, func(filePath string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
 
-        if err != nil {
-            return err
-        }
+		if err != nil {
+			return err
+		}
 
-        relPath := strings.TrimPrefix(filePath,pathToZip)
-        zipFile, err := myZip.Create(relPath)
-        if err != nil {
-            return err
-        }
+		relPath := strings.TrimPrefix(filePath, pathToZip)
+		zipFile, err := myZip.Create(relPath)
+		if err != nil {
+			return err
+		}
 
-        fsFile, err := os.Open(filePath)
-        if err != nil {
-            return err
-        }
-        _, err = io.Copy(zipFile, fsFile)
-        if err != nil {
-            return err
-        }
-        return nil
-    })
-    if err != nil {
-        return err
-    }
-    err = myZip.Close()
-    if err != nil {
-        return err
-    }
-    return nil
+		fsFile, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(zipFile, fsFile)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	err = myZip.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-//This function is used to generate the support bundles.It copies all the log files specified into a directory and archives that given directory
-func gensupportbundle(){
-t := time.Now()
-	  
-	    file:="~/pf9/log/"
-        source,err:=expand(file)
-        fmt.Println(source,err)
-	dest:="~/pf9/copy/pf9/log/"
-	target,err:=expand(dest)
-        fmt.Println(target,err)
-        CopyDir(source,target)
+//This function is used to generate the support bundles. It copies all the log files specified into a directory and archives that given directory
+func gensupportbundle() {
+	t := time.Now()
 
-	file1:="~/pf9/db/"
-        source1,err:=expand(file1)
-        fmt.Println(source1,err)
-	dest1:="~/pf9/copy/pf9/db/"
-	target1,err:=expand(dest1)
-        fmt.Println(target1,err)
-        CopyDir(source1,target1)
+	file := "~/pf9/log/"
+	source, err := expand(file)
+	fmt.Println(source, err)
+	dest := "~/pf9/copy/pf9/log/"
+	target, err := expand(dest)
+	fmt.Println(target, err)
+	CopyDir(source, target)
 
-        file2:="/var/log/pf9/"
-        source2,err:=expand(file2)
-        fmt.Println(source2,err)
-	dest2:="~/pf9/copy/var/log/pf9/"
-	target2,err:=expand(dest2)
-        fmt.Println(target2,err)
-        CopyDir(source2,target2)
+	file1 := "~/pf9/db/"
+	source1, err := expand(file1)
+	fmt.Println(source1, err)
+	dest1 := "~/pf9/copy/pf9/db/"
+	target1, err := expand(dest1)
+	fmt.Println(target1, err)
+	CopyDir(source1, target1)
 
-	file3:="/etc/pf9/"
-        source3,err:=expand(file3)
-        fmt.Println(source3,err)
-	dest3:="~/pf9/copy/etc/pf9/"
-	target3,err:=expand(dest3)
-        fmt.Println(target3,err)
-        CopyDir(source3,target3)
-       
-		//Storing the hostname for the given node
-		name, err := os.Hostname()
-	    if err != nil {
+	file2 := "/var/log/pf9/"
+	source2, err := expand(file2)
+	fmt.Println(source2, err)
+	dest2 := "~/pf9/copy/var/log/pf9/"
+	target2, err := expand(dest2)
+	fmt.Println(target2, err)
+	CopyDir(source2, target2)
+
+	file3 := "/etc/pf9/"
+	source3, err := expand(file3)
+	fmt.Println(source3, err)
+	dest3 := "~/pf9/copy/etc/pf9/"
+	target3, err := expand(dest3)
+	fmt.Println(target3, err)
+	CopyDir(source3, target3)
+
+	//Storing the hostname for the given node
+	name, err := os.Hostname()
+	if err != nil {
 		panic(err)
-	    }
+	}
 
-		//timestamp format for the zip file
-	    layout:=t.Format("2006-01-02")
-	    h:=t.Hour()
-	    s1:=strconv.Itoa(h)
-	    m:=t.Minute()
-	    s2:=strconv.Itoa(m)
-            s:=t.Second()
-	    s3:=strconv.Itoa(s)
+	//timestamp format for the zip file
+	layout := t.Format("2006-01-02")
+	h := t.Hour()
+	s1 := strconv.Itoa(h)
+	m := t.Minute()
+	s2 := strconv.Itoa(m)
+	s := t.Second()
+	s3 := strconv.Itoa(s)
 
-		destination:="/tmp/"+name+"-"+layout+"-"+s1+"-"+s2+"-"+s3+".tgz"
-		targetfile,err:=expand(destination)
-		fmt.Println(targetfile,err)
-        
-		//This function will archive the source directory,subdirectories,files and place the archived file in the targetfile directory
-        copydirectory:="~/pf9/copy/"
-		RecursiveZip(copydirectory,targetfile);
-		fmt.Println("Zipped Successfully")
+	destination := "/tmp/" + name + "-" + layout + "-" + s1 + "-" + s2 + "-" + s3 + ".tgz"
+	targetfile, err := expand(destination)
+	fmt.Println(targetfile, err)
 
-        //This function will remove all the contents of the directory
-	    err1 := os.RemoveAll(copydirectory) 
-        if err1 != nil { 
-        log.Fatal(err1) 
-    } 	
+	//This function will archive the source directory,subdirectories,files and place the archived file in the targetfile directory
+	copydirectory := "~/pf9/copy/"
+	copy1, err := expand(copydirectory)
+	RecursiveZip(copy1, targetfile)
+	fmt.Println("Zipped Successfully")
 
-}	
-func main(){
-      gensupportbundle() 	
+	//This function will remove all the contents of the directory
+	err1 := os.RemoveAll(copy1)
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+
 }
-
-
+func main() {
+	gensupportbundle()
+}
