@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -73,9 +74,9 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will bail out if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
+
 			// Check if invalid config exits or no config found, then bail out if loop backed thrice.
 			err = configValidation(pmk.LoopCounter)
-
 		} else {
 			// We will store the set config if its set for first time using check-node
 			if pmk.IsNewConfig {
@@ -95,7 +96,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		fmt.Println("\nRequired pre-requisite check(s) failed.")
+		fmt.Println(color.Red("x ") + "Required pre-requisite check(s) failed.")
 		return
 	} else if result == pmk.OptionalFail {
 		fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")

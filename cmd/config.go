@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -129,9 +130,9 @@ func configValidation(int) error {
 
 	if pmk.LoopCounter <= MaxLoopNoConfig-1 {
 		if !pmk.OldConfigExist {
-			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
+			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 		} else {
-			zap.S().Info("Invalid credentials found (Username/Password/Tenant)")
+			zap.S().Debug("Invalid credentials found (Username/Password/Tenant)")
 		}
 	}
 	// If existing initial config is Invalid
@@ -142,11 +143,14 @@ func configValidation(int) error {
 		// If user enteres invalid credentials during new config pormpt.
 		pmk.LoopCounter += 1
 	}
+
 	// If any invalid credentials extered multiple times in new config prompt then to bail out the recursive loop (thrice)
 	if pmk.LoopCounter >= MaxLoopNoConfig && !(pmk.InvalidExistingConfig) {
-		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant), run -- pf9ctl config set")
+		fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant)")
 	} else if pmk.LoopCounter >= MaxLoopNoConfig+1 && pmk.InvalidExistingConfig {
-		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant), run -- pf9ctl config set")
+		fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant)")
 	}
 	return nil
 }

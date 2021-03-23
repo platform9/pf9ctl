@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	// If selinux is enabled on any system then some packages might not be present.
-	packages            = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils"}
-	packageInstallError = "Packages not found and could not be installed"
-	k8sPresentError     = errors.New("A Kubernetes cluster is already running on node")
+	packages                   = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils"}
+	packageInstallError        = "Packages not found and could not be installed"
+	MissingPkgsInstalledCentos bool
+	k8sPresentError            = errors.New("A Kubernetes cluster is already running on node")
 )
 
 // CentOS reprents centos based host machine
@@ -106,18 +106,19 @@ func (c *CentOS) checkExistingInstallation() (bool, error) {
 func (c *CentOS) checkOSPackages() (bool, error) {
 
 	errLines := []string{packageInstallError}
-	zap.S().Info("Checking OS Packages")
+	zap.S().Debug("Checking OS Packages")
 
 	for _, p := range packages {
 		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
 		if err != nil {
-			zap.S().Info("Installing missing packages, this may take a few minutes")
+			zap.S().Debug("Installing missing packages, this may take a few minutes")
 			zap.S().Debugf("Package %s not found, trying to install", p)
 			if err = c.installOSPackages(p); err != nil {
 				zap.S().Debugf("Error installing package %s: %s", p, err)
 				errLines = append(errLines, p)
 			} else {
-				zap.S().Infof("Missing package %s installed", p)
+				MissingPkgsInstalledCentos = true
+				zap.S().Debugf("Missing package %s installed", p)
 			}
 		}
 	}

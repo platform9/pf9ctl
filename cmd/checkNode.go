@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -57,6 +58,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will loop back again if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
+
 			// Check if invalid config exits or no config found, then bail out if loop backed than maxLoop.
 			err = configValidation(pmk.LoopCounter)
 		} else {
@@ -80,7 +82,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		fmt.Printf("\nRequired pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		fmt.Printf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	} else if result == pmk.OptionalFail {
 		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	}

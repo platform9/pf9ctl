@@ -3,6 +3,8 @@ module github.com/platform9/pf9ctl
 go 1.14
 
 require (
+	github.com/briandowns/spinner v1.12.0
+	github.com/fatih/color v1.10.0
 	github.com/google/go-cmp v0.2.0
 	github.com/google/uuid v1.1.2
 	github.com/hashicorp/go-retryablehttp v0.6.7
