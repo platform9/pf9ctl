@@ -104,7 +104,7 @@ func ConfigCmdCreateRun() (Config, error) {
 	zap.S().Debug("==========Running set config==========")
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("Platform9 Account URL:")
+	fmt.Printf("Platform9 Account URL: ")
 	fqdn, _ := reader.ReadString('\n')
 	fqdn = strings.TrimSuffix(fqdn, "\n")
 
