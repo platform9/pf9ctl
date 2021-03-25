@@ -38,7 +38,7 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
 	result, err = d.checkExistingInstallation()
-	checks = append(checks, platform.Check{"Existing pf9 Packages Check", true, result, err, util.ExisitngInstallationErr})
+	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", true, result, err, util.ExisitngInstallationErr})
 
 	result, err = d.checkOSPackages()
 	checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
