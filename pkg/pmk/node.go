@@ -163,10 +163,30 @@ func PrepNode(ctx Config, allClients Client) error {
 	return nil
 }
 
+func fetchInstallerURL(ctx Config, auth keystone.KeystoneAuth, hostOS string) (string, error) {
+	regionInfoServiceID, err := keystone.GetServiceID(ctx.Fqdn, auth, "regionInfo")
+	if err != nil {
+		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
+	}
+	fmt.Println("Service ID fetched", regionInfoServiceID)
+
+        endpointURL, err := keystone.GetEndpointForRegion(ctx.Fqdn, auth, ctx.Region, regionInfoServiceID)
+        if err != nil {
+                return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
+        }
+        fmt.Println("endpointURL fetched", endpointURL)
+        return endpointURL, nil
+}
+
 func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent")
 
-	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", ctx.Fqdn, hostOS)
+	regionURL, err := fetchInstallerURL(ctx, auth, hostOS)
+        if err != nil {
+                return fmt.Errorf("Unable to fetch URL: %w", err)
+        }
+
+	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", regionURL, hostOS)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("Unable to create a http request: %w", err)
@@ -180,20 +200,20 @@ func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exe
 	HostAgent = resp.StatusCode
 	switch resp.StatusCode {
 	case 404:
-		return installHostAgentLegacy(ctx, auth, hostOS, exec)
+		return installHostAgentLegacy(ctx, regionURL, auth, hostOS, exec)
 	case 200:
-		return installHostAgentCertless(ctx, auth, hostOS, exec)
+		return installHostAgentCertless(ctx, regionURL, auth, hostOS, exec)
 	default:
 		return fmt.Errorf("Invalid status code when identifiying hostagent type: %d", resp.StatusCode)
 	}
 }
 
-func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
+func installHostAgentCertless(ctx Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading the installer (this might take a few minutes...)")
 
 	url := fmt.Sprintf(
 		"%s/clarity/platform9-install-%s.sh",
-		ctx.Fqdn, hostOS)
+		regionURL, hostOS)
 	insecureDownload := ""
 	if ctx.AllowInsecure {
 		insecureDownload = "-k"
@@ -205,7 +225,7 @@ func installHostAgentCertless(ctx Config, auth keystone.KeystoneAuth, hostOS str
 	}
 	zap.S().Debug("Hostagent download completed successfully")
 
-	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, ctx.Fqdn, ctx.Username, ctx.Password)
+	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, regionURL, ctx.Username, ctx.Password)
 
 	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
 	if err != nil {
@@ -274,10 +294,10 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 	return !(out == "")
 }
 
-func installHostAgentLegacy(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
+func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent Installer Legacy")
 
-	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", ctx.Fqdn, hostOS)
+	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", regionURL, hostOS)
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
 	//use insecure by default
 	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o /tmp/installer.sh`, auth.Token, url)
