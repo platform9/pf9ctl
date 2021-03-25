@@ -39,7 +39,7 @@ func (c *CentOS) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
 	result, err = c.checkExistingInstallation()
-	checks = append(checks, platform.Check{"Existing Installation Check", true, result, err, util.ExisitngInstallationErr})
+	checks = append(checks, platform.Check{"Existing pf9 Packages Check", true, result, err, util.ExisitngInstallationErr})
 
 	result, err = c.checkOSPackages()
 	checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
