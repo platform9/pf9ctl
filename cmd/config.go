@@ -27,6 +27,8 @@ var (
 	c   pmk.Client
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag bool
+	// This flag is true when we set config through ./pf9ctl config set
+	SetConfig bool
 )
 
 const MaxLoopNoConfig = 3
@@ -35,7 +37,9 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
 
 	credentialFlag = true
-
+	SetConfig = true
+	// To bail out if loop runs recursively more than thrice
+	pmk.LoopCounter = 0
 	for credentialFlag {
 		// invoked the configcreate command from pkg/pmk
 		ctx, _ = pmk.ConfigCmdCreateRun()
@@ -53,8 +57,8 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// Validate the user credentials entered during config set and will bail out if invalid
 
 		if err := validateUserCredentials(ctx, c); err != nil {
-			//zap.S().Fatalf("Invalid credentials (Username/ Password/ Account), run 'pf9ctl config set' with correct credentials.")
-			zap.S().Info("Invalid credentials entered (Username/Password/Tenant)")
+			// Check if invalid config exits or no config found, then bail out if loop backed than maxLoop.
+			err = configValidation(pmk.LoopCounter)
 
 		} else {
 			credentialFlag = false
@@ -128,11 +132,17 @@ func validateUserCredentials(pmk.Config, pmk.Client) error {
 
 func configValidation(int) error {
 
-	if pmk.LoopCounter <= MaxLoopNoConfig-1 {
-		if !pmk.OldConfigExist {
-			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+	if pmk.LoopCounter < MaxLoopNoConfig-1 {
+		// checking are we seting confing through ./pf9ctl config set
+		if !SetConfig {
+			if !pmk.OldConfigExist {
+				zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+			} else {
+				zap.S().Debug("Invalid credentials found (Username/Password/Tenant)")
+			}
 		} else {
-			zap.S().Debug("Invalid credentials found (Username/Password/Tenant)")
+			fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 		}
 	}
 	// If existing initial config is Invalid
