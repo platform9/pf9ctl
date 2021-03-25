@@ -186,7 +186,7 @@ func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exe
                 return fmt.Errorf("Unable to fetch URL: %w", err)
         }
 
-	url := fmt.Sprintf("%s/clarity/platform9-install-%s.sh", regionURL, hostOS)
+	url := fmt.Sprintf("https://%s/clarity/platform9-install-%s.sh", regionURL, hostOS)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("Unable to create a http request: %w", err)
@@ -212,7 +212,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	zap.S().Debug("Downloading the installer (this might take a few minutes...)")
 
 	url := fmt.Sprintf(
-		"%s/clarity/platform9-install-%s.sh",
+		"https://%s/clarity/platform9-install-%s.sh",
 		regionURL, hostOS)
 	insecureDownload := ""
 	if ctx.AllowInsecure {
@@ -297,7 +297,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent Installer Legacy")
 
-	url := fmt.Sprintf("%s/private/platform9-install-%s.sh", regionURL, hostOS)
+	url := fmt.Sprintf("https://%s/private/platform9-install-%s.sh", regionURL, hostOS)
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
 	//use insecure by default
 	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o /tmp/installer.sh`, auth.Token, url)

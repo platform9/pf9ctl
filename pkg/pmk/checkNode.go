@@ -14,7 +14,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
-	"github.com/platform9/pf9ctl/pkg/keystone"
 )
 
 const (
@@ -29,21 +28,6 @@ const (
 	RequiredFail CheckNodeResult = "requiredFail"
 	OptionalFail CheckNodeResult = "optionalFail"
 )
-
-func fetchInstallerURLDummy(ctx Config, auth keystone.KeystoneAuth, hostOS string) (string, error) {
-        regionInfoServiceID, err := keystone.GetServiceID(ctx.Fqdn, auth, "regionInfo")
-        if err != nil {
-                return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
-        }
-        fmt.Println("Service ID fetched", regionInfoServiceID)
-
-        endpointURL, err := keystone.GetEndpointForRegion(ctx.Fqdn, auth, ctx.Region, regionInfoServiceID)
-        if err != nil {
-                return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
-        }
-        fmt.Println("endpointURL fetched", endpointURL)
-        return endpointURL, nil
-}
 
 // CheckNode checks the prerequisites for k8s stack
 func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
@@ -92,10 +76,6 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		}
 		return RequiredFail, fmt.Errorf("Unable to obtain keystone credentials: %s", err.Error())
 	}
-
-        regionURL, err := fetchInstallerURLDummy(ctx, auth, "dummy")
-	fmt.Println(regionURL)
-	return RequiredFail, fmt.Errorf("Unable to fetch URL: %w", err)
 
 	if err = allClients.Segment.SendEvent("Starting CheckNode", auth, checkPass, ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
