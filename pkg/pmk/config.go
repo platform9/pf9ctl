@@ -61,20 +61,22 @@ func LoadConfig(loc string) (Config, error) {
 	if err != nil || (err == nil && InvalidExistingConfig) {
 
 		if os.IsNotExist(err) || InvalidExistingConfig {
-			// to initiate the config create and store it
-			if InvalidExistingConfig {
-				fmt.Println(color.Red("x ") + "Existing config is invalid, prompting for new config")
-				zap.S().Debug("Existing config is invalid, prompting for new config.")
-			} else {
+			// If Config not found and we prompt for new config
+			if LoopCounter == 0 {
 				fmt.Println(color.Red("x ") + "Existing config not found, prompting for new config")
 				zap.S().Debug("Existing config not found, prompting for new config.")
+				// to initiate the config create and store it
+			}
+			// If Existing config is invalid then we prompt for new config
+			if InvalidExistingConfig && LoopCounter == 1 {
+				fmt.Println(color.Red("x ") + "Existing config is invalid, prompting for new config")
+				zap.S().Debug("Existing config is invalid, prompting for new config.")
 			}
 
 			ctx, err := ConfigCmdCreateRun()
 
 			// It is set true when we are setting config for the first time using check-node/prep-node
 			IsNewConfig = true
-
 			return ctx, err
 		}
 		return Config{}, err

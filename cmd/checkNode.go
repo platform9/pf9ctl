@@ -59,7 +59,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		// Validate the user credentials entered during config set and will loop back again if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
 
-			// Check if invalid config exits or no config found, then bail out if loop backed than maxLoop.
+			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
 			err = configValidation(pmk.LoopCounter)
 		} else {
 			// We will store the set config if its set for first time using check-node
