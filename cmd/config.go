@@ -57,7 +57,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// Validate the user credentials entered during config set and will bail out if invalid
 
 		if err := validateUserCredentials(ctx, c); err != nil {
-			// Check if invalid config exits or no config found, then bail out if loop backed than maxLoop.
+			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
 			err = configValidation(pmk.LoopCounter)
 
 		} else {
@@ -134,7 +134,7 @@ func configValidation(int) error {
 
 	if pmk.LoopCounter <= MaxLoopNoConfig-1 {
 
-		// Checking are we seting confing through ./pf9ctl config set
+		//Check if we are setting config through pf9ctl config set command.
 		if !SetConfig {
 			// If Oldconfig exists and invalid credentials entered
 			if pmk.OldConfigExist {
@@ -164,7 +164,6 @@ func configValidation(int) error {
 
 	// If any invalid credentials extered multiple times in new config prompt then to bail out the recursive loop (thrice)
 	if pmk.LoopCounter >= MaxLoopNoConfig && !(pmk.InvalidExistingConfig) {
-		//fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant)")
 	} else if pmk.LoopCounter >= MaxLoopNoConfig+1 && pmk.InvalidExistingConfig {
 		fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
