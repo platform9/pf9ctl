@@ -132,13 +132,21 @@ func validateUserCredentials(pmk.Config, pmk.Client) error {
 
 func configValidation(int) error {
 
-	if pmk.LoopCounter < MaxLoopNoConfig-1 {
-		// checking are we seting confing through ./pf9ctl config set
+	if pmk.LoopCounter <= MaxLoopNoConfig-1 {
+
+		// Checking are we seting confing through ./pf9ctl config set
 		if !SetConfig {
-			if !pmk.OldConfigExist {
-				zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+			// If Oldconfig exists and invalid credentials entered
+			if pmk.OldConfigExist {
+				if pmk.InvalidExistingConfig {
+					fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+					zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+				} else if pmk.OldConfigExist && pmk.LoopCounter == 0 {
+					zap.S().Debug("Invalid credentials found (Username/Password/Tenant)")
+				}
 			} else {
-				zap.S().Debug("Invalid credentials found (Username/Password/Tenant)")
+				fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+				zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 			}
 		} else {
 			fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
@@ -156,7 +164,7 @@ func configValidation(int) error {
 
 	// If any invalid credentials extered multiple times in new config prompt then to bail out the recursive loop (thrice)
 	if pmk.LoopCounter >= MaxLoopNoConfig && !(pmk.InvalidExistingConfig) {
-		fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+		//fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant)")
 	} else if pmk.LoopCounter >= MaxLoopNoConfig+1 && pmk.InvalidExistingConfig {
 		fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
