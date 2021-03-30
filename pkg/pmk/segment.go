@@ -13,7 +13,8 @@ import (
 	"gopkg.in/segmentio/analytics-go.v3"
 )
 
-const segmentWriteKey = "P6DycMCALprZrUwWL9ZzRLlfMQwL5Xyl"
+//Added segment key for the source PRD-PMKFT Metrics-Aggregator
+const segmentWriteKey = "4jevYUNBF5sY3vZJWm5TrhfdsFzQIQ3y"
 
 type Segment interface {
 	SendEvent(string, interface{}, string, string) error
