@@ -2,12 +2,12 @@ package keystone_test
 
 import (
 	"bytes"
+	. "github.com/platform9/pf9ctl/pkg/keystone"
+	. "github.com/platform9/pf9ctl/pkg/test_utils"
 	"io/ioutil"
 	"net/http"
 	"testing"
-	. "github.com/platform9/pf9ctl/pkg/keystone"
-	. "github.com/platform9/pf9ctl/pkg/test_utils"
-       )
+)
 
 // RoundTripFunc .
 type RoundTripFunc func(req *http.Request) *http.Response
@@ -153,7 +153,6 @@ func TestGetEndpointForRegion(t *testing.T) {
 	endpoint_actual, err := e_api.GetEndpointForRegion_API("region1", "6d30c85c033247548d6d93b0056b266b")
 	Ok(t, err)
 	Equals(t, region1_endpoint_expected, endpoint_actual)
-
 
 	// Test for region2
 	endpoint_actual, err = e_api.GetEndpointForRegion_API("region2", "6d30c85c033247548d6d93b0056b266b")

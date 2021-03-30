@@ -170,14 +170,14 @@ func fetchInstallerURL(ctx Config, auth keystone.KeystoneAuth, hostOS string) (s
 	if err != nil {
 		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
 	}
-	zap.S().Debug("Service ID fetched", regionInfoServiceID)
+	zap.S().Debug("Service ID fetched : ", regionInfoServiceID)
 
 	// Fetch the endpoint based on region name.
 	endpointURL, err := keystone.GetEndpointForRegion(ctx.Fqdn, auth, ctx.Region, regionInfoServiceID)
 	if err != nil {
 		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
 	}
-	zap.S().Debug("endpointURL fetched", endpointURL)
+	zap.S().Debug("endpointURL fetched : ", endpointURL)
 	return endpointURL, nil
 }
 
