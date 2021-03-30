@@ -1,216 +1,165 @@
-package main
+package supportBundle
 
 import (
-	"archive/zip"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"os"
-	"os/user"
-	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
+
+	"github.com/mholt/archiver/v3"
+	"github.com/plus3it/gorecurcopy"
+
+	//"github.com/aws/aws-sdk-go/aws"
+	//"github.com/aws/aws-sdk-go/aws/session"
+	//"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/platform9/pf9ctl/pkg/util"
+	"go.uber.org/zap"
 )
 
-//This function takes a source string and destination string as parameters.
-func CopyFile(src, dst string) (err error) {
-	in, err := os.Open(src)
-	if err != nil {
-		return
-	}
-	defer in.Close()
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return
-	}
-	defer func() {
-		if e := out.Close(); e != nil {
-			err = e
-		}
-	}()
-
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return
-	}
-
-	err = out.Sync()
-	if err != nil {
-		return
-	}
-
-	si, err := os.Stat(src)
-	if err != nil {
-		return
-	}
-	err = os.Chmod(dst, si.Mode())
-	if err != nil {
-		return
-	}
-
-	return
+/*
+// These contants specifiy the S3 Bucket to upload supportBundle and its region
+const (
+	S3_BUCKET_NAME = "loguploads.platform9.com"
+	S3_REGION      = "us-west-2"
+)
+*/
+/*
+// To initialise the new s3 session with in the specified region.
+func init() {
+	s3session = s3.New(session.Must(session.NewSession(&aws.Config{
+		Region: aws.String(S3_REGION),
+	})))
 }
 
-// CopyDir recursively copies a directory tree, attempting to preserve permissions.
-// Source directory must exist, destination directory must not exist.
-// Symlinks are ignored and skipped.
-func CopyDir(src string, dst string) (err error) {
-	src = filepath.Clean(src)
-	dst = filepath.Clean(dst)
-
-	si, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	if !si.IsDir() {
-		return fmt.Errorf("source is not a directory")
-	}
-
-	_, err = os.Stat(dst)
-	if err != nil && !os.IsNotExist(err) {
-		return
-	}
-	if err == nil {
-		return fmt.Errorf("destination already exists")
-	}
-
-	err = os.MkdirAll(dst, si.Mode())
-	if err != nil {
-		return
-	}
-
-	entries, err := ioutil.ReadDir(src)
-	if err != nil {
-		return
-	}
-
-	for _, entry := range entries {
-		srcPath := filepath.Join(src, entry.Name())
-		dstPath := filepath.Join(dst, entry.Name())
-
-		if entry.IsDir() {
-			err = CopyDir(srcPath, dstPath)
-			if err != nil {
-				return
-			}
-		} else {
-			// Skip symlinks.
-			if entry.Mode()&os.ModeSymlink != 0 {
-				continue
-			}
-
-			err = CopyFile(srcPath, dstPath)
-			if err != nil {
-				return
-			}
-		}
-	}
-
-	return
-}
-
-//This function will take the absolute path as an input and convert it into the relative path
-func expand(path string) (string, error) {
-	if len(path) == 0 || path[0] != '~' {
-		return path, nil
-	}
-
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(usr.HomeDir, path[1:]), nil
-}
-
-//This fucntion recursively archives all the files present in the directory given.
-//Parameters: 1. Source Directory
-//            2. Destination Directory
-func RecursiveZip(pathToZip, destinationPath string) error {
-	destinationFile, err := os.Create(destinationPath)
-	if err != nil {
-		return err
-	}
-	myZip := zip.NewWriter(destinationFile)
-	err = filepath.Walk(pathToZip, func(filePath string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-
-		if err != nil {
-			return err
-		}
-
-		relPath := strings.TrimPrefix(filePath, pathToZip)
-		zipFile, err := myZip.Create(relPath)
-		if err != nil {
-			return err
-		}
-
-		fsFile, err := os.Open(filePath)
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(zipFile, fsFile)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	err = myZip.Close()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-//This function is used to generate the support bundles. It copies all the log files specified into a directory and archives that given directory
-func gensupportbundle() {
-	t := time.Now()
-
-	file := "~/pf9/log/"
-	source, err := expand(file)
-	fmt.Println(source, err)
-	dest := "~/pf9/copy/pf9/log/"
-	target, err := expand(dest)
-	fmt.Println(target, err)
-	CopyDir(source, target)
-
-	file1 := "~/pf9/db/"
-	source1, err := expand(file1)
-	fmt.Println(source1, err)
-	dest1 := "~/pf9/copy/pf9/db/"
-	target1, err := expand(dest1)
-	fmt.Println(target1, err)
-	CopyDir(source1, target1)
-
-	file2 := "/var/log/pf9/"
-	source2, err := expand(file2)
-	fmt.Println(source2, err)
-	dest2 := "~/pf9/copy/var/log/pf9/"
-	target2, err := expand(dest2)
-	fmt.Println(target2, err)
-	CopyDir(source2, target2)
-
-	file3 := "/etc/pf9/"
-	source3, err := expand(file3)
-	fmt.Println(source3, err)
-	dest3 := "~/pf9/copy/etc/pf9/"
-	target3, err := expand(dest3)
-	fmt.Println(target3, err)
-	CopyDir(source3, target3)
-
-	//Storing the hostname for the given node
-	name, err := os.Hostname()
+//This will upload the file(object) to s3 bucket.
+func uploadFileToS3(filename string) (resp *s3.PutObjectOutput) {
+	//This is to check the zip file exists.
+	f, err := os.Open(filename)
 	if err != nil {
 		panic(err)
 	}
 
+
+	zap.S().Infof("Uploading files %s", f)
+	resp, err = s3session.PutObject(&s3.PutObjectInput{
+		Body:   f,
+		Bucket: aws.String(S3_BUCKET_NAME),
+		Key:    aws.String(filename),
+	})
+	if err != nil {
+		zap.S().Fatalf("Uploading supportBundle Falied")
+	}
+
+return resp*/
+
+//This will upload the file(object) to s3 bucket.
+/*
+func uploadFileToS3(filename string) error {
+	//This is to check the zip file exists.
+	file, err := os.Open(filename)
+	if err != nil {
+		zap.S().Errorf("Unable to open file %q, %v", err)
+	}
+
+	defer file.Close()
+
+	// To initialise the new s3 session with in the specified region.
+	s3session, err := session.NewSession(&aws.Config{
+		Region: aws.String(S3_REGION)},
+	)
+	if err != nil {
+		zap.S().Errorf("Unable to create S3 Session")
+	}
+
+	uploader := s3manager.NewUploader(s3session)
+
+	zap.S().Infof("Uploading files %s", filename)
+	_, err = uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(S3_BUCKET_NAME),
+		Key:    aws.String(filename),
+		Body:   file,
+	})
+	if err != nil {
+		// Print the error and exit.
+		zap.S().Errorf("Unable to upload %q to %q, %v", filename, S3_BUCKET_NAME, err)
+	}
+	return nil
+}
+
+func SupportBundle() {
+	tarname, err := Gensupportbundle()
+	if err != nil {
+		zap.S().Info("Support Bundle not generated")
+	}
+
+	fmt.Println(tarname)
+
+	folder := "/tmp/support/"
+	files, _ := ioutil.ReadDir(folder)
+	fmt.Println(files)
+	for _, file := range files {
+		if file.Name() == "hello.txt" {
+			_ = uploadFileToS3(file.Name())
+		}
+	}
+	fmt.Println("Uploaded successfully")
+
+	/*err1 := os.RemoveAll(folder)
+	if err1 != nil {
+		log.Fatal(err1)
+	}
+
+}
+*/
+
+//This function is used to generate the support bundles. It copies all the log files specified into a directory and archives that given directory
+func Gensupportbundle() {
+	//Checking whether the source directories exist
+	_, e := os.Stat(util.Pf9Dir)
+	if e != nil {
+
+		if os.IsNotExist(e) {
+			zap.S().Debug("Directory ~/pf9 not Found !!")
+		}
+	}
+
+	_, e1 := os.Stat(util.DirVar)
+	if e1 != nil {
+
+		if os.IsNotExist(e1) {
+			zap.S().Debug("Directory /var/pf9/log not Found !!")
+		}
+	}
+	_, e2 := os.Stat(util.DirEtc)
+	if e2 != nil {
+
+		if os.IsNotExist(e1) {
+			zap.S().Debug("Directory /etc/pf9 not Found !!")
+		}
+	}
+
+	//Recursively copying the contents of source directory to destination directory
+	//Function:gorecurcopy.CopyDirectory(Source Directory,Destination Directory)
+	err1 := gorecurcopy.CopyDirectory(util.Pf9Dir, util.DestDirPf9)
+	if err1 != nil {
+		zap.S().Debug("Error in copying ~/pf9 directory ")
+	}
+	err2 := gorecurcopy.CopyDirectory(util.DirVar, util.DestDirvar)
+	if err2 != nil {
+		zap.S().Debug("Error in copying /var/pf9/log directory ")
+	}
+	err3 := gorecurcopy.CopyDirectory(util.DirEtc, util.DestDirPf9EtcDir)
+	if err3 != nil {
+		zap.S().Debug("Error in copying /etc/pf9 directory ")
+	}
+
+	//Storing the hostname for the given node
+	name, err := os.Hostname()
+	if err != nil {
+		zap.S().Debug("Error fetching hostname")
+	}
+
+	t := time.Now()
 	//timestamp format for the zip file
 	layout := t.Format("2006-01-02")
 	h := t.Hour()
@@ -220,23 +169,24 @@ func gensupportbundle() {
 	s := t.Second()
 	s3 := strconv.Itoa(s)
 
-	destination := "/tmp/" + name + "-" + layout + "-" + s1 + "-" + s2 + "-" + s3 + ".tgz"
-	targetfile, err := expand(destination)
-	fmt.Println(targetfile, err)
+	tarname := name + "-" + layout + "-" + s1 + "-" + s2 + "-" + s3
+	targetfile := "/tmp/support/" + tarname + ".tar.gz"
+	DestDir := util.DestDir + "-" + tarname
+	//Renaming the copied directory according to the format
+	os.Rename(util.DestDir, DestDir)
 
-	//This function will archive the source directory,subdirectories,files and place the archived file in the targetfile directory
-	copydirectory := "~/pf9/copy/"
-	copy1, err := expand(copydirectory)
-	RecursiveZip(copy1, targetfile)
-	fmt.Println("Zipped Successfully")
-
-	//This function will remove all the contents of the directory
-	err1 := os.RemoveAll(copy1)
-	if err1 != nil {
-		log.Fatal(err1)
+	//This function archives the contents of the source directory and places it in the archive file
+	//Function:archiver.Archive(Source Directory,Archive file)
+	err5 := archiver.Archive([]string{DestDir}, targetfile)
+	if err5 != nil {
+		zap.S().Debug("Error in creating the archive file")
 	}
+	zap.S().Debug("Zipped Successfully")
 
-}
-func main() {
-	gensupportbundle()
+	//This function will remove all the contents of the copied directory
+	err6 := os.RemoveAll(DestDir)
+	if err6 != nil {
+		log.Fatal(err6)
+	}
+	//return tarname, nil
 }

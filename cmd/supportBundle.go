@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
@@ -19,13 +20,13 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Info("Support bundle called")
+		supportBundle.Gensupportbundle()
 	},
 }
 
-/*
-This initialization is using create commands which is not in use for now.
+//This initialization is using create commands which is not in use for now.
 func init() {
-	//createCmd.AddCommand(supportBundleCmd)
+	rootCmd.AddCommand(supportBundleCmd)
 
 	// Here you will define your flags and configuration settings.
 
@@ -36,4 +37,4 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// supportBundleCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-}*/
+}
