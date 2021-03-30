@@ -5,8 +5,8 @@ package keystone
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 // Type definition for struct encapsulating service manager APIs.
@@ -83,7 +83,7 @@ func (s_api *ServiceManagerAPI) GetServiceID_API(
 	resp, err := s_api.Client.Do(req)
 	if err != nil {
 		zap.S().Errorf("Failed to fetch service information for service %s, Error: %s", name, err)
-		return "", fmt.Errorf("Failed to fetch service information for service %s, Error: %s",name, err)
+		return "", fmt.Errorf("Failed to fetch service information for service %s, Error: %s", name, err)
 	}
 	defer resp.Body.Close()
 

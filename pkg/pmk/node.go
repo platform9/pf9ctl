@@ -164,27 +164,30 @@ func PrepNode(ctx Config, allClients Client) error {
 }
 
 func fetchInstallerURL(ctx Config, auth keystone.KeystoneAuth, hostOS string) (string, error) {
+
+	// "regionInfo" service will have endpoint information. So fetch it's service ID.
 	regionInfoServiceID, err := keystone.GetServiceID(ctx.Fqdn, auth, "regionInfo")
 	if err != nil {
 		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
 	}
-	fmt.Println("Service ID fetched", regionInfoServiceID)
+	zap.S().Debug("Service ID fetched", regionInfoServiceID)
 
-        endpointURL, err := keystone.GetEndpointForRegion(ctx.Fqdn, auth, ctx.Region, regionInfoServiceID)
-        if err != nil {
-                return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
-        }
-        fmt.Println("endpointURL fetched", endpointURL)
-        return endpointURL, nil
+	// Fetch the endpoint based on region name.
+	endpointURL, err := keystone.GetEndpointForRegion(ctx.Fqdn, auth, ctx.Region, regionInfoServiceID)
+	if err != nil {
+		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
+	}
+	zap.S().Debug("endpointURL fetched", endpointURL)
+	return endpointURL, nil
 }
 
 func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent")
 
 	regionURL, err := fetchInstallerURL(ctx, auth, hostOS)
-        if err != nil {
-                return fmt.Errorf("Unable to fetch URL: %w", err)
-        }
+	if err != nil {
+		return fmt.Errorf("Unable to fetch URL: %w", err)
+	}
 
 	url := fmt.Sprintf("https://%s/clarity/platform9-install-%s.sh", regionURL, hostOS)
 	req, err := http.NewRequest("GET", url, nil)
