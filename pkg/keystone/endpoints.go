@@ -100,6 +100,8 @@ func (e_api *EndpointManagerAPI) GetEndpointForRegion_API(
 
 	var endpointURL string
 	for _, endpoint := range endpointsInfo.Endpoints {
+		// There will be multiple regions. Filter based on region name and
+		// interface which is going to give exact endpoint for a region.
 		if (endpoint.Region == regionName) && (endpoint.Interface == "internal") {
 			zap.S().Debug("endpoint: ", endpoint.URL)
 			u, err := url.Parse(endpoint.URL)
