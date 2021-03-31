@@ -11,12 +11,14 @@ import (
 func setupNode(hostOS string, exec cmdexec.Executor) (err error) {
 	zap.S().Debug("Received a call to setup the node")
 
+	/*
 	if err := swapOff(exec); err != nil {
 		return err
 	}
 	if err := swapOffFstab(exec, "/etc/fstab"); err != nil {
 		return fmt.Errorf("Unable to edit file /etc/fstab")
 	}
+	*/
 	return nil
 }
 
