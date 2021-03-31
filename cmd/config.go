@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/pmk"
@@ -28,7 +29,8 @@ var (
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag bool
 	// This flag is true when we set config through ./pf9ctl config set
-	SetConfig bool
+	SetConfig             bool
+	SetConfigByParameters bool
 )
 
 const MaxLoopNoConfig = 3
@@ -42,7 +44,18 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	pmk.LoopCounter = 0
 	for credentialFlag {
 		// invoked the configcreate command from pkg/pmk
-		ctx, _ = pmk.ConfigCmdCreateRun()
+		if account_url == "" {
+			ctx, _ = pmk.ConfigCmdCreateRun()
+		} else {
+			SetConfigByParameters = true
+			ctx.Fqdn = account_url
+			ctx.Username = username
+			ctx.Password = Password
+			ctx.Region = region
+			ctx.Tenant = tenant
+			ctx.WaitPeriod = time.Duration(60)
+			ctx.AllowInsecure = false
+		}
 
 		executor, err := getExecutor()
 		if err != nil {
@@ -54,15 +67,25 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 		}
 
-		// Validate the user credentials entered during config set and will bail out if invalid
-
-		if err := validateUserCredentials(ctx, c); err != nil {
-			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-			err = configValidation(pmk.LoopCounter)
-
+		if SetConfigByParameters {
+			err := validateUserCredentials(ctx, c)
+			if err != nil {
+				zap.S().Fatal("Invalid information entered :", err)
+			} else {
+				break
+			}
 		} else {
-			credentialFlag = false
+			// Validate the user credentials entered during config set and will bail out if invalid
+
+			if err := validateUserCredentials(ctx, c); err != nil {
+				//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
+				err = configValidation(pmk.LoopCounter)
+
+			} else {
+				credentialFlag = false
+			}
 		}
+
 	}
 
 	defer c.Segment.Close()
@@ -117,6 +140,22 @@ func init() {
 	rootCmd.AddCommand(configCmdCreate)
 	configCmdCreate.AddCommand(configCmdGet)
 	configCmdCreate.AddCommand(configCmdSet)
+}
+
+var (
+	account_url string
+	username    string
+	Password    string
+	region      string
+	tenant      string
+)
+
+func init() {
+	configCmdSet.Flags().StringVarP(&account_url, "account_url", "u", "", "sets account_url")
+	configCmdSet.Flags().StringVarP(&username, "username", "e", "", "sets username")
+	configCmdSet.Flags().StringVarP(&Password, "password", "p", "", "sets password")
+	configCmdSet.Flags().StringVarP(&region, "region", "r", "", "sets region")
+	configCmdSet.Flags().StringVarP(&tenant, "tenant", "t", "", "sets tenant")
 }
 
 // This function will validate the user credentials entered during config set and bail out if invalid
