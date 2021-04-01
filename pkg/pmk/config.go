@@ -100,49 +100,53 @@ func LoadConfig(loc string) (Config, error) {
 	return ctx, err
 }
 
+var Context Config
+
 // ConfigCmdCreatRun will initiate the config set and return a config given by user
 func ConfigCmdCreateRun() (Config, error) {
 
 	zap.S().Debug("==========Running set config==========")
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Printf("Platform9 Account URL: ")
-	fqdn, _ := reader.ReadString('\n')
-	fqdn = strings.TrimSuffix(fqdn, "\n")
 
-	fmt.Printf("Username: ")
-	username, _ := reader.ReadString('\n')
-	username = strings.TrimSuffix(username, "\n")
-
-	fmt.Printf("Password: ")
-	passwordBytes, _ := terminal.ReadPassword(0)
-	password := string(passwordBytes)
-
-	fmt.Printf("\nRegion [RegionOne]: ")
-	region, _ := reader.ReadString('\n')
-	region = strings.TrimSuffix(region, "\n")
-
-	fmt.Printf("Tenant [service]: ")
-	service, _ := reader.ReadString('\n')
-	service = strings.TrimSuffix(service, "\n")
-
-	if region == "" {
-		region = "RegionOne"
+	if Context.Fqdn == "" {
+		fmt.Printf("Platform9 Account URL: ")
+		fqdn, _ := reader.ReadString('\n')
+		Context.Fqdn = strings.TrimSuffix(fqdn, "\n")
 	}
 
-	if service == "" {
-		service = "service"
+	if Context.Username == "" {
+		fmt.Printf("Username: ")
+		username, _ := reader.ReadString('\n')
+		Context.Username = strings.TrimSuffix(username, "\n")
 	}
 
-	ctx := Config{
-		Fqdn:          fqdn,
-		Username:      username,
-		Password:      password,
-		Region:        region,
-		Tenant:        service,
-		WaitPeriod:    time.Duration(60),
-		AllowInsecure: false,
+	if Context.Password == "" {
+		fmt.Printf("Password: ")
+		passwordBytes, _ := terminal.ReadPassword(0)
+		Context.Password = string(passwordBytes)
 	}
-	return ctx, nil
+	var region string
+	if Context.Region == "" {
+		fmt.Printf("\nRegion [RegionOne]: ")
+		region, _ = reader.ReadString('\n')
+		Context.Region = strings.TrimSuffix(region, "\n")
+	}
+	var service string
+	if Context.Tenant == "" {
+		fmt.Printf("Tenant [service]: ")
+		service, _ = reader.ReadString('\n')
+		Context.Tenant = strings.TrimSuffix(service, "\n")
+	}
+
+	if Context.Region == "" {
+		Context.Region = "RegionOne"
+	}
+
+	if Context.Tenant == "" {
+		Context.Tenant = "service"
+	}
+
+	return Context, nil
 
 }

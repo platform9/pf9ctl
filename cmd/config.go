@@ -42,20 +42,18 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	SetConfig = true
 	// To bail out if loop runs recursively more than thrice
 	pmk.LoopCounter = 0
+
+	pmk.Context.Fqdn = account_url
+	pmk.Context.Username = username
+	pmk.Context.Password = Password
+	pmk.Context.Region = region
+	pmk.Context.Tenant = tenant
+	pmk.Context.WaitPeriod = time.Duration(60)
+	pmk.Context.AllowInsecure = false
+
 	for credentialFlag {
 		// invoked the configcreate command from pkg/pmk
-		if account_url == "" {
-			ctx, _ = pmk.ConfigCmdCreateRun()
-		} else {
-			SetConfigByParameters = true
-			ctx.Fqdn = account_url
-			ctx.Username = username
-			ctx.Password = Password
-			ctx.Region = region
-			ctx.Tenant = tenant
-			ctx.WaitPeriod = time.Duration(60)
-			ctx.AllowInsecure = false
-		}
+		ctx, _ = pmk.ConfigCmdCreateRun()
 
 		executor, err := getExecutor()
 		if err != nil {
@@ -67,23 +65,13 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 		}
 
-		if SetConfigByParameters {
-			err := validateUserCredentials(ctx, c)
-			if err != nil {
-				zap.S().Fatal("Invalid information entered :", err)
-			} else {
-				break
-			}
+		// Validate the user credentials entered during config set and will bail out if invalid
+
+		if err := validateUserCredentials(ctx, c); err != nil {
+			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
+			err = configValidation(pmk.LoopCounter)
 		} else {
-			// Validate the user credentials entered during config set and will bail out if invalid
-
-			if err := validateUserCredentials(ctx, c); err != nil {
-				//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-				err = configValidation(pmk.LoopCounter)
-
-			} else {
-				credentialFlag = false
-			}
+			credentialFlag = false
 		}
 
 	}
