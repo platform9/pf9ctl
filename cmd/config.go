@@ -166,17 +166,17 @@ func configValidation(int) error {
 			// If Oldconfig exists and invalid credentials entered
 			if pmk.OldConfigExist {
 				if pmk.InvalidExistingConfig {
-					fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+					fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 					zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 				} else if pmk.OldConfigExist && pmk.LoopCounter == 0 {
 					zap.S().Debug("Invalid credentials found (Username/Password/Tenant)")
 				}
 			} else {
-				fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+				fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 				zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 			}
 		} else {
-			fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+			fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 		}
 	}
