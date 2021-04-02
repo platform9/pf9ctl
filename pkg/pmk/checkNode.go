@@ -42,7 +42,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		return RequiredFail, fmt.Errorf("User executing this CLI is not allowed to switch to privileged (sudo) mode")
 	}
 
-	os, err := validatePlatform(allClients.Executor)
+	os, err := ValidatePlatform(allClients.Executor)
 	if err != nil {
 		return RequiredFail, err
 	}

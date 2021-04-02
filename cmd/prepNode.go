@@ -13,6 +13,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -92,6 +93,11 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
+		// Uploads pf9cli log bundle if pre-requisite checks fails
+		err := supportBundle.SupportBundleUpload(ctx, c)
+		if err != nil {
+			zap.S().Fatalf("Unable to upload supportbundle to s3 bucket %s", err.Error())
+		}
 		zap.S().Fatalf("\nPre-requisite check(s) failed %s\n", err.Error())
 	}
 
@@ -110,6 +116,13 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if err := pmk.PrepNode(ctx, c); err != nil {
 		fmt.Printf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
 		c.Segment.SendEvent("Prep Node : Fail", err, "FAIL", "")
+
+		// Uploads pf9cli log bundle if prepnode failed to get prepared
+		err := supportBundle.SupportBundleUpload(ctx, c)
+		if err != nil {
+			zap.S().Fatalf("Unable to upload supportbundle to s3 bucket %s", err.Error())
+		}
+
 		zap.S().Debugf("Unable to prep node: %s\n", err.Error())
 	}
 

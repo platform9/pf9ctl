@@ -74,7 +74,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
 	s.Suffix = " Starting prep-node"
 
-	hostOS, err := validatePlatform(allClients.Executor)
+	hostOS, err := ValidatePlatform(allClients.Executor)
 	if err != nil {
 		errStr := "Error: Invalid host OS. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
@@ -163,7 +163,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	return nil
 }
 
-func fetchInstallerURL(ctx Config, auth keystone.KeystoneAuth, hostOS string) (string, error) {
+func FetchInstallerURL(ctx Config, auth keystone.KeystoneAuth, hostOS string) (string, error) {
 
 	// "regionInfo" service will have endpoint information. So fetch it's service ID.
 	regionInfoServiceID, err := keystone.GetServiceID(ctx.Fqdn, auth, "regionInfo")
@@ -184,7 +184,7 @@ func fetchInstallerURL(ctx Config, auth keystone.KeystoneAuth, hostOS string) (s
 func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent")
 
-	regionURL, err := fetchInstallerURL(ctx, auth, hostOS)
+	regionURL, err := FetchInstallerURL(ctx, auth, hostOS)
 	if err != nil {
 		return fmt.Errorf("Unable to fetch URL: %w", err)
 	}
@@ -246,7 +246,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	return nil
 }
 
-func validatePlatform(exec cmdexec.Executor) (string, error) {
+func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Received a call to validate platform")
 
 	strData, err := openOSReleaseFile(exec)
