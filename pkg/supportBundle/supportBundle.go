@@ -48,7 +48,6 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		fmt.Printf(color.Green("x ") + "Failed to generate pf9ctl log bundle\n")
 		zap.S().Debug("Failed to generate pf9ctl log bundle\n")
 	}
-	fmt.Println(fileloc)
 
 	// To get the HostIP
 	host, err := HostIP(allClients)
