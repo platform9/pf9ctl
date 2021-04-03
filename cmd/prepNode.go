@@ -96,7 +96,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		// Uploads pf9cli log bundle if pre-requisite checks fails
 		err := supportBundle.SupportBundleUpload(ctx, c)
 		if err != nil {
-			zap.S().Fatalf("Unable to upload supportbundle to s3 bucket %s", err.Error())
+			zap.S().Errorf("Unable to upload supportbundle to s3 bucket %s", err.Error())
 		}
 		zap.S().Fatalf("\nPre-requisite check(s) failed %s\n", err.Error())
 	}
@@ -120,7 +120,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		// Uploads pf9cli log bundle if prepnode failed to get prepared
 		err := supportBundle.SupportBundleUpload(ctx, c)
 		if err != nil {
-			zap.S().Fatalf("Unable to upload supportbundle to s3 bucket %s", err.Error())
+			zap.S().Errorf("Unable to upload supportbundle to s3 bucket %s", err.Error())
 		}
 
 		zap.S().Debugf("Unable to prep node: %s\n", err.Error())

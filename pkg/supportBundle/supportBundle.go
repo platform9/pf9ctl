@@ -2,14 +2,12 @@ package supportBundle
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/mholt/archiver/v3"
-
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -17,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// These contants specifiy the S3 Bucket to upload supportBundle and its region
+// These constants specifiy the S3 Bucket to upload supportBundle and its region
 const (
 	S3_BUCKET_NAME = "loguploads.platform9.com"
 	S3_REGION      = "us-west-2"
@@ -35,7 +33,7 @@ func HostIP(allClients pmk.Client) (string, error) {
 	if err != nil {
 		zap.S().Error("Host IP Not found", err)
 	}
-	return host, nil
+	return host, err
 }
 
 // To upload pf9ctl log bundle to S3 bucket
@@ -50,9 +48,13 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		fmt.Printf(color.Green("x ") + "Failed to generate pf9ctl log bundle\n")
 		zap.S().Debug("Failed to generate pf9ctl log bundle\n")
 	}
+	fmt.Println(fileloc)
 
 	// To get the HostIP
-	host, _ := HostIP(allClients)
+	host, err := HostIP(allClients)
+	if err != nil {
+		zap.S().Error("Unable to fetch Host IP", err)
+	}
 	//To remove extra spaces and lines after the IP
 	host = strings.TrimSpace(strings.Trim(host, "\n"))
 
@@ -65,7 +67,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("Unable to locate keystone credentials: %s\n", err.Error())
+		return fmt.Errorf("unable to locate keystone credentials: %s\n", err.Error())
 	}
 
 	// To get the hostOS.
@@ -75,17 +77,18 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		return fmt.Errorf(errStr)
 	}
 
-	// To Fetch Fqnd
-	fqdn, err := pmk.FetchInstallerURL(ctx, auth, hostOS)
+	// To Fetch FQDN
+	FQDN, err := pmk.FetchRegionFQDN(ctx, auth, hostOS)
 	if err != nil {
 		return fmt.Errorf("unable to fetch fqdn: %w", err)
 	}
 
 	// S3 location to upload the file
-	S3_Location := S3_Loc + "/" + fqdn + "/" + host + "/"
+	S3_Location := S3_Loc + "/" + FQDN + "/" + host + "/"
 
 	// To upload the pf9cli log bundle to S3 bucket
-	err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("curl -T %s -H %s %s", fileloc, S3_ACL, S3_Location))
+	err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("curl -T %s -H %s %s", fileloc,
+		S3_ACL, S3_Location))
 	if err != nil {
 		zap.S().Error("Failed to upload pf9ctl log bundle to %s bucket!!", S3_BUCKET_NAME, err)
 	}
@@ -93,16 +96,17 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	//To remove the supportbundle after getting uploaded
 	err = os.Remove(fileloc)
 	if err != nil {
-		log.Fatal(err)
+		zap.S().Error("unable to remove supportbundle", err)
 	}
 
-	fmt.Printf(color.Green("✓ ")+"Succesfully uploaded pf9ctl log bundle to %s bucket\n", S3_BUCKET_NAME)
-	zap.S().Debugf("Succesfully uploaded pf9ctl log bundle to %s bucket\n", S3_BUCKET_NAME)
+	fmt.Printf(color.Green("✓ ")+"Succesfully uploaded pf9ctl log bundle to %s bucket at %s location \n", S3_BUCKET_NAME, S3_Location)
+	zap.S().Debugf("Succesfully uploaded pf9ctl log bundle to %s bucket at %s location \n", S3_BUCKET_NAME, S3_Location)
 
 	return nil
 }
 
-//This function is used to generate the support bundles. It copies all the log files specified into a directory and archives that given directory
+/*This function is used to generate the support bundles.
+It copies all the log files specified into a directory and archives that given directory. */
 func Gensupportbundle() (string, error) {
 
 	//Checking whether the source directories exist
@@ -112,13 +116,13 @@ func Gensupportbundle() (string, error) {
 			zap.S().Error("Directory not Found", err)
 		}
 	}
-	_, err = os.Stat(util.DirVar)
+	_, err = os.Stat(util.VarDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			zap.S().Error("Directory not Found", err)
 		}
 	}
-	_, err = os.Stat(util.DirEtc)
+	_, err = os.Stat(util.EtcDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			zap.S().Error("Directory not Found", err)
@@ -131,11 +135,11 @@ func Gensupportbundle() (string, error) {
 	if err != nil {
 		zap.S().Error("Error in copying directory ", err)
 	}
-	err = gorecurcopy.CopyDirectory(util.DirVar, util.DestDirvar)
+	err = gorecurcopy.CopyDirectory(util.VarDir, util.DestvarDir)
 	if err != nil {
 		zap.S().Error("Error in copying  directory ", err)
 	}
-	err = gorecurcopy.CopyDirectory(util.DirEtc, util.DestDirPf9EtcDir)
+	err = gorecurcopy.CopyDirectory(util.EtcDir, util.DestDirPf9EtcDir)
 	if err != nil {
 		zap.S().Error("Error in copying  directory ", err)
 	}
@@ -145,9 +149,15 @@ func Gensupportbundle() (string, error) {
 		zap.S().Error("Error fetching hostname", err)
 	}
 
-	//timestamp format for the zip file
+	//timestamp format for the archive file(Note:UTC Time is taken)
+	//File Format - hostname-yy-mm-dd-hours-minutes-seconds.tar.gz
+	//Sample File Format- test-dev-vm-2021-04-01-16-29-17.tar.gz
 	timestamp := time.Now()
-	tarname := hostname + "-" + timestamp.Format("2006-01-02") + "-" + strconv.Itoa(timestamp.Hour()) + "-" + strconv.Itoa(timestamp.Minute()) + "-" + strconv.Itoa(timestamp.Second())
+	hour := strconv.Itoa(timestamp.Hour())
+	minutes := strconv.Itoa(timestamp.Minute())
+	seconds := strconv.Itoa(timestamp.Second())
+	layout := timestamp.Format("2006-01-02")
+	tarname := hostname + "-" + layout + "-" + hour + "-" + minutes + "-" + seconds
 	tarzipname := tarname + ".tar.gz"
 	targetfile := "/tmp/" + tarzipname
 	destDir := "/tmp/" + tarname
@@ -166,7 +176,7 @@ func Gensupportbundle() (string, error) {
 	//This function will remove all the contents of the copied directory
 	err = os.RemoveAll(destDir)
 	if err != nil {
-		log.Fatal(err)
+		zap.S().Error("unable to remove destination directory", err)
 	}
 	return targetfile, nil
 }

@@ -63,8 +63,8 @@ var (
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
 
-	DirVar = "/var/log/pf9/"
-	DirEtc = "/etc/pf9/"
+	VarDir = "/var/log/pf9/"
+	EtcDir = "/etc/pf9/"
 
 	//Destination directories required for the support bundle generation
 	DestDir = filepath.Join(homeDir, "support")
@@ -77,7 +77,7 @@ var (
 	//Destination directory for the etc directory in the pf9 subdirectory
 	DestDirPf9EtcDir = filepath.Join(DestDir, "etc")
 	//Destination directory for the var/log/pf9 directory in the pf9 subdirectory
-	DestDirvar = filepath.Join(DestDir, "var/pf9")
+	DestvarDir = filepath.Join(DestDir, "var/pf9")
 )
 
 func init() {

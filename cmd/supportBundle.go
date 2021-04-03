@@ -13,8 +13,8 @@ import (
 // supportBundleCmd represents the supportBundle command
 var supportBundleCmd = &cobra.Command{
 	Use:   "bundle",
-	Short: "To upload the pf9ctl log files to S3",
-	Long:  `To upload pf9ctl log files if we entcounter any issue while setup of node `,
+	Short: "Gathers support bundle and uploads to S3",
+	Long:  `Gathers support bundle that includes logs for pf9 services and pf9ctl, uploads to S3 `,
 	Run:   supportBundleUpload,
 }
 
