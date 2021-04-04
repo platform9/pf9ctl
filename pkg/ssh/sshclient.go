@@ -149,6 +149,39 @@ func (c *client) UploadFile(localFile string, remoteFilePath string, mode os.Fil
 	return nil
 }
 
+func (c *client) DownloadFile(remoteFile string, localFilePath string, mode os.FileMode, cb func(read int64, total int64)) error {
+	// check if remote file exists
+	remoteFP, err := c.sftpClient.Open(remoteFile)
+	if err != nil {
+		return fmt.Errorf("unable to read remoteFile: %s", err)
+	}
+	defer remoteFP.Close()
+	fInfo, err := remoteFP.Stat()
+	if err != nil {
+		return fmt.Errorf("unable to find size of remoteFile: %s", err)
+	}
+
+	remoteFileReader := bufio.NewReader(remoteFP)
+	progressReader := newProgressCBReader(fInfo.Size(), remoteFileReader, cb)
+
+	localFile, err := os.Create(localFilePath)
+	if err != nil {
+		return fmt.Errorf("unable to create local file: %s", err)
+	}
+	defer localFile.Close()
+
+	_, err = io.Copy(localFile, progressReader)
+	if err != nil {
+		os.Remove(localFilePath)
+		return fmt.Errorf("unable to copy data: %s", err)
+	}
+	err = localFile.Chmod(mode)
+	if err != nil {
+		return fmt.Errorf("chmod failed: %s", err)
+	}
+	return nil
+}
+
 func newProgressCBReader(totalSize int64, orig io.Reader, cb func(read int64, total int64)) io.Reader {
 	progReader := &ProgressCBReader{
 		TotalSize:  totalSize,
