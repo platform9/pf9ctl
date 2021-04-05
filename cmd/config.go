@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/color"
@@ -29,11 +30,16 @@ var (
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag bool
 	// This flag is true when we set config through ./pf9ctl config set
-	SetConfig             bool
-	SetConfigByParameters bool
+	SetConfig bool
+	//SetConfigByParameters bool
 )
 
 const MaxLoopNoConfig = 3
+
+func clear(v interface{}) {
+	p := reflect.ValueOf(v).Elem()
+	p.Set(reflect.Zero(p.Type()))
+}
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
@@ -51,9 +57,15 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	pmk.Context.WaitPeriod = time.Duration(60)
 	pmk.Context.AllowInsecure = false
 
+	/*if SetConfigByParameters {
+		ctx = pmk.Context
+	}*/
+
 	for credentialFlag {
 		// invoked the configcreate command from pkg/pmk
+		//if !SetConfigByParameters {
 		ctx, _ = pmk.ConfigCmdCreateRun()
+		//}
 
 		executor, err := getExecutor()
 		if err != nil {
@@ -68,7 +80,13 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// Validate the user credentials entered during config set and will bail out if invalid
 
 		if err := validateUserCredentials(ctx, c); err != nil {
+			//if SetConfigByParameters {
+			//credentialFlag = false
+			//	zap.S().Fatalf("Make sure you entered all parameters correctly")
+			//break
+			//}
 			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
+			clear(&pmk.Context)
 			err = configValidation(pmk.LoopCounter)
 		} else {
 			credentialFlag = false
@@ -122,6 +140,12 @@ var configCmdSet = &cobra.Command{
 	Short: "Create a new config",
 	Long:  `Create a new config that can be used to query Platform9 controller`,
 	Run:   configCmdCreateRun,
+	/*Args: func(configCmdSet *cobra.Command, args []string) error {
+		if configCmdSet.Flags().Changed("account_url") || configCmdSet.Flags().Changed("username") || configCmdSet.Flags().Changed("password") || configCmdSet.Flags().Changed("region") || configCmdSet.Flags().Changed("tenant") {
+			SetConfigByParameters = true
+		}
+		return nil
+	},*/
 }
 
 func init() {
