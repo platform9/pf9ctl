@@ -74,7 +74,8 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will bail out if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
-
+			//Clearing the invalid config entered. So that it will ask for new information again.
+			clearContext(&pmk.Context)
 			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
 			err = configValidation(pmk.LoopCounter)
 		} else {
