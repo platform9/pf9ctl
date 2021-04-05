@@ -33,7 +33,8 @@ var (
 	password   string
 	sshKey     string
 	ips        []string
-	floatingIP bool
+	skipChecks bool
+	//floatingIP bool
 )
 
 func init() {
@@ -41,6 +42,7 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes")
 	prepNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	prepNodeCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
+	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skipChecks", "c", false, "Will skip optional checks if true")
 	//prepNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
 	rootCmd.AddCommand(prepNodeCmd)
@@ -98,12 +100,14 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if result == pmk.RequiredFail {
 		fmt.Println(color.Red("x ") + "Required pre-requisite check(s) failed.")
 		return
-	} else if result == pmk.OptionalFail {
-		fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
-		reader := bufio.NewReader(os.Stdin)
-		char, _, _ := reader.ReadRune()
-		if char != 'y' {
-			return
+	} else if !skipChecks {
+		if result == pmk.OptionalFail {
+			fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
+			reader := bufio.NewReader(os.Stdin)
+			char, _, _ := reader.ReadRune()
+			if char != 'y' {
+				return
+			}
 		}
 	}
 
