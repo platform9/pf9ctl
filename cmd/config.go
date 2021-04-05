@@ -36,7 +36,7 @@ var (
 
 const MaxLoopNoConfig = 3
 
-//This function cleares the context if it is invalid. Before storing it.
+//This function clears the context if it is invalid. Before storing it.
 func clearContext(v interface{}) {
 	p := reflect.ValueOf(v).Elem()
 	p.Set(reflect.Zero(p.Type()))
@@ -75,11 +75,12 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// Validate the user credentials entered during config set and will bail out if invalid
 
 		if err := validateUserCredentials(ctx, c); err != nil {
-			//Clearing the invalid config entered. So that it will ask for new information again.
+
 			if SetConfigByParameters {
 				zap.S().Fatalf("Invalid credentials entered (Username/Password/Tenant)")
 				credentialFlag = false
 			} else {
+				//Clearing the invalid config entered. So that it will ask for new information again.
 				clearContext(&pmk.Context)
 				//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
 				err = configValidation(pmk.LoopCounter)
