@@ -81,10 +81,10 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 				credentialFlag = false
 			} else {
 				clearContext(&pmk.Context)
+				//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
 				err = configValidation(pmk.LoopCounter)
 			}
-			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-			//err = configValidation(pmk.LoopCounter)
+
 		} else {
 			credentialFlag = false
 		}
