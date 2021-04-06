@@ -21,6 +21,9 @@ import (
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
 
+//If this is true the swapOff functionality will be disabled.
+var SwapOffDisabled bool
+
 const (
 	// Response Status Codes
 	HostAgentCertless = 200
@@ -91,19 +94,24 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf(errStr)
 	}
 
-	sendSegmentEvent(allClients, "Disabling swap - 1", auth, false)
-	s.Suffix = " Disabling swap and removing swap in fstab"
+	if !SwapOffDisabled {
+		sendSegmentEvent(allClients, "Disabling swap - 1", auth, false)
+		s.Suffix = " Disabling swap and removing swap in fstab"
 
-	err = setupNode(hostOS, allClients.Executor)
-	if err != nil {
-		errStr := "Error: Unable to disable swap. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth, true)
-		return fmt.Errorf(errStr)
+		err = setupNode(hostOS, allClients.Executor)
+
+		if err != nil {
+			errStr := "Error: Unable to disable swap. " + err.Error()
+			sendSegmentEvent(allClients, errStr, auth, true)
+			return fmt.Errorf(errStr)
+		}
+
+		s.Stop()
+		fmt.Println(color.Green("✓ ") + "Disabled swap and removed swap in fstab")
+		s.Restart()
+	} else {
+		zap.S().Debug("disableSwapOff is set, not disabling the swap")
 	}
-
-	s.Stop()
-	fmt.Println(color.Green("✓ ") + "Disabled swap and removed swap in fstab")
-	s.Restart()
 
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
 	s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
