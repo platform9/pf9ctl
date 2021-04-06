@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
+	"time"
 
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/pmk"
@@ -28,10 +30,17 @@ var (
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag bool
 	// This flag is true when we set config through ./pf9ctl config set
-	SetConfig bool
+	SetConfig             bool
+	SetConfigByParameters bool
 )
 
 const MaxLoopNoConfig = 3
+
+//This function clears the context if it is invalid. Before storing it.
+func clearContext(v interface{}) {
+	p := reflect.ValueOf(v).Elem()
+	p.Set(reflect.Zero(p.Type()))
+}
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
@@ -40,6 +49,15 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	SetConfig = true
 	// To bail out if loop runs recursively more than thrice
 	pmk.LoopCounter = 0
+
+	pmk.Context.Fqdn = account_url
+	pmk.Context.Username = username
+	pmk.Context.Password = Password
+	pmk.Context.Region = region
+	pmk.Context.Tenant = tenant
+	pmk.Context.WaitPeriod = time.Duration(60)
+	pmk.Context.AllowInsecure = false
+
 	for credentialFlag {
 		// invoked the configcreate command from pkg/pmk
 		ctx, _ = pmk.ConfigCmdCreateRun()
@@ -57,12 +75,21 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// Validate the user credentials entered during config set and will bail out if invalid
 
 		if err := validateUserCredentials(ctx, c); err != nil {
-			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-			err = configValidation(pmk.LoopCounter)
+
+			if SetConfigByParameters {
+				zap.S().Fatalf("Invalid credentials entered (Username/Password/Tenant)")
+				credentialFlag = false
+			} else {
+				//Clearing the invalid config entered. So that it will ask for new information again.
+				clearContext(&pmk.Context)
+				//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
+				err = configValidation(pmk.LoopCounter)
+			}
 
 		} else {
 			credentialFlag = false
 		}
+
 	}
 
 	defer c.Segment.Close()
@@ -111,12 +138,34 @@ var configCmdSet = &cobra.Command{
 	Short: "Create a new config",
 	Long:  `Create a new config that can be used to query Platform9 controller`,
 	Run:   configCmdCreateRun,
+	Args: func(configCmdSet *cobra.Command, args []string) error {
+		if configCmdSet.Flags().Changed("account_url") || configCmdSet.Flags().Changed("username") || configCmdSet.Flags().Changed("password") || configCmdSet.Flags().Changed("region") || configCmdSet.Flags().Changed("tenant") {
+			SetConfigByParameters = true
+		}
+		return nil
+	},
 }
 
 func init() {
 	rootCmd.AddCommand(configCmdCreate)
 	configCmdCreate.AddCommand(configCmdGet)
 	configCmdCreate.AddCommand(configCmdSet)
+}
+
+var (
+	account_url string
+	username    string
+	Password    string
+	region      string
+	tenant      string
+)
+
+func init() {
+	configCmdSet.Flags().StringVarP(&account_url, "account_url", "u", "", "sets account_url")
+	configCmdSet.Flags().StringVarP(&username, "username", "e", "", "sets username")
+	configCmdSet.Flags().StringVarP(&Password, "password", "p", "", "sets password")
+	configCmdSet.Flags().StringVarP(&region, "region", "r", "", "sets region")
+	configCmdSet.Flags().StringVarP(&tenant, "tenant", "t", "", "sets tenant")
 }
 
 // This function will validate the user credentials entered during config set and bail out if invalid
@@ -139,17 +188,17 @@ func configValidation(int) error {
 			// If Oldconfig exists and invalid credentials entered
 			if pmk.OldConfigExist {
 				if pmk.InvalidExistingConfig {
-					fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+					fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 					zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 				} else if pmk.OldConfigExist && pmk.LoopCounter == 0 {
 					zap.S().Debug("Invalid credentials found (Username/Password/Tenant)")
 				}
 			} else {
-				fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+				fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 				zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 			}
 		} else {
-			fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
+			fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
 			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
 		}
 	}

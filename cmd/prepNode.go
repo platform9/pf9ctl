@@ -27,14 +27,21 @@ var prepNodeCmd = &cobra.Command{
 	Long: `Prepare a node to be ready to be added to a Kubernetes cluster. Read more
 	at http://pf9.io/cli_clprep.`,
 	Run: prepNodeRun,
+	Args: func(prepNodeCmd *cobra.Command, args []string) error {
+		if prepNodeCmd.Flags().Changed("disableSwapOff") {
+			pmk.SwapOffDisabled = true
+		}
+		return nil
+	},
 }
 
 var (
-	user       string
-	password   string
-	sshKey     string
-	ips        []string
-	floatingIP bool
+	user           string
+	password       string
+	sshKey         string
+	ips            []string
+	skipChecks     bool
+	disableSwapOff bool
 )
 
 func init() {
@@ -42,7 +49,9 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes")
 	prepNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	prepNodeCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
-	//prepNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
+	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skipChecks", "c", false, "Will skip optional checks if true")
+	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disableSwapOff", "d", false, "Will skip swapoff")
+	prepNodeCmd.Flags().MarkHidden("disableSwapOff")
 
 	rootCmd.AddCommand(prepNodeCmd)
 }
@@ -75,7 +84,8 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will bail out if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
-
+			//Clearing the invalid config entered. So that it will ask for new information again.
+			clearContext(&pmk.Context)
 			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
 			err = configValidation(pmk.LoopCounter)
 		} else {
@@ -104,12 +114,14 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if result == pmk.RequiredFail {
 		fmt.Println(color.Red("x ") + "Required pre-requisite check(s) failed.")
 		return
-	} else if result == pmk.OptionalFail {
-		fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
-		reader := bufio.NewReader(os.Stdin)
-		char, _, _ := reader.ReadRune()
-		if char != 'y' {
-			return
+	} else if !skipChecks {
+		if result == pmk.OptionalFail {
+			fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
+			reader := bufio.NewReader(os.Stdin)
+			char, _, _ := reader.ReadRune()
+			if char != 'y' {
+				return
+			}
 		}
 	}
 
