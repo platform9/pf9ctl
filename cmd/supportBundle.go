@@ -3,6 +3,9 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -20,6 +23,11 @@ var supportBundleCmd = &cobra.Command{
 
 //This initialization is using create commands which is not in use for now.
 func init() {
+	supportBundleCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
+	supportBundleCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes")
+	supportBundleCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
+	supportBundleCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
+
 	rootCmd.AddCommand(supportBundleCmd)
 }
 
@@ -50,7 +58,7 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 
 		// Validate the user credentials entered during config set and will loop back again if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
-
+			clearContext(&pmk.Context)
 			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
 			err = configValidation(pmk.LoopCounter)
 		} else {
@@ -68,11 +76,16 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 
 	defer c.Segment.Close()
 
-	zap.S().Infof("==========Uploading pf9ctl log bundle to S3 bucket==========")
+	zap.S().Info("==========Uploading supportBundle to S3 bucket==========")
 	err := supportBundle.SupportBundleUpload(ctx, c)
 	if err != nil {
-		zap.S().Fatalf("Unable to upload supportbundle to S3 bucket %s", err.Error())
+		zap.S().Infof("Failed to upload pf9ctl supportBundle to %s bucket!!", supportBundle.S3_BUCKET_NAME)
+	} else {
+
+		fmt.Printf(color.Green("✓ ")+"Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
+			supportBundle.S3_BUCKET_NAME, supportBundle.S3_Location)
+
 	}
 
-	zap.S().Debug("==========Finished running supportbundleupload==========")
+	zap.S().Debug("==========Finished running supportBundleupload==========")
 }

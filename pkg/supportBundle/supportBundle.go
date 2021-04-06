@@ -7,11 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
-	"github.com/plus3it/gorecurcopy"
 	"go.uber.org/zap"
 )
 
@@ -21,6 +19,14 @@ const (
 	S3_REGION      = "us-west-2"
 	S3_ACL         = "x-amz-acl:bucket-owner-full-control"
 	S3_Loc         = "https://s3-us-west-2.amazonaws.com/loguploads.platform9.com"
+)
+
+var (
+	RemoteBundle bool = false
+	hostname     string
+	fileloc      string
+	err          error
+	S3_Location  string
 )
 
 // To get the Host IP address
@@ -40,22 +46,32 @@ func HostIP(allClients pmk.Client) (string, error) {
 
 func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 
-	zap.S().Debugf("Received a call to upload pf9ctl log bundle to %s bucket.\n", S3_BUCKET_NAME)
+	zap.S().Debugf("Received a call to upload pf9ctl supportBundle to %s bucket.\n", S3_BUCKET_NAME)
+
+	timestamp := time.Now()
 
 	// Generation of tar file of supportbundle (pf9ctl log files)
-	fileloc, err := Gensupportbundle()
-	if err != nil {
-		fmt.Printf(color.Green("x ") + "Failed to generate pf9ctl log bundle\n")
-		zap.S().Debug("Failed to generate pf9ctl log bundle\n")
+	if RemoteBundle {
+		fileloc, err = genSupportBundleRemote(allClients, timestamp)
+		if err != nil {
+			zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
+		}
+	} else {
+		fileloc, err = genSupportBundle(allClients, timestamp)
+		if err != nil {
+
+			zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
+		}
 	}
 
 	// To get the HostIP
-	host, err := HostIP(allClients)
+	hostIP, err := HostIP(allClients)
 	if err != nil {
-		zap.S().Error("Unable to fetch Host IP", err)
+		zap.S().Debug("Unable to fetch Host IP")
 	}
+
 	//To remove extra spaces and lines after the IP
-	host = strings.TrimSpace(strings.Trim(host, "\n"))
+	hostIP = strings.TrimSpace(strings.Trim(hostIP, "\n"))
 
 	// Fetch the keystone token.
 	// This is used as a reference to the segment event.
@@ -64,14 +80,15 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		ctx.Password,
 		ctx.Tenant,
 	)
-
 	if err != nil {
-		return fmt.Errorf("unable to locate keystone credentials: %s\n", err.Error())
+		zap.S().Debug("Unable to locate keystone credentials: %s\n", err.Error())
+		return fmt.Errorf("Unable to locate keystone credentials: %s\n", err.Error())
 	}
 
 	// To get the hostOS.
 	hostOS, err := pmk.ValidatePlatform(allClients.Executor)
 	if err != nil {
+		zap.S().Debug("Error: Invalid host OS. " + err.Error())
 		errStr := "Error: Invalid host OS. " + err.Error()
 		return fmt.Errorf(errStr)
 	}
@@ -79,79 +96,76 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	// To Fetch FQDN
 	FQDN, err := pmk.FetchRegionFQDN(ctx, auth, hostOS)
 	if err != nil {
+		zap.S().Debug("unable to fetch fqdn: %w")
 		return fmt.Errorf("unable to fetch fqdn: %w", err)
 	}
 
 	// S3 location to upload the file
-	S3_Location := S3_Loc + "/" + FQDN + "/" + host + "/"
+	S3_Location = S3_Loc + "/" + FQDN + "/" + hostIP + "/"
 
 	// To upload the pf9cli log bundle to S3 bucket
+
 	err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("curl -T %s -H %s %s", fileloc,
 		S3_ACL, S3_Location))
 	if err != nil {
-		zap.S().Error("Failed to upload pf9ctl log bundle to %s bucket!!", S3_BUCKET_NAME, err)
+		zap.S().Debugf("Failed to upload pf9ctl supportBundle to %s bucket!!", S3_BUCKET_NAME)
+	} else {
+		zap.S().Debugf("Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
+			S3_BUCKET_NAME, S3_Location)
 	}
 
 	//To remove the supportbundle after getting uploaded
-	err = os.Remove(fileloc)
-	if err != nil {
-		zap.S().Error("unable to remove supportbundle", err)
+
+	// Remove the supportbundle after uploading to S3
+
+	if RemoteBundle {
+		err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("rm -rf %s", fileloc))
+		if err != nil {
+			zap.S().Debug("Failed to remove supportbundle", err)
+		}
+
+	} else {
+		err = os.Remove(fileloc)
+		if err != nil {
+			zap.S().Debug("Failed to remove supportbundle", err)
+		}
 	}
-
-	fmt.Printf(color.Green("✓ ")+"Succesfully uploaded pf9ctl log bundle to %s bucket at %s location \n", S3_BUCKET_NAME, S3_Location)
-	zap.S().Debugf("Succesfully uploaded pf9ctl log bundle to %s bucket at %s location \n", S3_BUCKET_NAME, S3_Location)
-
 	return nil
 }
 
 /*This function is used to generate the support bundles.
 It copies all the log files specified into a directory and archives that given directory. */
-func Gensupportbundle() (string, error) {
+func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error) {
 
 	//Checking whether the source directories exist
 	_, err := os.Stat(util.Pf9Dir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			zap.S().Error("Directory not Found", err)
+			zap.S().Debug("Log files directory not Found")
 		}
 	}
 	_, err = os.Stat(util.VarDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			zap.S().Error("Directory not Found", err)
+			zap.S().Debug("Log files directory not Found")
 		}
 	}
 	_, err = os.Stat(util.EtcDir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			zap.S().Error("Directory not Found", err)
+			zap.S().Debug("Log files directory not Found")
 		}
 	}
 
-	//Recursively copying the contents of source directory to destination directory
-	//Function:gorecurcopy.CopyDirectory(Source Directory,Destination Directory)
-	err = gorecurcopy.CopyDirectory(util.Pf9Dir, util.DestDirPf9)
+	//Fetching the hostname of the given node
+	hostname, err = os.Hostname()
 	if err != nil {
-		zap.S().Error("Error in copying directory ", err)
-	}
-	err = gorecurcopy.CopyDirectory(util.VarDir, util.DestvarDir)
-	if err != nil {
-		zap.S().Error("Error in copying  directory ", err)
-	}
-	err = gorecurcopy.CopyDirectory(util.EtcDir, util.DestDirPf9EtcDir)
-	if err != nil {
-		zap.S().Error("Error in copying  directory ", err)
-	}
-	//Storing the hostname for the given node
-	hostname, err := os.Hostname()
-	if err != nil {
-		zap.S().Error("Error fetching hostname", err)
+		zap.S().Debug("Failed to fetch hostname", err)
 	}
 
 	//timestamp format for the archive file(Note:UTC Time is taken)
 	//File Format - hostname-yy-mm-dd-hours-minutes-seconds.tar.gz
 	//Sample File Format- test-dev-vm-2021-04-01-16-29-17.tar.gz
-	timestamp := time.Now()
 	hour := strconv.Itoa(timestamp.Hour())
 	minutes := strconv.Itoa(timestamp.Minute())
 	seconds := strconv.Itoa(timestamp.Second())
@@ -159,23 +173,57 @@ func Gensupportbundle() (string, error) {
 	tarname := hostname + "-" + layout + "-" + hour + "-" + minutes + "-" + seconds
 	tarzipname := tarname + ".tar.gz"
 	targetfile := "/tmp/" + tarzipname
-	destDir := "/tmp/" + tarname
 
-	//Renaming the copied directory according to the format
-	os.Rename(util.DestDir, destDir)
-
-	//This function archives the contents of the source directory and places it in the archive file
-	//Function:archiver.Archive(Source Directory,Archive file)
-	err = archiver.Archive([]string{destDir}, targetfile)
+	// To generate the supportBundle in loacl host case.
+	err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s pf9 %s %s",
+		targetfile, util.Pf9DirLoc, util.VarDir, util.EtcDir))
 	if err != nil {
-		zap.S().Error("Error in creating the archive of pf9ctl log files", err)
+		zap.S().Debug("Failed to generate supportBundle", err)
 	}
-	zap.S().Debug("Zipped the pf9ctl log files successfully")
 
-	//This function will remove all the contents of the copied directory
-	err = os.RemoveAll(destDir)
+	zap.S().Debug("Generated the pf9ctl supportBundle successfully")
+
+	return targetfile, err
+}
+
+func genSupportBundleRemote(allClients pmk.Client, timestamp time.Time) (string, error) {
+
+	// Check Pf9 files existance duirng remote node.
+	_, err = allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("cd /etc | ls | grep -i pf9"))
 	if err != nil {
-		zap.S().Error("unable to remove destination directory", err)
+		zap.S().Debug("Log files directory not Found!!")
 	}
-	return targetfile, nil
+
+	_, err = allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("cd /var/log | ls | grep -i pf9"))
+	if err != nil {
+		zap.S().Debug("Log files directory not Found!!")
+	}
+
+	// To fetch the hostname of remote node
+	hostname, err = allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("hostname"))
+	if err != nil {
+		zap.S().Debug("Failed to fetch hostname ", err)
+	}
+	hostname = strings.TrimSpace(strings.Trim(hostname, "\n"))
+
+	//timestamp format for the archive file(Note:UTC Time is taken)
+	//File Format - hostname-yy-mm-dd-hours-minutes-seconds.tar.gz
+	//Sample File Format- test-dev-vm-2021-04-01-16-29-17.tar.gz
+	hour := strconv.Itoa(timestamp.Hour())
+	minutes := strconv.Itoa(timestamp.Minute())
+	seconds := strconv.Itoa(timestamp.Second())
+	layout := timestamp.Format("2006-01-02")
+	tarname := hostname + "-" + layout + "-" + hour + "-" + minutes + "-" + seconds
+	tarzipname := tarname + ".tar.gz"
+	targetfile := "/tmp/" + tarzipname
+	// Generation of supportBundle in remote host case.
+	err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("tar -czf %s %s %s",
+		targetfile, util.VarDir, util.EtcDir))
+	if err != nil {
+		zap.S().Debug("Failed to generate supportBundle (Remote Host)", err)
+	}
+
+	zap.S().Debug("Generated the pf9ctl supportBundle (Remote Host) successfully")
+
+	return targetfile, err
 }
