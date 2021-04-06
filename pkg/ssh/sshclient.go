@@ -149,6 +149,7 @@ func (c *client) UploadFile(localFile string, remoteFilePath string, mode os.Fil
 	return nil
 }
 
+// DownloadFile fetches a file from the remote machine
 func (c *client) DownloadFile(remoteFile string, localFilePath string, mode os.FileMode, cb func(read int64, total int64)) error {
 	// check if remote file exists
 	remoteFP, err := c.sftpClient.Open(remoteFile)
@@ -177,6 +178,7 @@ func (c *client) DownloadFile(remoteFile string, localFilePath string, mode os.F
 	}
 	err = localFile.Chmod(mode)
 	if err != nil {
+		os.Remove(localFilePath)
 		return fmt.Errorf("chmod failed: %s", err)
 	}
 	return nil
