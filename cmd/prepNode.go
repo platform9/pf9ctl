@@ -26,14 +26,21 @@ var prepNodeCmd = &cobra.Command{
 	Long: `Prepare a node to be ready to be added to a Kubernetes cluster. Read more
 	at http://pf9.io/cli_clprep.`,
 	Run: prepNodeRun,
+	Args: func(prepNodeCmd *cobra.Command, args []string) error {
+		if prepNodeCmd.Flags().Changed("disableSwapOff") {
+			pmk.SwapOffDisabled = true
+		}
+		return nil
+	},
 }
 
 var (
-	user       string
-	password   string
-	sshKey     string
-	ips        []string
-	skipChecks bool
+	user           string
+	password       string
+	sshKey         string
+	ips            []string
+	skipChecks     bool
+	disableSwapOff bool
 	//floatingIP bool
 )
 
@@ -43,6 +50,8 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	prepNodeCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skipChecks", "c", false, "Will skip optional checks if true")
+	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disableSwapOff", "d", false, "Will skip swapoff")
+	prepNodeCmd.Flags().MarkHidden("disableSwapOff")
 	//prepNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
 	rootCmd.AddCommand(prepNodeCmd)
