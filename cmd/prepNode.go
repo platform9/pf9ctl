@@ -41,7 +41,6 @@ var (
 	ips            []string
 	skipChecks     bool
 	disableSwapOff bool
-	//floatingIP bool
 )
 
 func init() {
@@ -52,7 +51,6 @@ func init() {
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skipChecks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disableSwapOff", "d", false, "Will skip swapoff")
 	prepNodeCmd.Flags().MarkHidden("disableSwapOff")
-	//prepNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
 	rootCmd.AddCommand(prepNodeCmd)
 }

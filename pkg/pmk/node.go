@@ -109,6 +109,8 @@ func PrepNode(ctx Config, allClients Client) error {
 		s.Stop()
 		fmt.Println(color.Green("✓ ") + "Disabled swap and removed swap in fstab")
 		s.Restart()
+	} else {
+		zap.S().Debug("disableSwapOff is set, not disabling the swap")
 	}
 
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
