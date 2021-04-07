@@ -62,6 +62,10 @@ var (
 	// WaitPeriod is the sleep period for the cli
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
+
+	VarDir    = "/var/log/pf9"
+	EtcDir    = "/etc/pf9"
+	Pf9DirLoc = filepath.Join(homeDir, "/")
 )
 
 func init() {

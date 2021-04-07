@@ -8,6 +8,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -79,6 +80,11 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
+		// Uploads pf9cli log bundle if checknode fails
+		errbundle := supportBundle.SupportBundleUpload(ctx, c)
+		if errbundle != nil {
+			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
+		}
 		zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
 	}
 
