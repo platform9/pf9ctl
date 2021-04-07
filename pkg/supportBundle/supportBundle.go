@@ -109,21 +109,28 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		S3_ACL, S3_Location))
 	if err != nil {
 		zap.S().Debugf("Failed to upload pf9ctl supportBundle to %s bucket!!", S3_BUCKET_NAME)
+		if err := allClients.Segment.SendEvent("supportBundle upload Success", auth, "Success", ""); err != nil {
+			zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
+		}
+
 	} else {
 		zap.S().Debugf("Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
 			S3_BUCKET_NAME, S3_Location)
+		if err := allClients.Segment.SendEvent("supportBundle upload Failed", auth, "Failed", ""); err != nil {
+			zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
+		}
 	}
 
 	// Remove the supportbundle after uploading to S3
 
 	if RemoteBundle {
-		err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("rm -rf %s", fileloc))
+		err := allClients.Executor.Run("bash", "-c", fmt.Sprintf("rm -rf %s", fileloc))
 		if err != nil {
 			zap.S().Debug("Failed to remove supportbundle", err)
 		}
 
 	} else {
-		err = os.Remove(fileloc)
+		err := os.Remove(fileloc)
 		if err != nil {
 			zap.S().Debug("Failed to remove supportbundle", err)
 		}

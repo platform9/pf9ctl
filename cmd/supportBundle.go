@@ -80,13 +80,10 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 	err := supportBundle.SupportBundleUpload(ctx, c)
 	if err != nil {
 		zap.S().Infof("Failed to upload pf9ctl supportBundle to %s bucket!!", supportBundle.S3_BUCKET_NAME)
-		c.Segment.SendEvent("supportBundle Upload: Fail", err, "FAIL", "")
 	} else {
 
 		fmt.Printf(color.Green("✓ ")+"Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
 			supportBundle.S3_BUCKET_NAME, supportBundle.S3_Location)
-		c.Segment.SendEvent("supportBundle Upload: Success", true, "SUCCESS", "")
-
 	}
 
 	zap.S().Debug("==========Finished running supportBundleupload==========")
