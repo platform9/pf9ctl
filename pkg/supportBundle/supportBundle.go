@@ -114,8 +114,6 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 			S3_BUCKET_NAME, S3_Location)
 	}
 
-	//To remove the supportbundle after getting uploaded
-
 	// Remove the supportbundle after uploading to S3
 
 	if RemoteBundle {
@@ -137,7 +135,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 It copies all the log files specified into a directory and archives that given directory. */
 func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error) {
 
-	//Checking whether the source directories exist
+	//Check whether the source directories exist.
 	_, err := os.Stat(util.Pf9Dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -157,25 +155,17 @@ func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error
 		}
 	}
 
-	//Fetching the hostname of the given node
+	// To fetch the hostname of given node
 	hostname, err = os.Hostname()
 	if err != nil {
 		zap.S().Debug("Failed to fetch hostname", err)
 	}
 
-	//timestamp format for the archive file(Note:UTC Time is taken)
-	//File Format - hostname-yy-mm-dd-hours-minutes-seconds.tar.gz
-	//Sample File Format- test-dev-vm-2021-04-01-16-29-17.tar.gz
-	hour := strconv.Itoa(timestamp.Hour())
-	minutes := strconv.Itoa(timestamp.Minute())
-	seconds := strconv.Itoa(timestamp.Second())
-	layout := timestamp.Format("2006-01-02")
-	tarname := hostname + "-" + layout + "-" + hour + "-" + minutes + "-" + seconds
-	tarzipname := tarname + ".tar.gz"
-	targetfile := "/tmp/" + tarzipname
+	// To generate the targetfile name
+	targetfile := genTargetFilename(timestamp, hostname)
 
-	// To generate the supportBundle in loacl host case.
-	err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s pf9 %s %s",
+	// Generation of supportBundle in loacl host case.
+	_, err = allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s pf9 %s %s",
 		targetfile, util.Pf9DirLoc, util.VarDir, util.EtcDir))
 	if err != nil {
 		zap.S().Debug("Failed to generate supportBundle", err)
@@ -188,7 +178,7 @@ func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error
 
 func genSupportBundleRemote(allClients pmk.Client, timestamp time.Time) (string, error) {
 
-	// Check Pf9 files existance duirng remote node.
+	//Check whether the source directories exist in remote node.
 	_, err = allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("cd /etc | ls | grep -i pf9"))
 	if err != nil {
 		zap.S().Debug("Log files directory not Found!!")
@@ -206,6 +196,24 @@ func genSupportBundleRemote(allClients pmk.Client, timestamp time.Time) (string,
 	}
 	hostname = strings.TrimSpace(strings.Trim(hostname, "\n"))
 
+	// To generate the targetfile name
+	targetfile := genTargetFilename(timestamp, hostname)
+
+	// Generation of supportBundle in remote host case.
+	_, err = allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("tar -czf %s %s %s",
+		targetfile, util.VarDir, util.EtcDir))
+	if err != nil {
+		zap.S().Debug("Failed to generate supportBundle (Remote Host)", err)
+	}
+
+	zap.S().Debug("Generated the pf9ctl supportBundle (Remote Host) successfully")
+
+	return targetfile, err
+}
+
+//To generate the targetfile name including the hostname and the timestamp
+func genTargetFilename(timestamp time.Time, hostname string) string {
+
 	//timestamp format for the archive file(Note:UTC Time is taken)
 	//File Format - hostname-yy-mm-dd-hours-minutes-seconds.tar.gz
 	//Sample File Format- test-dev-vm-2021-04-01-16-29-17.tar.gz
@@ -216,14 +224,5 @@ func genSupportBundleRemote(allClients pmk.Client, timestamp time.Time) (string,
 	tarname := hostname + "-" + layout + "-" + hour + "-" + minutes + "-" + seconds
 	tarzipname := tarname + ".tar.gz"
 	targetfile := "/tmp/" + tarzipname
-	// Generation of supportBundle in remote host case.
-	err = allClients.Executor.Run("bash", "-c", fmt.Sprintf("tar -czf %s %s %s",
-		targetfile, util.VarDir, util.EtcDir))
-	if err != nil {
-		zap.S().Debug("Failed to generate supportBundle (Remote Host)", err)
-	}
-
-	zap.S().Debug("Generated the pf9ctl supportBundle (Remote Host) successfully")
-
-	return targetfile, err
+	return targetfile
 }
