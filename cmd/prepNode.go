@@ -127,7 +127,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 	if err := pmk.PrepNode(ctx, c); err != nil {
 		fmt.Printf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
-		c.Segment.SendEvent("Prep Node : Fail", err, "FAIL", "")
 
 		// Uploads pf9cli log bundle if prepnode failed to get prepared
 		errbundle := supportBundle.SupportBundleUpload(ctx, c)
