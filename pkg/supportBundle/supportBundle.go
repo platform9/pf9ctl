@@ -55,8 +55,6 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 			return err
 		}
 		zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
-	} else {
-
 	}
 
 	// To get the HostIP
@@ -195,7 +193,7 @@ func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error
 		return targetfile, nil
 
 	} else {
-		// Generation of supportBundle in loacl host case.
+		// Generation of supportBundle in local host case.
 		_, errbundle := allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s pf9 %s %s",
 			targetfile, util.Pf9DirLoc, util.VarDir, util.EtcDir))
 		if errbundle != nil {
