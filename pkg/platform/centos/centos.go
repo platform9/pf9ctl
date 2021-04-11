@@ -264,11 +264,11 @@ func (c *CentOS) Version() (string, error) {
 	out, err := c.exec.RunWithStdout(
 		"bash",
 		"-c",
-		"cat /etc/*release | grep '(Core)' | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
+		"cat /etc/*release | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match {
+	if match, _:= regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[3]\.*`, string(out)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
