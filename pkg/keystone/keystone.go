@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"go.uber.org/zap"
 
+	"go.uber.org/zap"
 )
 
 type KeystoneAuth struct {
 	Token     string
 	UserID    string
 	ProjectID string
+	EmailID   string
 }
 
 type Keystone interface {
@@ -37,7 +38,6 @@ func (k KeystoneImpl) GetAuth(
 	zap.S().Debugf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s\n", k.fqdn, username, tenant)
 
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", k.fqdn)
-
 
 	body := fmt.Sprintf(`{
 		"auth": {
@@ -71,12 +71,10 @@ func (k KeystoneImpl) GetAuth(
 
 	var payload map[string]interface{}
 	decoder := json.NewDecoder(resp.Body)
-
 	err = decoder.Decode(&payload)
 	if err != nil {
 		return auth, fmt.Errorf("Unable to decode the payload")
 	}
-
 	t := payload["token"].(map[string]interface{})
 	project := t["project"].(map[string]interface{})
 	user := t["user"].(map[string]interface{})
@@ -86,5 +84,6 @@ func (k KeystoneImpl) GetAuth(
 		Token:     token,
 		UserID:    user["id"].(string),
 		ProjectID: project["id"].(string),
+		EmailID:   user["name"].(string),
 	}, nil
 }
