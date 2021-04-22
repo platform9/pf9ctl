@@ -14,7 +14,9 @@ import (
 )
 
 //Added segment key for the source PRD-PMKFT Metrics-Aggregator
-const segmentWriteKey = "4jevYUNBF5sY3vZJWm5TrhfdsFzQIQ3y"
+//const segmentWriteKey = "4jevYUNBF5sY3vZJWm5TrhfdsFzQIQ3y"
+
+var segmentWriteKey = os.Getenv("SEGMENT_WRITE_KEY")
 
 type Segment interface {
 	SendEvent(string, interface{}, string, string) error
