@@ -50,12 +50,13 @@ func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
 		return c.client.Enqueue(analytics.Track{
-			UserId:     data_struct.UserID,
-			Event:      name,
+			UserId: data_struct.UserID,
+			Event:  name,
 			Properties: analytics.NewProperties().
-					Set("keystoneData", data).
-					Set("status", status).
-					Set("errorMsg", err),
+				Set("keystoneData", data).
+				Set("email", data_struct.Email).
+				Set("status", status).
+				Set("errorMsg", err),
 			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
 				"session_id": time.Now().Unix(),
 			}),

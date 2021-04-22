@@ -15,7 +15,8 @@ type KeystoneAuth struct {
 	Token     string
 	UserID    string
 	ProjectID string
-	EmailID   string
+	Email     string
+
 }
 
 type Keystone interface {
@@ -84,6 +85,6 @@ func (k KeystoneImpl) GetAuth(
 		Token:     token,
 		UserID:    user["id"].(string),
 		ProjectID: project["id"].(string),
-		EmailID:   user["name"].(string),
+		Email:     user["name"].(string),
 	}, nil
 }
