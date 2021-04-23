@@ -236,7 +236,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	}
 	zap.S().Debug("Hostagent download completed successfully")
 
-	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password=%s`, regionURL, ctx.Username, ctx.Password)
+	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
 
 	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
 	if err != nil {
