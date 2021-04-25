@@ -23,6 +23,8 @@ type Client interface {
 	RunCommand(cmd string) ([]byte, []byte, error)
 	// Uploadfile uploads the srcFile to remoteDestFilePath and changes the mode to the filemode
 	UploadFile(srcFilePath, remoteDstFilePath string, mode os.FileMode, cb func(read int64, total int64)) error
+	// Downloadfile downloads the remoteFile to localFile and changes the mode to the filemode
+	DownloadFile(remoteFile, localPath string, mode os.FileMode, cb func(read int64, total int64)) error
 }
 
 type client struct {
