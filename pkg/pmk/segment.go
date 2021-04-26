@@ -16,8 +16,6 @@ import (
 //Added segment key for the source PRD-PMKFT Metrics-Aggregator
 var SegmentWriteKey string
 
-//var SegmentWriteKey = os.Getenv("SEGMENT_KEY_PRD_PMKFT")
-
 type Segment interface {
 	SendEvent(string, interface{}, string, string) error
 	SendGroupTraits(string, interface{}) error
@@ -37,7 +35,7 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 	envCheck := os.Getenv("PF9CTL_SEGMENT_EVENTS_DISABLE")
 	segmentEventDisabled, _ := strconv.ParseBool(envCheck)
 
-	// Local Case.
+	// Local build case
 	if SegmentWriteKey == "" {
 		segmentEventDisabled = true
 	}
