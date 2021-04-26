@@ -15,8 +15,9 @@ import (
 
 //Added segment key for the source PRD-PMKFT Metrics-Aggregator
 //const segmentWriteKey = "4jevYUNBF5sY3vZJWm5TrhfdsFzQIQ3y"
+var SegmentWriteKey string
 
-var segmentWriteKey = os.Getenv("SEGMENT_KEY_PRD_PMKFT")
+//var SegmentWriteKey = os.Getenv("SEGMENT_KEY_PRD_PMKFT")
 
 type Segment interface {
 	SendEvent(string, interface{}, string, string) error
@@ -38,14 +39,14 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 	segmentEventDisabled, _ := strconv.ParseBool(envCheck)
 
 	// Local Case.
-	if segmentWriteKey == "" {
+	if SegmentWriteKey == "" {
 		segmentEventDisabled = true
 	}
 
 	if noTracking || segmentEventDisabled {
 		return NoopSegment{}
 	}
-	client := analytics.New(segmentWriteKey)
+	client := analytics.New(SegmentWriteKey)
 
 	return SegmentImpl{
 		fqdn:   fqdn,
@@ -55,7 +56,7 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 
 func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err string) error {
 	zap.S().Debug("Sending Segment Event: ", name)
-	zap.S().Debug("SegmentKey", segmentWriteKey)
+	zap.S().Debug("SegmentKey", SegmentWriteKey)
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
 		return c.client.Enqueue(analytics.Track{
