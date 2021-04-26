@@ -32,7 +32,7 @@ container-build:
 	docker run --rm --env XDG_CACHE_HOME=$(XDG_CACHE_HOME) --env VERSION_OVERRIDE=${VERSION_OVERRIDE} --env GOPATH=/tmp --env GOFLAGS=$(GOFLAGS) --user $(CONT_USER):$(CONT_GRP) --volume $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) --workdir $(PACKAGE_GOPATH) platform9systems/build-centos7-golang:1.15.2 make
 
 $(BIN): test
-	go build -o $(BIN_DIR)/$(BIN) -ldflags "$(LDFLAGS)" -X pmk.segment.SegmentWriteKey = SEGMENT_KEY_PRD_PMKFT
+	go build -o $(BIN_DIR)/$(BIN) -ldflags "$(LDFLAGS) -X pmk.segment.SegmentWriteKey = SEGMENT_KEY_PRD_PMKFT"
 
 format:
 	gofmt -w -s *.go
