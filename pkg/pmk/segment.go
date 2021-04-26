@@ -14,7 +14,7 @@ import (
 )
 
 //Added segment key for the source PRD-PMKFT Metrics-Aggregator
-const segmentWriteKey = "4jevYUNBF5sY3vZJWm5TrhfdsFzQIQ3y"
+var SegmentWriteKey string
 
 type Segment interface {
 	SendEvent(string, interface{}, string, string) error
@@ -34,10 +34,16 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 	// mock out segment if the user wants no Tracking
 	envCheck := os.Getenv("PF9CTL_SEGMENT_EVENTS_DISABLE")
 	segmentEventDisabled, _ := strconv.ParseBool(envCheck)
+
+	// Local build case
+	if SegmentWriteKey == "" {
+		segmentEventDisabled = true
+	}
+
 	if noTracking || segmentEventDisabled {
 		return NoopSegment{}
 	}
-	client := analytics.New(segmentWriteKey)
+	client := analytics.New(SegmentWriteKey)
 
 	return SegmentImpl{
 		fqdn:   fqdn,
