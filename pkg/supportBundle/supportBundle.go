@@ -92,6 +92,11 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		zap.S().Debug("unable to fetch fqdn: %w")
 		return fmt.Errorf("unable to fetch fqdn: %w", err)
 	}
+	//To fetch FQDN from config if region given is invalid
+	if FQDN == "" {
+		FQDN = ctx.Fqdn
+		FQDN = strings.Replace(FQDN, "https://", "", 1)
+	}
 
 	// S3 location to upload the file
 	S3_Location = S3_Loc + "/" + FQDN + "/" + hostIP + "/"
