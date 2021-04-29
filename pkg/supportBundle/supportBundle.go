@@ -37,6 +37,8 @@ func HostIP(allClients pmk.Client) (string, error) {
 	if err != nil {
 		zap.S().Error("Host IP Not found", err)
 	}
+	// If host have multiple IPs
+	host = strings.Split(host, " ")[0]
 	return host, err
 }
 
