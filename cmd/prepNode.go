@@ -46,7 +46,7 @@ var (
 
 func init() {
 	prepNodeCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
-	prepNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use eg: 'single quotes' to pass password)")
+	prepNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	prepNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	prepNodeCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skipChecks", "c", false, "Will skip optional checks if true")
@@ -72,7 +72,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		executor, err := getExecutor()
 		if err != nil {
 			zap.S().Debug("Error connecting to host %s", err.Error())
-			zap.S().Fatalf(" Invalid (Username/Password/IP) or use eg: 'single quotes' to pass password")
+			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
 		}
 
 		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)

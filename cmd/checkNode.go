@@ -24,7 +24,7 @@ var checkNodeCmd = &cobra.Command{
 
 func init() {
 	checkNodeCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
-	checkNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use eg: 'single quotes' to pass password)")
+	checkNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	checkNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	checkNodeCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
@@ -48,7 +48,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 		executor, err := getExecutor()
 		if err != nil {
-			zap.S().Fatalf(" Invalid (Username/Password/IP) or use eg: 'single quotes' to pass password")
+			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
 			zap.S().Debug("Error connecting to host %s", err.Error())
 		}
 

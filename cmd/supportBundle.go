@@ -24,7 +24,7 @@ var supportBundleCmd = &cobra.Command{
 //This initialization is using create commands which is not in use for now.
 func init() {
 	supportBundleCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
-	supportBundleCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use eg: 'single quotes' to pass password)")
+	supportBundleCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	supportBundleCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	supportBundleCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
 
@@ -48,7 +48,7 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 		executor, err := getExecutor()
 		if err != nil {
 			zap.S().Debug("Error connecting to host %s", err.Error())
-			zap.S().Fatalf(" Invalid (Username/Password/IP) or use eg: 'single quotes' to pass password")
+			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
 		}
 
 		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
