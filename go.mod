@@ -3,6 +3,7 @@ module github.com/platform9/pf9ctl
 go 1.14
 
 require (
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/briandowns/spinner v1.12.0
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.10.0
