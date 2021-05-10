@@ -83,6 +83,7 @@ func createHeadlessCluster(configFile string) error {
 	if err := viper.ReadInConfig(); err != nil {
 		return fmt.Errorf("failed to read config file: %s", err)
 	}
+	// TODO: validate parameters
 	pf9KubePath := viper.GetString("pf9KubePath")
 	configTarPath := viper.GetString("configTarPath")
 	masterNodeList := viper.GetStringSlice("masterNodeList")
@@ -91,7 +92,8 @@ func createHeadlessCluster(configFile string) error {
 	privKeyPath := viper.GetString("privKeyPath")
 	password := viper.GetString("password")
 
-	err = pmk.CreateHeadlessCluster(pf9KubePath, configTarPath, masterNodeList, workerNodeList, username, privKeyPath, password)
+	err = pmk.CreateHeadlessCluster(pf9KubePath, configTarPath, masterNodeList,
+		workerNodeList, username, privKeyPath, password)
 	if err != nil {
 		return fmt.Errorf("failed to create headless cluster: %s", err)
 	}

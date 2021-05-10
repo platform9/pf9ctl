@@ -14,6 +14,20 @@ import (
 	"go.uber.org/zap"
 )
 
+type ClusterConf struct {
+	// Public variables
+	MasterNodeList []string
+	WorkerNodeList []string
+	Username       string
+	Password       string
+	PrivKeyPath    string
+	Pf9KubePath    string
+	ConfigTarPath  string
+
+	// private variables
+	privKey []byte
+}
+
 // Bootstrap simply preps the local node and attach it as master to a newly
 // created cluster.
 func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
@@ -79,14 +93,22 @@ func CreateHeadlessCluster(pf9KubePath string, configTarPath string,
 		return fmt.Errorf("error reading key file %s %s", privKeyPath, err)
 	}
 
-	err = bootstrapMasters(masterNodeList, username, privKey, password,
-		pf9KubePath, configTarPath)
+	cluster := ClusterConf{
+		MasterNodeList: masterNodeList,
+		WorkerNodeList: workerNodeList,
+		Username:       username,
+		Password:       password,
+		PrivKeyPath:    privKeyPath,
+		privKey:        privKey,
+		Pf9KubePath:    pf9KubePath,
+		ConfigTarPath:  configTarPath,
+	}
+	err = cluster.BootstrapMasters()
 	if err != nil {
 		return fmt.Errorf("failed to boostrap masters: %s", err)
 	}
 
-	err = bootstrapWorkers(workerNodeList, username, privKey, password,
-		pf9KubePath, configTarPath)
+	err = cluster.BootstrapWorkers()
 	if err != nil {
 		return fmt.Errorf("failed to boostrap workers: %s", err)
 	}
@@ -94,11 +116,9 @@ func CreateHeadlessCluster(pf9KubePath string, configTarPath string,
 	return nil
 }
 
-func bootstrapMasters(masterNodeList []string, username string, privKey []byte,
-	password string, pf9KubePath string, configTarPath string) error {
-	for _, masterNode := range masterNodeList {
-		err := uploadPackages(masterNode, username, privKey, password,
-			pf9KubePath, configTarPath)
+func (cluster *ClusterConf) BootstrapMasters() error {
+	for _, masterNode := range cluster.MasterNodeList {
+		err := cluster.configureNode(masterNode)
 		if err != nil {
 			return fmt.Errorf("failed to upload packages to %s: %s",
 				masterNode, err)
@@ -107,13 +127,11 @@ func bootstrapMasters(masterNodeList []string, username string, privKey []byte,
 	return nil
 }
 
-func bootstrapWorkers(workerNodeList []string, username string, privKey []byte,
-	password string, pf9KubePath string, configTarPath string) error {
+func (cluster *ClusterConf) BootstrapWorkers() error {
 
-	for _, workerNode := range workerNodeList {
+	for _, workerNode := range cluster.WorkerNodeList {
 		// TODO - parallelize this
-		err := uploadPackages(workerNode, username, privKey, password,
-			pf9KubePath, configTarPath)
+		err := cluster.configureNode(workerNode)
 		if err != nil {
 			return fmt.Errorf("failed to upload packages to %s: %s",
 				workerNode, err)
@@ -122,21 +140,36 @@ func bootstrapWorkers(workerNodeList []string, username string, privKey []byte,
 	return nil
 }
 
-func uploadPackages(node string, username string, privKey []byte,
-	password string, pf9KubePath string, configTarPath string) error {
-	client, err := ssh.NewClient(node, 22, username, privKey, password)
+func (cluster *ClusterConf) configureNode(node string) error {
+	client, err := ssh.NewClient(node, 22, cluster.Username, cluster.privKey,
+		cluster.Password)
 	if err != nil {
 		return fmt.Errorf("failed to create ssh client to %s: %s", node, err)
 	}
 
-	err = client.UploadFile(pf9KubePath, "/tmp/pf9kube.rpm", 0644, nil)
+	err = client.UploadFile(cluster.Pf9KubePath, "/tmp/pf9kube.rpm", 0644, nil)
 	if err != nil {
 		return fmt.Errorf("failed to upload pf9kube RPM to %s: %s", node, err)
 	}
 
-	err = client.UploadFile(configTarPath, "/tmp/pf9config.tar", 0644, nil)
+	kubeInstallCmd := "yum install -y /tmp/pf9kube.rpm"
+	_, _, err = client.RunCommand(kubeInstallCmd)
+	if err != nil {
+		return fmt.Errorf("failed to install pf9-kube on %s: %s", node, err)
+	}
+
+	err = client.UploadFile(cluster.ConfigTarPath, "/tmp/pf9config.tgz", 0644, nil)
 	if err != nil {
 		return fmt.Errorf("failed to upload config tar to %s: %s", node, err)
+	}
+
+	_, _, err = client.RunCommand("mkdir -p /etc/pf9")
+	if err != nil {
+		return fmt.Errorf("failed to create conf dir on %s: %s", node, err)
+	}
+	_, _, err = client.RunCommand("tar -zxvf /tmp/pf9config.tgz -C /etc")
+	if err != nil {
+		return fmt.Errorf("failed to extract config on %s: %s", node, err)
 	}
 
 	return nil
