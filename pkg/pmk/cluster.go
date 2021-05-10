@@ -4,10 +4,12 @@ package pmk
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/qbert"
+	"github.com/platform9/pf9ctl/pkg/ssh"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
@@ -65,5 +67,77 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 	}
 
 	zap.S().Info("Bootstrap successfully finished")
+	return nil
+}
+
+func CreateHeadlessCluster(pf9KubePath string, configTarPath string,
+	masterNodeList []string, workerNodeList []string, username string,
+	privKeyPath string, password string) error {
+
+	privKey, err := ioutil.ReadFile(privKeyPath)
+	if err != nil {
+		return fmt.Errorf("error reading key file %s %s", privKeyPath, err)
+	}
+
+	err = bootstrapMasters(masterNodeList, username, privKey, password,
+		pf9KubePath, configTarPath)
+	if err != nil {
+		return fmt.Errorf("failed to boostrap masters: %s", err)
+	}
+
+	err = bootstrapWorkers(workerNodeList, username, privKey, password,
+		pf9KubePath, configTarPath)
+	if err != nil {
+		return fmt.Errorf("failed to boostrap workers: %s", err)
+	}
+
+	return nil
+}
+
+func bootstrapMasters(masterNodeList []string, username string, privKey []byte,
+	password string, pf9KubePath string, configTarPath string) error {
+	for _, masterNode := range masterNodeList {
+		err := uploadPackages(masterNode, username, privKey, password,
+			pf9KubePath, configTarPath)
+		if err != nil {
+			return fmt.Errorf("failed to upload packages to %s: %s",
+				masterNode, err)
+		}
+	}
+	return nil
+}
+
+func bootstrapWorkers(workerNodeList []string, username string, privKey []byte,
+	password string, pf9KubePath string, configTarPath string) error {
+
+	for _, workerNode := range workerNodeList {
+		// TODO - parallelize this
+		err := uploadPackages(workerNode, username, privKey, password,
+			pf9KubePath, configTarPath)
+		if err != nil {
+			return fmt.Errorf("failed to upload packages to %s: %s",
+				workerNode, err)
+		}
+	}
+	return nil
+}
+
+func uploadPackages(node string, username string, privKey []byte,
+	password string, pf9KubePath string, configTarPath string) error {
+	client, err := ssh.NewClient(node, 22, username, privKey, password)
+	if err != nil {
+		return fmt.Errorf("failed to create ssh client to %s: %s", node, err)
+	}
+
+	err = client.UploadFile(pf9KubePath, "/tmp/pf9kube.rpm", 0644, nil)
+	if err != nil {
+		return fmt.Errorf("failed to upload pf9kube RPM to %s: %s", node, err)
+	}
+
+	err = client.UploadFile(configTarPath, "/tmp/pf9config.tar", 0644, nil)
+	if err != nil {
+		return fmt.Errorf("failed to upload config tar to %s: %s", node, err)
+	}
+
 	return nil
 }

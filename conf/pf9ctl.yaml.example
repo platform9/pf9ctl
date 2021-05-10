@@ -1,0 +1,9 @@
+pf9KubePath: "/tmp/pf9kube.rpm"
+configTarPath: "/tmp/pf9Kubeconfig.tar"
+
+masterNodeList: []
+workerNodeList: []
+
+username: "centos"
+password: ""
+privKeyPath: "~/.ssh/id_rsa"

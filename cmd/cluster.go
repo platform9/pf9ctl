@@ -3,13 +3,29 @@
 package cmd
 
 import (
+	"fmt"
+
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
+var (
+	clusterHeadless   bool
+	clusterConfigPath string
+)
+
+// clusterCmdCreate represents Create cluster command
+var clusterCmd = &cobra.Command{
+	Use:   "cluster",
+	Short: "Manage PMK clusters",
+	Long:  "Create and delete PMK clusters locally",
+}
+
 // clusterCmdGet represents the cluster get command
 var clusterCmdGet = &cobra.Command{
-	Use:   "cluster",
+	Use:   "get",
 	Short: "Display one or many clusters",
 	Long: `Query your controller using the current config and list
 	 the clusters`,
@@ -20,12 +36,26 @@ var clusterCmdGet = &cobra.Command{
 
 // clusterCmdCreate represents Create cluster command
 var clusterCmdCreate = &cobra.Command{
-	Use:   "cluster",
+	Use:   "create",
 	Short: "Create a kubernetes cluster",
 	Long:  `Create a cluster and add one or more nodes to it.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		zap.S().Info("Create cluster called")
+		if !clusterHeadless {
+			// Do nothing
+			return nil
+		}
+		err := createHeadlessCluster(clusterConfigPath)
+		return err
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(clusterCmd)
+	clusterCmd.AddCommand(clusterCmdGet)
+	clusterCmd.AddCommand(clusterCmdCreate)
+	clusterCmdCreate.Flags().BoolVar(&clusterHeadless, "headless", false, "Create headless clusters; will not talk to the DU")
+	clusterCmdCreate.Flags().StringVar(&clusterConfigPath, "config", "/etc/pf9/pf9ctl.yaml", "Path to headless cluster config file")
 }
 
 /*
@@ -46,3 +76,24 @@ func init() {
 
 	//getCmd.AddCommand(clusterCmdGet)
 }*/
+
+func createHeadlessCluster(configFile string) error {
+	viper.SetConfigFile(configFile)
+
+	if err := viper.ReadInConfig(); err != nil {
+		return fmt.Errorf("failed to read config file: %s", err)
+	}
+	pf9KubePath := viper.GetString("pf9KubePath")
+	configTarPath := viper.GetString("configTarPath")
+	masterNodeList := viper.GetStringSlice("masterNodeList")
+	workerNodeList := viper.GetStringSlice("workerNodeList")
+	username := viper.GetString("username")
+	privKeyPath := viper.GetString("privKeyPath")
+	password := viper.GetString("password")
+
+	err = pmk.CreateHeadlessCluster(pf9KubePath, configTarPath, masterNodeList, workerNodeList, username, privKeyPath, password)
+	if err != nil {
+		return fmt.Errorf("failed to create headless cluster: %s", err)
+	}
+	return nil
+}
