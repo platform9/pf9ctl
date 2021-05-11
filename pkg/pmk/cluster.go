@@ -118,12 +118,7 @@ func CreateHeadlessCluster(pf9KubePath string, configTarPath string,
 
 func (cluster *ClusterConf) BootstrapMasters() error {
 	for _, masterNode := range cluster.MasterNodeList {
-		nodeletConf, kubeEnv, err := cluster.generateMasterConfig(masterNode)
-		if err != nil {
-			return fmt.Errorf("failed to generate config for node %s: %s",
-				masterNode, err)
-		}
-		err = cluster.configureNode(masterNode, nodeletConf, kubeEnv)
+		err := cluster.configureNode(masterNode)
 		if err != nil {
 			return fmt.Errorf("failed to upload packages to %s: %s",
 				masterNode, err)
@@ -136,12 +131,7 @@ func (cluster *ClusterConf) BootstrapWorkers() error {
 
 	for _, workerNode := range cluster.WorkerNodeList {
 		// TODO - parallelize this
-		nodeletConf, kubeEnv, err := cluster.generateMasterConfig(workerNode)
-		if err != nil {
-			return fmt.Errorf("failed to generate config for node %s: %s",
-				workerNode, err)
-		}
-		err = cluster.configureNode(workerNode, nodeletConf, kubeEnv)
+		err := cluster.configureNode(workerNode)
 		if err != nil {
 			return fmt.Errorf("failed to upload packages to %s: %s",
 				workerNode, err)
@@ -150,7 +140,7 @@ func (cluster *ClusterConf) BootstrapWorkers() error {
 	return nil
 }
 
-func (cluster *ClusterConf) configureNode(node string, nodeletConf string, kubeEnv string) error {
+func (cluster *ClusterConf) configureNode(node string) error {
 	client, err := ssh.NewClient(node, 22, cluster.Username, cluster.privKey,
 		cluster.Password)
 	if err != nil {
@@ -168,41 +158,19 @@ func (cluster *ClusterConf) configureNode(node string, nodeletConf string, kubeE
 		return fmt.Errorf("failed to install pf9-kube on %s: %s", node, err)
 	}
 
-	err = client.UploadFile(nodeletConf, "/tmp/nodelet_sunpike.yaml", 0644, nil)
+	err = client.UploadFile(cluster.ConfigTarPath, "/tmp/pf9config.tgz", 0644, nil)
 	if err != nil {
-		return fmt.Errorf("failed to upload config file to %s: %s", node, err)
-	}
-
-	err = client.UploadFile(kubeEnv, "/tmp/kube.env", 0644, nil)
-	if err != nil {
-		return fmt.Errorf("failed to upload config file to %s: %s", node, err)
+		return fmt.Errorf("failed to upload config tar to %s: %s", node, err)
 	}
 
 	_, _, err = client.RunCommand("mkdir -p /etc/pf9")
 	if err != nil {
 		return fmt.Errorf("failed to create conf dir on %s: %s", node, err)
 	}
-	_, _, err = client.RunCommand("cp /tmp/nodelet_sunpike.yaml /etc/pf9/")
+	_, _, err = client.RunCommand("tar -zxvf /tmp/pf9config.tgz -C /etc")
 	if err != nil {
-		return fmt.Errorf("failed to copy config files on %s: %s", node, err)
-	}
-
-	_, _, err = client.RunCommand("cp /tmp/kube.env /etc/pf9/")
-	if err != nil {
-		return fmt.Errorf("failed to copy config files on %s: %s", node, err)
+		return fmt.Errorf("failed to extract config on %s: %s", node, err)
 	}
 
 	return nil
-}
-
-func (cluster *ClusterConf) generateMasterConfig(node string) (string,
-	string, error) {
-
-	return "", "", nil
-}
-
-func (cluster *ClusterConf) generateWorkerConfig(node string) (string,
-	string, error) {
-
-	return "", "", nil
 }
