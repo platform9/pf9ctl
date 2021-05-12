@@ -116,6 +116,62 @@ func CreateHeadlessCluster(pf9KubePath string, configTarPath string,
 	return nil
 }
 
+func UpgradeHeadlessCluster(pf9KubePath string, configTarPath string,
+	masterNodeList []string, workerNodeList []string, username string,
+	privKeyPath string, password string) error {
+
+	privKey, err := ioutil.ReadFile(privKeyPath)
+	if err != nil {
+		return fmt.Errorf("error reading key file %s %s", privKeyPath, err)
+	}
+
+	cluster := ClusterConf{
+		MasterNodeList: masterNodeList,
+		WorkerNodeList: workerNodeList,
+		Username:       username,
+		Password:       password,
+		PrivKeyPath:    privKeyPath,
+		privKey:        privKey,
+		Pf9KubePath:    pf9KubePath,
+		ConfigTarPath:  configTarPath,
+	}
+
+	err = cluster.upgradeMasters()
+	if err != nil {
+		zap.S().Error("Error upgrading master nodes")
+		return err
+	}
+
+	err = cluster.upgradeWorkers()
+	if err != nil {
+		zap.S().Error("Error upgrading worker nodes")
+		return err
+	}
+	return nil
+}
+
+func (c *ClusterConf) upgradeWorkers() error {
+	for _, node := range c.WorkerNodeList {
+		err := c.upgradeNode(node)
+		if err != nil {
+			zap.S().Error("Error upgrading master node: ", node)
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *ClusterConf) upgradeMasters() error {
+	for _, node := range c.MasterNodeList {
+		err := c.upgradeNode(node)
+		if err != nil {
+			zap.S().Error("Error upgrading master node: ", node)
+			return err
+		}
+	}
+	return nil
+}
+
 func (cluster *ClusterConf) BootstrapMasters() error {
 	for _, masterNode := range cluster.MasterNodeList {
 		err := cluster.configureNode(masterNode)
@@ -152,12 +208,15 @@ func (cluster *ClusterConf) configureNode(node string) error {
 		return fmt.Errorf("failed to upload pf9kube RPM to %s: %s", node, err)
 	}
 
+	zap.S().Info("Configuring node: ", node)
+	zap.S().Info("Installing pf9-kube package")
 	kubeInstallCmd := "yum install -y /tmp/pf9kube.rpm"
 	_, _, err = client.RunCommand(kubeInstallCmd)
 	if err != nil {
 		return fmt.Errorf("failed to install pf9-kube on %s: %s", node, err)
 	}
 
+	zap.S().Info("Applying configuration")
 	err = client.UploadFile(cluster.ConfigTarPath, "/tmp/pf9config.tgz", 0644, nil)
 	if err != nil {
 		return fmt.Errorf("failed to upload config tar to %s: %s", node, err)
@@ -167,10 +226,80 @@ func (cluster *ClusterConf) configureNode(node string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create conf dir on %s: %s", node, err)
 	}
-	_, _, err = client.RunCommand("tar -zxvf /tmp/pf9config.tgz -C /etc")
+	_, _, err = client.RunCommand("tar -zxvf /tmp/pf9config.tgz -C /tmp")
 	if err != nil {
 		return fmt.Errorf("failed to extract config on %s: %s", node, err)
 	}
+
+	_, _, err = client.RunCommand("/bin/cp -R -f /tmp/etc/pf9/* /etc/pf9/")
+	if err != nil {
+		return fmt.Errorf("failed to copy extracted config to correct location on %s: %s", node, err)
+	}
+
+	zap.S().Info("Starting nodelet to bring up the cluster on node: ", node)
+	_, _, err = client.RunCommand("/opt/pf9/nodelet/nodeletd phases start")
+	if err != nil {
+		return fmt.Errorf("failed to start nodelet on %s: %s", node, err)
+	}
+
+	zap.S().Info("node successfully added to cluster")
+
+	return nil
+}
+
+func (c *ClusterConf) upgradeNode(node string) error {
+
+	client, err := ssh.NewClient(node, 22, c.Username, c.privKey,
+		c.Password)
+	if err != nil {
+		return fmt.Errorf("failed to create ssh client to %s: %s", node, err)
+	}
+
+	zap.S().Info("Uploading new packages to node: ", node)
+	err = client.UploadFile(c.Pf9KubePath, "/tmp/pf9kube.rpm", 0644, nil)
+	if err != nil {
+		return fmt.Errorf("failed to upload pf9kube RPM to %s: %s", node, err)
+	}
+
+	err = client.UploadFile(c.ConfigTarPath, "/tmp/pf9config.tgz", 0644, nil)
+	if err != nil {
+		return fmt.Errorf("failed to upload config tar to %s: %s", node, err)
+	}
+
+	zap.S().Info("Removing old pf9-kube package")
+	_, _, err = client.RunCommand("yum erase -y pf9-kube")
+	if err != nil {
+		return fmt.Errorf("Failed to remove older package from %s: %s", node, err)
+	}
+
+	zap.S().Infof("Installing new pf9-kube package")
+	_, _, err = client.RunCommand("yum install -y /tmp/pf9kube.rpm")
+	if err != nil {
+		return fmt.Errorf("Failed to install new package on %s: %s", node, err)
+	}
+
+	zap.S().Info("Applying configuration")
+	_, _, err = client.RunCommand("mkdir -p /etc/pf9")
+	if err != nil {
+		return fmt.Errorf("failed to create conf dir on %s: %s", node, err)
+	}
+	_, _, err = client.RunCommand("tar -zxvf /tmp/pf9config.tgz -C /tmp")
+	if err != nil {
+		return fmt.Errorf("failed to extract config on %s: %s", node, err)
+	}
+
+	_, _, err = client.RunCommand("/bin/cp -R -f /tmp/etc/pf9/* /etc/pf9/")
+	if err != nil {
+		return fmt.Errorf("failed to copy extracted config to correct location on %s: %s", node, err)
+	}
+
+	zap.S().Info("Starting nodelet to bring up the cluster on node: ", node)
+	_, _, err = client.RunCommand("/opt/pf9/nodelet/nodeletd phases start")
+	if err != nil {
+		return fmt.Errorf("failed to start nodelet on %s: %s", node, err)
+	}
+
+	zap.S().Info("node successfully upgraded")
 
 	return nil
 }

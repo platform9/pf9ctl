@@ -50,12 +50,30 @@ var clusterCmdCreate = &cobra.Command{
 	},
 }
 
+var clusterCmdUpgrade = &cobra.Command{
+	Use:   "upgrade",
+	Short: "Upgrade a headless k8s cluster",
+	Long:  "Upgrade an headless k8s cluster",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		zap.S().Info("Upgrade cluster")
+		if !clusterHeadless {
+			zap.S().Error("This command currently only works with headless clusters")
+			return nil
+		}
+		err := upgradeHeadlessCluster(clusterConfigPath)
+		return err
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(clusterCmd)
 	clusterCmd.AddCommand(clusterCmdGet)
 	clusterCmd.AddCommand(clusterCmdCreate)
+	clusterCmd.AddCommand(clusterCmdUpgrade)
 	clusterCmdCreate.Flags().BoolVar(&clusterHeadless, "headless", false, "Create headless clusters; will not talk to the DU")
 	clusterCmdCreate.Flags().StringVar(&clusterConfigPath, "config", "/etc/pf9/pf9ctl.yaml", "Path to headless cluster config file")
+	clusterCmdUpgrade.Flags().BoolVar(&clusterHeadless, "headless", false, "Create headless clusters; will not talk to the DU")
+	clusterCmdUpgrade.Flags().StringVar(&clusterConfigPath, "config", "/etc/pf9/pf9ctl.yaml", "Path to headless cluster config file")
 }
 
 /*
@@ -76,6 +94,28 @@ func init() {
 
 	//getCmd.AddCommand(clusterCmdGet)
 }*/
+
+func upgradeHeadlessCluster(configFile string) error {
+	viper.SetConfigFile(configFile)
+
+	if err := viper.ReadInConfig(); err != nil {
+		return fmt.Errorf("failed to read config file: %s", err)
+	}
+	// TODO: validate parameters
+	pf9KubePath := viper.GetString("pf9KubePath")
+	configTarPath := viper.GetString("configTarPath")
+	masterNodeList := viper.GetStringSlice("masterNodeList")
+	workerNodeList := viper.GetStringSlice("workerNodeList")
+	username := viper.GetString("username")
+	privKeyPath := viper.GetString("privKeyPath")
+	password := viper.GetString("password")
+	err = pmk.UpgradeHeadlessCluster(pf9KubePath, configTarPath, masterNodeList,
+		workerNodeList, username, privKeyPath, password)
+	if err != nil {
+		return fmt.Errorf("failed to create headless cluster: %s", err)
+	}
+	return nil
+}
 
 func createHeadlessCluster(configFile string) error {
 	viper.SetConfigFile(configFile)
