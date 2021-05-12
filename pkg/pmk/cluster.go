@@ -53,12 +53,12 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 	nodeID := strings.TrimSuffix(string(output), "\n")
 
 	time.Sleep(ctx.WaitPeriod * time.Second)
-
+	var nodeIDs []string
+	nodeIDs = append(nodeIDs, nodeID)
 	zap.S().Info("Attaching node to the cluster...")
 	err = c.Qbert.AttachNode(
 		clusterID,
-		nodeID,
-		keystoneAuth.ProjectID, keystoneAuth.Token)
+		keystoneAuth.ProjectID, keystoneAuth.Token, nodeIDs, "workeer")
 
 	if err != nil {
 		return fmt.Errorf("Unable to attach node: %w", err)
