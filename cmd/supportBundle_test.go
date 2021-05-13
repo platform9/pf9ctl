@@ -15,6 +15,7 @@ import (
 var ErrHostIP = errors.New("Host IP not found")
 var ErrRemove = errors.New("Unable to remove bundle")
 var ErrUpload = errors.New("Unable to upload supportBundle to S3")
+var ErrPartialBundle = errors.New("Failed to generate complete supportBundle, generated partial bundle")
 
 //HostIP test case
 func TestHostIP(t *testing.T) {
@@ -88,7 +89,7 @@ func TestGenSupportBundle(t *testing.T) {
 		want
 	}{
 		//Success case.The GenSupportBundle function returns nil on succesful execution
-		"CheckPass": {
+		"CheckCompleteBundle": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
@@ -98,6 +99,19 @@ func TestGenSupportBundle(t *testing.T) {
 			},
 			want: want{
 				err: nil,
+			},
+		},
+		//Partial Bundle Generation Case.The GenSupportBundle function returns ErrPartialBundle error on execution
+		"CheckPartialBundle": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", ErrPartialBundle
+					},
+				},
+			},
+			want: want{
+				err: ErrPartialBundle,
 			},
 		},
 	}

@@ -28,10 +28,11 @@ var (
 	S3_Location  string
 
 	//Errors returned from the functions
-	ErrHostIP    = fmt.Errorf("Host IP not found")
-	ErrRemove    = fmt.Errorf("Unable to remove bundle")
-	ErrGenBundle = fmt.Errorf("Unable to generate supportBundle in remote host")
-	ErrUpload    = fmt.Errorf("Unable to upload supportBundle to S3")
+	ErrHostIP        = fmt.Errorf("Host IP not found")
+	ErrRemove        = fmt.Errorf("Unable to remove bundle")
+	ErrGenBundle     = fmt.Errorf("Unable to generate supportBundle in remote host")
+	ErrUpload        = fmt.Errorf("Unable to upload supportBundle to S3")
+	ErrPartialBundle = fmt.Errorf("Failed to generate complete supportBundle, generated partial bundle")
 
 	//Timestamp used for generating targetfile
 	Timestamp = time.Now()
@@ -56,7 +57,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	zap.S().Debugf("Received a call to upload pf9ctl supportBundle to %s bucket.\n", S3_BUCKET_NAME)
 
 	fileloc, err = GenSupportBundle(allClients.Executor, Timestamp)
-	if err != nil {
+	if err != nil && err != ErrPartialBundle {
 		if RemoteBundle {
 			zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
 			return err
@@ -64,7 +65,6 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
 	}
 
-	//var exec cmdexec.Executor
 	// To get the HostIP
 	hostIP, err := HostIP(allClients.Executor)
 	if err != nil {
@@ -129,7 +129,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	// Remove the supportbundle after uploading to S3
 	errremove := RemoveBundle(allClients.Executor)
 	if errremove != nil {
-		zap.S().Debug("Error removing generated bundle from local machine", errremove)
+		zap.S().Debug("Error removing generated bundle", errremove)
 	}
 
 	return nil
@@ -227,6 +227,7 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time) (string, error
 			targetfile, util.Pf9DirLoc, util.VarDir, util.EtcDir))
 		if errbundle != nil {
 			zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle", errbundle)
+			return targetfile, ErrPartialBundle
 		} else {
 			zap.S().Debug("Generated the pf9ctl supportBundle successfully")
 		}
