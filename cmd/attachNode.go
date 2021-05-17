@@ -21,12 +21,12 @@ var (
 var attachNodeCmd = &cobra.Command{
 	Use:   "attach-node",
 	Short: "attaches node to kubernetes cluster",
-	Long:  "attaches node to kubernetes cluster",
+	Long:  "attach-node command able to attach one master and multiple workers to cluster at a time. It is able to add one master at a time but mot multiple masters",
 	Args: func(configCmdSet *cobra.Command, args []string) error {
 		if len(args) > 1 {
-			return errors.New("only one argument is required")
+			return errors.New("Only cluster name is accepted as a parameter")
 		} else if len(args) < 1 {
-			return errors.New("cluster name is required")
+			return errors.New("Cluster name is required for attach-node")
 		}
 		clusterName = args[0]
 		return nil
@@ -99,13 +99,21 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	//master ips
 	var master_hostIds []string
 	if len(masterIPs) > 0 {
-		master_hostIds, _ = hostId(c.Executor, ctx.Fqdn, token, masterIPs)
+		var err error
+		master_hostIds, err = hostId(c.Executor, ctx.Fqdn, token, masterIPs)
+		if err != nil {
+			zap.S().Fatalf("Error : ", err)
+		}
 	}
 
 	//worker ips
 	var worker_hostIds []string
 	if len(workerIPs) > 0 {
-		worker_hostIds, _ = hostId(c.Executor, ctx.Fqdn, token, workerIPs)
+		var err error
+		worker_hostIds, err = hostId(c.Executor, ctx.Fqdn, token, workerIPs)
+		if err != nil {
+			zap.S().Fatalf("Error : ", err)
+		}
 	}
 
 	_, cluster_uuid, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
@@ -144,7 +152,7 @@ func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]s
 		hostid, _ := exec.RunWithStdout("bash", "-c", cmd)
 		hostid = strings.TrimSpace(strings.Trim(hostid, "\n"))
 		if len(hostid) == 0 {
-			zap.S().Infof("Unable to find host with IP %v please try again or run prep-node first", ip)
+			return hostIdsList, fmt.Errorf("Unable to find host with IP %v please try again or run prep-node first", ip)
 		} else {
 			hostIdsList = append(hostIdsList, hostid)
 		}
@@ -155,7 +163,10 @@ func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]s
 func cluster_Status(exec cmdexec.Executor, fqdn string, token string, projectID string, clusterID string) string {
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
 	cmd := fmt.Sprintf("curl -sH %v -X GET %v/qbert/v3/%v/clusters/%v | jq '.status' ", tkn, fqdn, projectID, clusterID)
-	status, _ := exec.RunWithStdout("bash", "-c", cmd)
+	status, err := exec.RunWithStdout("bash", "-c", cmd)
+	if err != nil {
+		zap.S().Fatalf("Unable to get cluster status : ", err)
+	}
 	status = strings.TrimSpace(strings.Trim(status, "\n\""))
 	return status
 }
