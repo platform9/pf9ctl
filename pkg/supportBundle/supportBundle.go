@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -25,33 +26,38 @@ var (
 	fileloc      string
 	err          error
 	S3_Location  string
+
+	//Errors returned from the functions
+	ErrHostIP        = fmt.Errorf("Host IP not found")
+	ErrRemove        = fmt.Errorf("Unable to remove bundle")
+	ErrGenBundle     = fmt.Errorf("Unable to generate supportBundle in remote host")
+	ErrUpload        = fmt.Errorf("Unable to upload supportBundle to S3")
+	ErrPartialBundle = fmt.Errorf("Failed to generate complete supportBundle, generated partial bundle")
+
+	//Timestamp used for generating targetfile
+	Timestamp = time.Now()
 )
 
 // To get the Host IP address
-
-func HostIP(allClients pmk.Client) (string, error) {
-
+func HostIP(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Fetching HostIP")
-
-	host, err := allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("hostname -I"))
+	host, err := exec.RunWithStdout("bash", "-c", fmt.Sprintf("hostname -I"))
 	if err != nil {
 		zap.S().Error("Host IP Not found", err)
+		return host, ErrHostIP
 	}
-	// If host have multiple IPs
+	// If the host has multiple IPs
 	host = strings.Split(host, " ")[0]
-	return host, err
+	return host, nil
 }
 
 // To upload pf9ctl log bundle to S3 bucket
-
 func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 
 	zap.S().Debugf("Received a call to upload pf9ctl supportBundle to %s bucket.\n", S3_BUCKET_NAME)
 
-	timestamp := time.Now()
-
-	fileloc, err = genSupportBundle(allClients, timestamp)
-	if err != nil {
+	fileloc, err = GenSupportBundle(allClients.Executor, Timestamp)
+	if err != nil && err != ErrPartialBundle {
 		if RemoteBundle {
 			zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
 			return err
@@ -60,7 +66,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	}
 
 	// To get the HostIP
-	hostIP, err := HostIP(allClients)
+	hostIP, err := HostIP(allClients.Executor)
 	if err != nil {
 		zap.S().Debug("Unable to fetch Host IP")
 	}
@@ -104,9 +110,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	S3_Location = S3_Loc + "/" + FQDN + "/" + hostIP + "/"
 
 	// To upload the pf9cli log bundle to S3 bucket
-
-	errUpload := allClients.Executor.Run("bash", "-c", fmt.Sprintf("curl -T %s -H %s %s", fileloc,
-		S3_ACL, S3_Location))
+	errUpload := S3Upload(allClients.Executor)
 	if errUpload != nil {
 		zap.S().Debugf("Failed to upload pf9ctl supportBundle to %s bucket!! ", S3_BUCKET_NAME, errUpload)
 
@@ -123,16 +127,16 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	}
 
 	// Remove the supportbundle after uploading to S3
-	errremove := allClients.Executor.Run("bash", "-c", fmt.Sprintf("rm -rf %s", fileloc))
+	errremove := RemoveBundle(allClients.Executor)
 	if errremove != nil {
-		zap.S().Debug("Failed to remove supportbundle", errremove)
+		zap.S().Debug("Error removing generated bundle", errremove)
 	}
 
 	return nil
 }
 
 //To generate the targetfile name including the hostname and the timestamp
-func genTargetFilename(timestamp time.Time, hostname string) string {
+func GenTargetFilename(timestamp time.Time, hostname string) string {
 
 	//timestamp format for the archive file(Note:UTC Time is taken)
 	//File Format - hostname-yy-mm-dd-hours-minutes-seconds.tar.gz
@@ -147,31 +151,49 @@ func genTargetFilename(timestamp time.Time, hostname string) string {
 	return targetfile
 }
 
+//To upload supportBundle to the S3 location
+func S3Upload(exec cmdexec.Executor) error {
+	errUpload := exec.Run("bash", "-c", fmt.Sprintf("curl -T %s -H %s %s", fileloc,
+		S3_ACL, S3_Location))
+	if errUpload != nil {
+		return ErrUpload
+	}
+	return nil
+}
+
+//To remove the supportBundle
+func RemoveBundle(exec cmdexec.Executor) error {
+	errremove := exec.Run("bash", "-c", fmt.Sprintf("rm -rf %s", fileloc))
+	if errremove != nil {
+		return ErrRemove
+	}
+	return nil
+}
+
 //This function is used to generate the support bundles.
 //It copies all the log files specified into a directory and archives that given directory.
-
-func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error) {
+func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time) (string, error) {
 
 	//Check whether the source directories exist in remote node.
 	if !RemoteBundle {
-		_, errPf9 := allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.Pf9Dir))
+		_, errPf9 := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.Pf9Dir))
 		if err != nil {
 			zap.S().Debug("Log files directory not Found!!", errPf9)
 		}
 	}
 
-	_, errEtc := allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.EtcDir))
+	_, errEtc := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.EtcDir))
 	if errEtc != nil {
 		zap.S().Debug("Log files directory not Found!! ", errEtc)
 	}
 
-	_, errVar := allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.VarDir))
+	_, errVar := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.VarDir))
 	if errVar != nil {
 		zap.S().Debug("Log files directory not Found!! ", errVar)
 	}
 
 	// To fetch the hostname of remote node
-	hostname, err := allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("hostname"))
+	hostname, err := exec.RunWithStdout("bash", "-c", fmt.Sprintf("hostname"))
 	if err != nil {
 		zap.S().Debug("Failed to fetch hostname ", err)
 	}
@@ -179,13 +201,13 @@ func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error
 	hostname = strings.TrimSpace(strings.Trim(hostname, "\n"))
 
 	// To generate the targetfile name
-	targetfile := genTargetFilename(timestamp, hostname)
+	targetfile := GenTargetFilename(timestamp, hostname)
 
 	if RemoteBundle {
 		// Generate supportBundle if any of Etc / var logs are present or both
 		if errEtc == nil || errVar == nil {
 			// Generation of supportBundle in remote host case.
-			_, errbundle := allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("tar -czf %s %s %s",
+			_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar -czf %s %s %s",
 				targetfile, util.VarDir, util.EtcDir))
 			if errbundle != nil {
 				zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle (Remote Host)", errbundle)
@@ -193,7 +215,7 @@ func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error
 
 		} else {
 			zap.S().Debug("Failed to generate supportBundle (Remote Host)", errVar, errEtc)
-			return targetfile, fmt.Errorf("%s %s", errVar, errEtc)
+			return targetfile, ErrGenBundle
 		}
 
 		zap.S().Debug("Generated the pf9ctl supportBundle (Remote Host) successfully")
@@ -201,10 +223,11 @@ func genSupportBundle(allClients pmk.Client, timestamp time.Time) (string, error
 
 	} else {
 		// Generation of supportBundle in local host case.
-		_, errbundle := allClients.Executor.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s pf9 %s %s",
+		_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s pf9 %s %s",
 			targetfile, util.Pf9DirLoc, util.VarDir, util.EtcDir))
 		if errbundle != nil {
 			zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle", errbundle)
+			return targetfile, ErrPartialBundle
 		} else {
 			zap.S().Debug("Generated the pf9ctl supportBundle successfully")
 		}
