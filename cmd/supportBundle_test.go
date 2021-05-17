@@ -8,7 +8,7 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
-	"github.com/stretchr/testify/assert"
+	"github.com/platform9/pf9ctl/pkg/test_utils"
 )
 
 //Errors returned by the functions
@@ -64,7 +64,7 @@ func TestHostIP(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			_, err1 := supportBundle.HostIP(tc.exec)
-			assert.Equal(t, tc.want.err, err1)
+			test_utils.Equals(t, tc.want.err, err1)
 		})
 	}
 
@@ -120,7 +120,7 @@ func TestGenSupportBundle(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			_, err1 := supportBundle.GenSupportBundle(tc.exec, timestamp)
-			assert.Equal(t, tc.want.err, err1)
+			test_utils.Equals(t, tc.want.err, err1)
 		})
 	}
 
@@ -157,7 +157,7 @@ func TestGenTargetFilename(t *testing.T) {
 
 			targetfile := supportBundle.GenTargetFilename(supportBundle.Timestamp, "hostname")
 			//Comparing both the targetfiles
-			assert.Equal(t, tc.want.targetfile, targetfile)
+			test_utils.Equals(t, tc.want.targetfile, targetfile)
 		})
 	}
 
@@ -209,7 +209,7 @@ func TestS3Upload(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			err1 := supportBundle.S3Upload(tc.exec)
-			assert.Equal(t, tc.want.err, err1)
+			test_utils.Equals(t, tc.want.err, err1)
 		})
 	}
 
@@ -261,7 +261,7 @@ func TestRemoveBundle(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			err1 := supportBundle.RemoveBundle(tc.exec)
-			assert.Equal(t, tc.want.err, err1)
+			test_utils.Equals(t, tc.want.err, err1)
 		})
 	}
 
