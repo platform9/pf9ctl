@@ -109,8 +109,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	_, cluster_uuid, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
-	clusterStatus, _ := c.Qbert.Get_converge_status(cluster_uuid, projectId, token)
-
+	clusterStatus := cluster_Status(c.Executor, ctx.Fqdn, token, projectId, cluster_uuid)
 	if clusterStatus == "ok" {
 		//Attaching worker node(s) to cluster
 		if len(worker_hostIds) > 0 {
@@ -151,4 +150,12 @@ func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]s
 		}
 	}
 	return hostIdsList, nil
+}
+
+func cluster_Status(exec cmdexec.Executor, fqdn string, token string, projectID string, clusterID string) string {
+	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
+	cmd := fmt.Sprintf("curl -sH %v -X GET %v/qbert/v3/%v/clusters/%v | jq '.status' ", tkn, fqdn, projectID, clusterID)
+	status, _ := exec.RunWithStdout("bash", "-c", cmd)
+	status = strings.TrimSpace(strings.Trim(status, "\n\""))
+	return status
 }
