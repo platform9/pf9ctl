@@ -16,6 +16,7 @@ var (
 	masterIPs   []string
 	workerIPs   []string
 	clusterName string
+	Errhostid   error
 )
 
 var attachNodeCmd = &cobra.Command{
@@ -168,7 +169,8 @@ func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]s
 		hostid, _ := exec.RunWithStdout("bash", "-c", cmd)
 		hostid = strings.TrimSpace(strings.Trim(hostid, "\n"))
 		if len(hostid) == 0 {
-			return hostIdsList, fmt.Errorf("Unable to find host with IP %v please try again or run prep-node first", ip)
+			Errhostid = fmt.Errorf("Unable to find host with IP %v please try again or run prep-node first", ip)
+			return hostIdsList, Errhostid
 		} else {
 			hostIdsList = append(hostIdsList, hostid)
 		}
