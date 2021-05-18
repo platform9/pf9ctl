@@ -134,7 +134,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 				if err := c.Segment.SendEvent("Attaching-node", auth, "Worker node attached", ""); err != nil {
 					zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
 				}
-				zap.S().Info("Worker node(s) attached to cluster")
+				zap.S().Infof("Worker node(s) %v attached to cluster", worker_hostIds)
 			}
 		}
 		//Attaching master node(s) to cluster
@@ -149,7 +149,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 				if err := c.Segment.SendEvent("Attaching-node", auth, "Master node attached", ""); err != nil {
 					zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
 				}
-				zap.S().Info("Master node(s) attached to cluster")
+				zap.S().Infof("Master node(s) %v attached to cluster", master_hostIds)
 			}
 		}
 	} else {
@@ -159,6 +159,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 }
 
 func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]string, error) {
+	zap.S().Debug("Getting host IDs")
 	var hostIdsList []string
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
 	for _, ip := range IPs {
@@ -176,6 +177,7 @@ func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]s
 }
 
 func cluster_Status(exec cmdexec.Executor, fqdn string, token string, projectID string, clusterID string) string {
+	zap.S().Debug("Getting cluster status")
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
 	cmd := fmt.Sprintf("curl -sH %v -X GET %v/qbert/v3/%v/clusters/%v | jq '.status' ", tkn, fqdn, projectID, clusterID)
 	status, err := exec.RunWithStdout("bash", "-c", cmd)
@@ -183,5 +185,6 @@ func cluster_Status(exec cmdexec.Executor, fqdn string, token string, projectID 
 		zap.S().Fatalf("Unable to get cluster status : ", err)
 	}
 	status = strings.TrimSpace(strings.Trim(status, "\n\""))
+	zap.S().Debug("Cluster status is : ", status)
 	return status
 }
