@@ -126,8 +126,14 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		if len(worker_hostIds) > 0 {
 			err1 := c.Qbert.AttachNode(cluster_uuid, projectId, token, worker_hostIds, "worker")
 			if err1 != nil {
+				if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach worker node", ""); err != nil {
+					zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
+				}
 				zap.S().Info("Encountered an error while attaching worker node to a Kubernetes cluster : ", err1)
 			} else {
+				if err := c.Segment.SendEvent("Attaching-node", auth, "Worker node attached", ""); err != nil {
+					zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
+				}
 				zap.S().Info("Worker node(s) attached to cluster")
 			}
 		}
@@ -135,8 +141,14 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		if len(master_hostIds) > 0 {
 			err1 := c.Qbert.AttachNode(cluster_uuid, projectId, token, master_hostIds, "master")
 			if err1 != nil {
+				if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach master node", ""); err != nil {
+					zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
+				}
 				zap.S().Info("Encountered an error while attaching master node to a Kubernetes cluster : ", err1)
 			} else {
+				if err := c.Segment.SendEvent("Attaching-node", auth, "Master node attached", ""); err != nil {
+					zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
+				}
 				zap.S().Info("Master node(s) attached to cluster")
 			}
 		}
