@@ -89,12 +89,12 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("No nodes were specified to be attached to the cluster")
 	}
 
-	keystone, err := c.Keystone.GetAuth(ctx.Username, ctx.Password, ctx.Tenant)
+	auth, err := c.Keystone.GetAuth(ctx.Username, ctx.Password, ctx.Tenant)
 	if err != nil {
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
-	projectId := keystone.ProjectID
-	token := keystone.Token
+	projectId := auth.ProjectID
+	token := auth.Token
 
 	//master ips
 	var master_hostIds []string
@@ -120,6 +120,9 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	clusterStatus := cluster_Status(c.Executor, ctx.Fqdn, token, projectId, cluster_uuid)
 	if clusterStatus == "ok" {
 		//Attaching worker node(s) to cluster
+		if err := c.Segment.SendEvent("Starting Attach-node", auth, "", ""); err != nil {
+			zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
+		}
 		if len(worker_hostIds) > 0 {
 			err1 := c.Qbert.AttachNode(cluster_uuid, projectId, token, worker_hostIds, "worker")
 			if err1 != nil {
