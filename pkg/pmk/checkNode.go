@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
@@ -85,6 +86,11 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	defer s.Stop()
 	s.Suffix = " Running pre-requisite checks and installing any missing OS packages"
 	checks := platform.Check()
+	if !SwapOffDisabled {
+		checks = disableSwap(os, allClients.Executor, checks)
+	} else {
+		zap.S().Debug("disableSwapOff is set, not disabling the swap")
+	}
 	s.Stop()
 
 	//We will print console if any missing os packages installed
@@ -138,4 +144,18 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		return PASS, nil
 	}
 
+}
+
+func disableSwap(os string, exec cmdexec.Executor, checks []platform.Check) []platform.Check {
+	var isSwapRemoved bool
+	err := setupNode(os, exec)
+	if err != nil {
+		errStr := "Error: Unable to disable swap. " + err.Error()
+		isSwapRemoved = false
+		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, isSwapRemoved, err, errStr})
+	} else {
+		isSwapRemoved = true
+		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, isSwapRemoved, err, ""})
+	}
+	return checks
 }

@@ -94,25 +94,6 @@ func PrepNode(ctx Config, allClients Client) error {
 		return fmt.Errorf(errStr)
 	}
 
-	if !SwapOffDisabled {
-		sendSegmentEvent(allClients, "Disabling swap - 1", auth, false)
-		s.Suffix = " Disabling swap and removing swap in fstab"
-
-		err = setupNode(hostOS, allClients.Executor)
-
-		if err != nil {
-			errStr := "Error: Unable to disable swap. " + err.Error()
-			sendSegmentEvent(allClients, errStr, auth, true)
-			return fmt.Errorf(errStr)
-		}
-
-		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Disabled swap and removed swap in fstab")
-		s.Restart()
-	} else {
-		zap.S().Debug("disableSwapOff is set, not disabling the swap")
-	}
-
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
 	s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
 	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
