@@ -6,18 +6,18 @@
 ### Purpose
    CLI tool for Platform9 management. This is under heavy development, please use with care
    
-### Requirements
+### Requirements(Prerequisites)
 
 - CPUs: Minimum 2 CPUs needed on host
 - RAM: 12 GB 
 - Disk: At least 30 GB of total disk space and 15 GB of free space is needed on host
 - Sudo access to the user
-- OS : 
+- OS(Supported) : 
     - Ubuntu (16.04,18.04,20.04)
     - Centos (7.3 -7.9 ,8.3)
 
 ### Usage
-- Download the CLI 
+- Downloading the CLI 
 ```sh
 bash <(curl -sL https://pmkft-assets.s3-us-west-1.amazonaws.com/pf9ctl_setup) 
 ```
