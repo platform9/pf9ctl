@@ -1,4 +1,4 @@
-package pmk
+package swapoff
 
 import (
 	"fmt"

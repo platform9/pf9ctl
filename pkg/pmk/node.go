@@ -21,9 +21,6 @@ import (
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
 
-//If this is true the swapOff functionality will be disabled.
-var SwapOffDisabled bool
-
 const (
 	// Response Status Codes
 	HostAgentCertless = 200

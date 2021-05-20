@@ -1,4 +1,4 @@
-package pmk
+package swapoff
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 // This files needs to be organized little better
-func setupNode(hostOS string, exec cmdexec.Executor) (err error) {
+func SetupNode(exec cmdexec.Executor) (err error) {
 	zap.S().Debug("Received a call to setup the node")
 
 	if err := swapOff(exec); err != nil {
