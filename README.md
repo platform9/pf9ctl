@@ -14,7 +14,7 @@
 - Sudo access to the user
 - OS(Supported) : 
     - Ubuntu (16.04,18.04,20.04)
-    - Centos (7.3 -7.9 ,8.3)
+    - Centos (7.x ,8.3)
 
 ### Usage
 - Downloading the CLI 
@@ -83,12 +83,17 @@ Use "pf9ctl config [command] --help" for more information about a command.
 
   This command will perform the prerequisite check before a node can be added to the cluster. It checks for the following:
   
-  - Existing pf9 packages
-  - Resources
-  - Memory Check
-  - Existing Pf9ctl(Python Based)
-  - Sudo Access Check
-  - Open Ports Check
+     - Mandatory Checks
+        - Existing pf9 packages
+        - Installing missing packages
+        - Sudo Access Check
+        - Ports Check
+        - OS Check
+        - Existing Kubernetes Cluster Check
+  
+     - Optional Checks
+       - Removal of existing pf9ctl(Python Based CLI)
+       - Resources(CPU,Disk,Memory check)
 ```sh
 #pf9ctl check-node --help
 
@@ -152,7 +157,7 @@ Enter password for remote host:
 ```
 - **prep-node**
 
- This command prepares a node to be ready to be added to a cluster. It installs all the required pre-requisites on the nodes and installs the Platform9 host agent and other required software on the nodes.
+ This command onboards a node. It installs platform9 packages on the host. After completion of this command, the node is available to be managed on the Platform9 control plane.
  ```sh
 #pf9ctl prep-node --help
 
