@@ -296,7 +296,7 @@ func (c *CentOS) installOSPackages(p string) error {
 func (c *CentOS) disableSwap() (bool, error) {
 	err := swapoff.SetupNode(c.exec)
 	if err != nil {
-		return false, errors.New("error occured while removing swap")
+		return false, errors.New("error occured while disabling swap")
 	} else {
 		return true, nil
 	}
