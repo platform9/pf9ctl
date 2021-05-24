@@ -21,9 +21,6 @@ import (
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
 
-//If this is true the swapOff functionality will be disabled.
-var SwapOffDisabled bool
-
 const (
 	// Response Status Codes
 	HostAgentCertless = 200
@@ -92,25 +89,6 @@ func PrepNode(ctx Config, allClients Client) error {
 			"\nhttps://docs.platform9.com/kubernetes/pmk-cli-unistall-hostagent"
 		sendSegmentEvent(allClients, "Error: Platform9 packages already present.", auth, true)
 		return fmt.Errorf(errStr)
-	}
-
-	if !SwapOffDisabled {
-		sendSegmentEvent(allClients, "Disabling swap - 1", auth, false)
-		s.Suffix = " Disabling swap and removing swap in fstab"
-
-		err = setupNode(hostOS, allClients.Executor)
-
-		if err != nil {
-			errStr := "Error: Unable to disable swap. " + err.Error()
-			sendSegmentEvent(allClients, errStr, auth, true)
-			return fmt.Errorf(errStr)
-		}
-
-		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Disabled swap and removed swap in fstab")
-		s.Restart()
-	} else {
-		zap.S().Debug("disableSwapOff is set, not disabling the swap")
 	}
 
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)

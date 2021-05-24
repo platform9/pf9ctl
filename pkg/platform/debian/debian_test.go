@@ -1,6 +1,7 @@
 package debian
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -555,6 +556,56 @@ func TestCheckDocker(t *testing.T) {
 			c := &Debian{exec: tc.exec}
 			err := c.checkDocker()
 
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}
+
+func TestDisableSwap(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. returns true on successful execution
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+				err:    nil,
+			},
+		},
+		//Failure case. returns false if error occured while disabling swap.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", errors.New("error occured while disabling swap")
+					},
+				},
+			},
+			want: want{
+				result: false,
+				err:    errors.New("error occured while disabling swap"),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			d := &Debian{exec: tc.exec}
+			result, err := d.disableSwap()
+			assert.Equal(t, tc.result, result)
 			assert.Equal(t, tc.err, err)
 		})
 	}

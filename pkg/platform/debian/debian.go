@@ -9,6 +9,7 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
+	"github.com/platform9/pf9ctl/pkg/swapoff"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
@@ -61,6 +62,10 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
 
+	if !util.SwapOffDisabled {
+		result, err = d.disableSwap()
+		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
+	}
 	return checks
 }
 
@@ -287,4 +292,13 @@ func (d *Debian) installOSPackages(p string) error {
 	zap.S().Debugf("Trying to install package %s", p)
 	_, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("apt install -qq -y %s", p))
 	return nil
+}
+
+func (d *Debian) disableSwap() (bool, error) {
+	err := swapoff.SetupNode(d.exec)
+	if err != nil {
+		return false, errors.New("error occured while disabling swap")
+	} else {
+		return true, nil
+	}
 }

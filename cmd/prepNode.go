@@ -29,7 +29,7 @@ var prepNodeCmd = &cobra.Command{
 	Run: prepNodeRun,
 	Args: func(prepNodeCmd *cobra.Command, args []string) error {
 		if prepNodeCmd.Flags().Changed("disableSwapOff") {
-			pmk.SwapOffDisabled = true
+			util.SwapOffDisabled = true
 		}
 		return nil
 	},

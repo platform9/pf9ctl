@@ -10,6 +10,7 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/platform"
+	"github.com/platform9/pf9ctl/pkg/swapoff"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
@@ -61,6 +62,11 @@ func (c *CentOS) Check() []platform.Check {
 
 	result, err = c.checkKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
+
+	if !util.SwapOffDisabled {
+		result, err = c.disableSwap()
+		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
+	}
 
 	return checks
 }
@@ -268,7 +274,7 @@ func (c *CentOS) Version() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if match, _:= regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[3]\.*`, string(out)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[3]\.*`, string(out)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
@@ -285,4 +291,13 @@ func (c *CentOS) installOSPackages(p string) error {
 	zap.S().Debugf("Trying to install package %s", p)
 	_, err = c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("yum -q -y install %s", p))
 	return nil
+}
+
+func (c *CentOS) disableSwap() (bool, error) {
+	err := swapoff.SetupNode(c.exec)
+	if err != nil {
+		return false, errors.New("error occured while disabling swap")
+	} else {
+		return true, nil
+	}
 }
