@@ -275,6 +275,9 @@ Enter password for remote host:
 
   **attach-node**
 ```sh
-#pf9ctl attach-node
 attach-node command attaches node to existing kubernetes cluster
+#pf9ctl attach-node -m 172.20.7.66 -w 172.20.7.58 test-cluster
+✓ Loaded Config Successfully
+2021-05-26T11:58:01.9579Z	INFO	Worker node(s) [bf5364cf-e2fd-4500-97fb-0b01be26084f] attached to cluster
+2021-05-26T11:58:03.6328Z	INFO	Master node(s) [615c1042-48a3-42e8-8003-ac135d12e6f4] attached to cluster
 ```
