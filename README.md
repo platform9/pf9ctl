@@ -33,7 +33,7 @@ Usage:
   pf9ctl [command]
   
 Available Commands:
-  attach-node Attaches node to kubernetes cluster
+  attach-node Attaches node to k8s cluster
   bundle      Gathers support bundle and uploads to S3
   check-node  Check prerequisites for k8s
   config      Create or get config
@@ -91,7 +91,7 @@ Use "pf9ctl config [command] --help" for more information about a command.
         - Ports Check
         - OS Check
         - Existing Kubernetes Cluster Check
-        - Check exec permission on /tmp
+        - Check execute permissions on /tmp folder
         - Disabling swap and removing swap in fstab
   
      - Optional Checks
