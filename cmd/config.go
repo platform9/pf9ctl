@@ -77,7 +77,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		if err := validateUserCredentials(ctx, c); err != nil {
 
 			if SetConfigByParameters {
-				zap.S().Fatalf("Invalid credentials entered (Username/Password/Tenant)")
+				zap.S().Fatalf("Invalid credentials entered (Username/Password/Tenant), use 'single quotes' to pass password ")
 				credentialFlag = false
 			} else {
 				//Clearing the invalid config entered. So that it will ask for new information again.
@@ -163,7 +163,7 @@ var (
 func init() {
 	configCmdSet.Flags().StringVarP(&account_url, "account_url", "u", "", "sets account_url")
 	configCmdSet.Flags().StringVarP(&username, "username", "e", "", "sets username")
-	configCmdSet.Flags().StringVarP(&Password, "password", "p", "", "sets password")
+	configCmdSet.Flags().StringVarP(&Password, "password", "p", "", "sets password (use 'single quotes' to pass password)")
 	configCmdSet.Flags().StringVarP(&region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&tenant, "tenant", "t", "", "sets tenant")
 }
