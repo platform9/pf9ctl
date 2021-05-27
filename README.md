@@ -33,6 +33,7 @@ Usage:
   pf9ctl [command]
   
 Available Commands:
+  attach-node Attaches node to k8s cluster
   bundle      Gathers support bundle and uploads to S3
   check-node  Check prerequisites for k8s
   config      Create or get config
@@ -90,6 +91,8 @@ Use "pf9ctl config [command] --help" for more information about a command.
         - Ports Check
         - OS Check
         - Existing Kubernetes Cluster Check
+        - Check execute permissions on /tmp folder
+        - Disabling swap and removing swap in fstab
   
      - Optional Checks
        - Removal of existing pf9ctl(Python Based CLI)
@@ -268,4 +271,13 @@ Enter Option : 1
 Enter password for remote host: 
 2021-05-17T06:51:41.338Z	INFO	==========Uploading supportBundle to S3 bucket==========
 ✓ Succesfully uploaded pf9ctl supportBundle to loguploads.platform9.com bucket at https://s3-us-west-2.amazonaws.com/loguploads.platform9.com/pmkft-1614749234-62656.platform9.io/172.20.7.104/ location 
+```
+
+  **attach-node**
+```sh
+attach-node command attaches node to existing kubernetes cluster
+#pf9ctl attach-node -m 172.20.7.66 -w 172.20.7.58 test-cluster
+✓ Loaded Config Successfully
+2021-05-26T11:58:01.9579Z	INFO	Worker node(s) [bf5364cf-e2fd-4500-97fb-0b01be26084f] attached to cluster
+2021-05-26T11:58:03.6328Z	INFO	Master node(s) [615c1042-48a3-42e8-8003-ac135d12e6f4] attached to cluster
 ```
