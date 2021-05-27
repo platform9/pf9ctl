@@ -4,12 +4,13 @@ package resmgr
 import (
 	"fmt"
 
-	rhttp "github.com/hashicorp/go-retryablehttp"
-	"go.uber.org/zap"
-	"github.com/platform9/pf9ctl/pkg/util"
-	"net/http"
 	"crypto/tls"
+	"net/http"
 	"time"
+
+	rhttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/platform9/pf9ctl/pkg/util"
+	"go.uber.org/zap"
 )
 
 type Resmgr interface {
@@ -17,10 +18,10 @@ type Resmgr interface {
 }
 
 type ResmgrImpl struct {
-	fqdn string
-	minWait time.Duration
-	maxWait time.Duration
-	maxHttpRetry int
+	fqdn          string
+	minWait       time.Duration
+	maxWait       time.Duration
+	maxHttpRetry  int
 	allowInsecure bool
 }
 

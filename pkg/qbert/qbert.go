@@ -8,9 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	rhttp "github.com/hashicorp/go-retryablehttp"
 	"go.uber.org/zap"
-	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 // CloudProviderType specifies the infrastructure where the cluster runs
@@ -21,8 +19,9 @@ type CNIBackend string
 
 type Qbert interface {
 	CreateCluster(r ClusterCreateRequest, projectID, token string) (string, error)
-	AttachNode(clusterID, nodeID, projectID, token string) error
+	AttachNode(clusterID, projectID, token string, nodeIDs []string, nodetype string) error
 	GetNodePoolID(projectID, token string) (string, error)
+	CheckClusterExists(Name, projectID, token string) (bool, string, error)
 }
 
 func NewQbert(fqdn string) Qbert {
@@ -53,7 +52,7 @@ func (c QbertImpl) CreateCluster(
 	r ClusterCreateRequest,
 	projectID, token string) (string, error) {
 
-	exists, err := c.checkClusterExists(r.Name, projectID, token)
+	exists, _, err := c.CheckClusterExists(r.Name, projectID, token)
 
 	if err != nil {
 		return "", fmt.Errorf("Unable to check existing cluster: %s", err.Error())
@@ -105,14 +104,24 @@ func (c QbertImpl) CreateCluster(
 	return payload["uuid"], nil
 }
 
-func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error {
-	zap.S().Debugf("Attaching the node: %s to cluster: %s", nodeID, clusterID)
+func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []string, nodetype string) error {
+	zap.S().Debugf("Attaching the node: %s to cluster: %s", nodeIDs, clusterID)
 
 	var p []map[string]interface{}
-	p = append(p, map[string]interface{}{
-		"uuid":     nodeID,
-		"isMaster": true,
-	})
+
+	for _, nodeid := range nodeIDs {
+		if nodetype == "master" {
+			p = append(p, map[string]interface{}{
+				"uuid":     nodeid,
+				"isMaster": true,
+			})
+		} else {
+			p = append(p, map[string]interface{}{
+				"uuid":     nodeid,
+				"isMaster": false,
+			})
+		}
+	}
 
 	byt, err := json.Marshal(p)
 	if err != nil {
@@ -123,13 +132,9 @@ func (c QbertImpl) AttachNode(clusterID, nodeID, projectID, token string) error 
 		"%s/qbert/v3/%s/clusters/%s/attach",
 		c.fqdn, projectID, clusterID)
 
-	client := rhttp.Client{}
-	client.RetryMax = 5
-	client.CheckRetry = rhttp.CheckRetry(util.RetryPolicyOn404)
-	client.Logger = &util.ZapWrapper{}
+	client := http.Client{}
 
-
-	req, err := rhttp.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {
 		return fmt.Errorf("Unable to create a request: %w", err)
 	}
@@ -186,37 +191,38 @@ func (c QbertImpl) GetNodePoolID(projectID, token string) (string, error) {
 	return "", errors.New("Unable to locate local Node Pool")
 }
 
-func (c QbertImpl) checkClusterExists(name, projectID, token string) (bool, error) {
+func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, string, error) {
 	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
 	client := http.Client{}
 	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
 
 	if err != nil {
-		return false, fmt.Errorf("Unable to create request to check cluster name: %w", err)
+		return false, "", fmt.Errorf("Unable to create request to check cluster name: %w", err)
 	}
 
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 	if resp.StatusCode != 200 {
-		return false, fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
+		return false, "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
 	}
 	var payload []map[string]interface{}
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
 	for _, val := range payload {
 		if val["name"] == name {
-			return true, nil
+			cluster_uuid := val["uuid"].(string)
+			return true, cluster_uuid, nil
 		}
 	}
 
-	return false, nil
+	return false, "", nil
 }
