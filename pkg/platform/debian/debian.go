@@ -62,6 +62,9 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
 
+	result, err = d.checkNoexecPermission()
+	checks = append(checks, platform.Check{"Check exec permission on /tmp", true, result, err, fmt.Sprintf("%s", err)})
+
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
 		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
@@ -300,5 +303,14 @@ func (d *Debian) disableSwap() (bool, error) {
 		return false, errors.New("error occured while disabling swap")
 	} else {
 		return true, nil
+	}
+}
+
+func (d *Debian) checkNoexecPermission() (bool, error) {
+	_, err := d.exec.RunWithStdout("bash", "-c", "mount | grep /tmp | grep noexec")
+	if err != nil {
+		return true, nil
+	} else {
+		return false, errors.New("/tmp is not having exec permission")
 	}
 }
