@@ -58,7 +58,7 @@ func PrepNode(ctx Config, allClients Client) error {
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
 
-	zap.S().Debug("Received a call to start preping node(s).")
+	zap.S().Debug("Received a call to start preparing node(s).")
 
 	auth, err := allClients.Keystone.GetAuth(
 		ctx.Username,
