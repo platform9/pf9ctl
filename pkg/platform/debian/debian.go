@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	packages                   = []string{"ntp", "curl", "uuid-runtime", "net-tools"}
+	packages                   = []string{"ntp", "curl", "uuid-runtime", "net-tools", "jq"}
 	packageInstallError        = "Packages not found and could not be installed"
 	MissingPkgsInstalledDebian bool
 	k8sPresentError            = errors.New("A Kubernetes cluster is already running on node")
