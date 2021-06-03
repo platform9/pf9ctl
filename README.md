@@ -80,6 +80,30 @@ Global Flags:
 Use "pf9ctl config [command] --help" for more information about a command.
 ```  
 
+
+```sh
+#pf9ctl config set --help
+
+We can set config through prompt or with flags. 
+
+Create a new config that can be used to query Platform9 controller
+
+Usage:
+  pf9ctl config set [flags]
+
+Flags:
+  -u, --account_url string   sets account_url
+  -h, --help                 help for set
+  -p, --password string      sets password (use 'single quotes' to pass password)
+  -r, --region string        sets region
+  -t, --tenant string        sets tenant
+  -e, --username string      sets username
+
+Global Flags:
+      --verbose   print verbose logs
+```  
+
+
 - **Check Node**
 
   This command will perform the prerequisite check before a node can be added to the cluster. It checks for the following:
@@ -274,8 +298,26 @@ Enter password for remote host:
 ```
 
   **attach-node**
+
 ```sh
-attach-node command attaches node to existing kubernetes cluster
+#pf9ctl attach-node --help
+
+Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached
+
+Usage:
+  pf9ctl attach-node [flags] cluster-name
+
+Flags:
+  -h, --help                help for attach-node
+  -m, --master-ip strings   master node ip address
+  -w, --worker-ip strings   worker node ip address
+
+Global Flags:
+      --verbose   print verbose logs
+```
+
+
+```sh
 #pf9ctl attach-node -m 172.20.7.66 -w 172.20.7.58 test-cluster
 ✓ Loaded Config Successfully
 2021-05-26T11:58:01.9579Z	INFO	Worker node(s) [bf5364cf-e2fd-4500-97fb-0b01be26084f] attached to cluster
