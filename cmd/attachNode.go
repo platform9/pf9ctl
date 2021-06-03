@@ -103,7 +103,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		var err error
 		master_hostIds, err = hostId(c.Executor, ctx.Fqdn, token, masterIPs)
 		if err != nil {
-			zap.S().Fatalf("Error : ", err)
+			zap.S().Fatalf("%v", err)
 		}
 	}
 
