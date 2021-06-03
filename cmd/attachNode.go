@@ -20,10 +20,10 @@ var (
 )
 
 var attachNodeCmd = &cobra.Command{
-	Use:   "attach-node",
+	Use:   "attach-node [flags] cluster-name",
 	Short: "attaches node to kubernetes cluster",
-	Long:  "attach-node command able to attach one master and multiple workers to cluster at a time. It is able to add one master at a time but mot multiple masters",
-	Args: func(configCmdSet *cobra.Command, args []string) error {
+	Long:  "Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached",
+	Args: func(attachNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 1 {
 			return errors.New("Only cluster name is accepted as a parameter")
 		} else if len(args) < 1 {
@@ -103,7 +103,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		var err error
 		master_hostIds, err = hostId(c.Executor, ctx.Fqdn, token, masterIPs)
 		if err != nil {
-			zap.S().Fatalf("Error : ", err)
+			zap.S().Fatalf("%v", err)
 		}
 	}
 
@@ -113,7 +113,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		var err error
 		worker_hostIds, err = hostId(c.Executor, ctx.Fqdn, token, workerIPs)
 		if err != nil {
-			zap.S().Fatalf("Error : ", err)
+			zap.S().Fatalf("%v", err)
 		}
 	}
 

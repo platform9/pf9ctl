@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -149,7 +150,12 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("Unable to attach node to cluster, code: %d", resp.StatusCode)
+		respString, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Info("Error occured while converting response body to string")
+		}
+		zap.S().Debug(string(respString))
+		return fmt.Errorf("%v", string(respString))
 	}
 	return nil
 }
