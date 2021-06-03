@@ -78,7 +78,30 @@ Global Flags:
       --verbose   print verbose logs
 
 Use "pf9ctl config [command] --help" for more information about a command.
-```  
+``` 
+
+```sh
+#pf9ctl config set --help
+
+Create a new config that can be used to query Platform9 controller
+
+We can set config through prompt or with flags.
+
+Usage:
+  pf9ctl config set [flags]
+
+       Create a new config
+Flags:
+  -u, --account_url string   sets account_url
+  -h, --help                 help for set
+  -p, --password string      sets password (use 'single quotes' to pass password)
+  -r, --region string        sets region
+  -t, --tenant string        sets tenant
+  -e, --username string      sets username
+
+Global Flags:
+      --verbose   print verbose logs
+```
 
 - **Check Node**
 
