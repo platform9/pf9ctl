@@ -154,7 +154,7 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 		if err != nil {
 			zap.S().Info("Error occured while converting responce body to string")
 		}
-		zap.S().Info(string(respString))
+		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
 	}
 	return nil
