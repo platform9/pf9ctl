@@ -71,6 +71,9 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkIfaptISLock()
 	checks = append(checks, platform.Check{"Check lock on apt", true, result, err, fmt.Sprintf("%s", err)})
 
+	result, err = d.checkIfSystemIsBootedWithSystemd()
+	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
+
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
 		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
@@ -336,5 +339,14 @@ func (d *Debian) checkIfaptISLock() (bool, error) {
 		return true, nil
 	} else {
 		return false, errors.New("apt is locked")
+	}
+}
+
+func (d *Debian) checkIfSystemIsBootedWithSystemd() (bool, error) {
+	_, err := d.exec.RunWithStdout("bash", "-c", "pidof systemd | grep '1'")
+	if err != nil {
+		return false, errors.New("PID of systemd is not 1")
+	} else {
+		return true, nil
 	}
 }
