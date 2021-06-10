@@ -65,6 +65,12 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkNoexecPermission()
 	checks = append(checks, platform.Check{"Check exec permission on /tmp", true, result, err, fmt.Sprintf("%s", err)})
 
+	result, err = d.checkIfdpkgISLock()
+	checks = append(checks, platform.Check{"Check lock on dpkg", true, result, err, fmt.Sprintf("%s", err)})
+
+	result, err = d.checkIfaptISLock()
+	checks = append(checks, platform.Check{"Check lock on apt", true, result, err, fmt.Sprintf("%s", err)})
+
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
 		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
@@ -312,5 +318,23 @@ func (d *Debian) checkNoexecPermission() (bool, error) {
 		return true, nil
 	} else {
 		return false, errors.New("/tmp is not having exec permission")
+	}
+}
+
+func (d *Debian) checkIfdpkgISLock() (bool, error) {
+	_, err := d.exec.RunWithStdout("bash", "-c", "lsof /var/lib/dpkg/lock")
+	if err != nil {
+		return true, nil
+	} else {
+		return false, errors.New("dpkg is locked")
+	}
+}
+
+func (d *Debian) checkIfaptISLock() (bool, error) {
+	_, err := d.exec.RunWithStdout("bash", "-c", "lsof /var/lib/apt/lists/lock")
+	if err != nil {
+		return true, nil
+	} else {
+		return false, errors.New("apt is locked")
 	}
 }
