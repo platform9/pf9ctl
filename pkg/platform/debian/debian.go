@@ -325,12 +325,17 @@ func (d *Debian) checkNoexecPermission() (bool, error) {
 }
 
 func (d *Debian) checkIfdpkgISLock() (bool, error) {
-	_, err := d.exec.RunWithStdout("bash", "-c", "lsof /var/lib/dpkg/lock")
-	if err != nil {
-		return true, nil
-	} else {
-		return false, errors.New("dpkg is locked")
+
+	var f = []string{"lock", "lock-frontend"}
+	for _, file := range f {
+		_, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("lsof /var/lib/dpkg/%s", file))
+		if err != nil {
+			return true, nil
+		} else {
+			return false, fmt.Errorf("Unable to acquire the dpkg")
+		}
 	}
+	return true, fmt.Errorf("Unable to check dpkg lock")
 }
 
 func (d *Debian) checkIfaptISLock() (bool, error) {
