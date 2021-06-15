@@ -224,7 +224,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
 	_, err = exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
-		return fmt.Errorf("Unable to run /tmp/installer.sh")
+		return fmt.Errorf("Unable to run installer script")
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
