@@ -62,7 +62,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 			//Clearing the invalid config entered. So that it will ask for new information again.
 			clearContext(&pmk.Context)
 			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-			err = configValidation(pmk.LoopCounter)
+			err = configValidation(RegionInvalid, pmk.LoopCounter)
 		} else {
 			// We will store the set config if its set for first time using check-node
 			if pmk.IsNewConfig {
