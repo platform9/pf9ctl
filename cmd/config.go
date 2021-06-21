@@ -193,7 +193,7 @@ func validateUserCredentials(pmk.Config, pmk.Client) error {
 	endpointURL, err1 := pmk.FetchRegionFQDN(ctx, auth)
 	if endpointURL == "" || err1 != nil {
 		RegionInvalid = true
-		zap.S().Debug("Invalid Region entered")
+		zap.S().Debug("Invalid Region")
 		return errors.New("Invalid Region")
 	}
 
@@ -206,11 +206,12 @@ func configValidation(bool, int) error {
 
 		//Check if we are setting config through pf9ctl config set command.
 		if !SetConfig {
-			// If Oldconfig exists and invalid credentials entered
+			// If Oldconfig exists and invalid credentials entered during config prompt
 			if pmk.OldConfigExist {
 				if pmk.InvalidExistingConfig {
+					// If user enters invalid credentials during prompt of config (due to invalid config found after config loading).
 					if RegionInvalid {
-						fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Region)")
+						fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
 						zap.S().Debug("Invalid Region entered")
 					} else {
 						fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
@@ -218,9 +219,10 @@ func configValidation(bool, int) error {
 					}
 
 				} else if pmk.OldConfigExist && pmk.LoopCounter == 0 {
+					// If invalid credentials are found during config loading
 					if RegionInvalid {
-						fmt.Println("\n" + color.Red("x ") + "Invalid credentials found (Region)")
-						zap.S().Debug("Invalid credentials found (Region)")
+						fmt.Println("\n" + color.Red("x ") + "Invalid Region found")
+						zap.S().Debug("Invalid Region found")
 					} else {
 						fmt.Println("\n" + color.Red("x ") + "Invalid credentials found (Platform9 Account URL/Username/Password/Region/Tenant)")
 						zap.S().Debug("Invalid credentials found (Platform9 Account URL/Username/Password/Region/Tenant)")
@@ -228,9 +230,10 @@ func configValidation(bool, int) error {
 				}
 
 			} else {
+				// If user enters invalid credentials during new config promput (due to config not found)
 				if RegionInvalid {
-					fmt.Println("\n" + color.Red("x ") + "Invalid credentials found (Region)")
-					zap.S().Debug("Invalid credentials found (Region)")
+					fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
+					zap.S().Debug("Invalid Region entered")
 				} else {
 					fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
 					zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
@@ -238,9 +241,10 @@ func configValidation(bool, int) error {
 
 			}
 		} else {
+			// If user enters invalid credentials during config set through "pf9ctl config set"
 			if RegionInvalid {
-				fmt.Println("\n" + color.Red("x ") + "Invalid credentials found (Region)")
-				zap.S().Debug("Invalid credentials found (Region)")
+				fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
+				zap.S().Debug("Invalid Region entered")
 			} else {
 				fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
 				zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
@@ -259,10 +263,14 @@ func configValidation(bool, int) error {
 
 	// If any invalid credentials extered multiple times in new config prompt then to bail out the recursive loop (thrice)
 	if pmk.LoopCounter >= MaxLoopNoConfig && !(pmk.InvalidExistingConfig) {
-		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Region/Tenant)")
+		zap.S().Fatalf("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant)")
 	} else if pmk.LoopCounter >= MaxLoopNoConfig+1 && pmk.InvalidExistingConfig {
-		fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Region/Tenant)")
-		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Region/Tenant)")
+		if RegionInvalid {
+			fmt.Println(color.Red("x ") + "Invalid Region entered")
+		} else {
+			fmt.Println(color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+		}
+		zap.S().Fatalf("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant)")
 	}
 	return nil
 }
