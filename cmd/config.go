@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -32,6 +33,8 @@ var (
 	// This flag is true when we set config through ./pf9ctl config set
 	SetConfig             bool
 	SetConfigByParameters bool
+	// This flag is set true when only region is found/entered is invalid.
+	RegionInvalid bool
 )
 
 const MaxLoopNoConfig = 3
@@ -77,13 +80,17 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		if err := validateUserCredentials(ctx, c); err != nil {
 
 			if SetConfigByParameters {
-				zap.S().Fatalf("Invalid credentials entered (Username/Password/Tenant), use 'single quotes' to pass password ")
+				if RegionInvalid {
+					zap.S().Fatalf("Invalid credentials entered (Region)")
+				} else {
+					zap.S().Fatalf("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant), use 'single quotes' to pass password")
+				}
 				credentialFlag = false
 			} else {
 				//Clearing the invalid config entered. So that it will ask for new information again.
 				clearContext(&pmk.Context)
 				//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-				err = configValidation(pmk.LoopCounter)
+				err = configValidation(RegionInvalid, pmk.LoopCounter)
 			}
 
 		} else {
@@ -171,35 +178,78 @@ func init() {
 // This function will validate the user credentials entered during config set and bail out if invalid
 func validateUserCredentials(pmk.Config, pmk.Client) error {
 
-	_, err = c.Keystone.GetAuth(
+	auth, err := c.Keystone.GetAuth(
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
 	)
-	return err
+
+	if err != nil {
+		RegionInvalid = false
+		return err
+	}
+
+	// To validate region.
+	endpointURL, err1 := pmk.FetchRegionFQDN(ctx, auth)
+	if endpointURL == "" || err1 != nil {
+		RegionInvalid = true
+		zap.S().Debug("Invalid Region")
+		return errors.New("Invalid Region")
+	}
+
+	return nil
 }
 
-func configValidation(int) error {
+func configValidation(bool, int) error {
 
 	if pmk.LoopCounter <= MaxLoopNoConfig-1 {
 
 		//Check if we are setting config through pf9ctl config set command.
 		if !SetConfig {
-			// If Oldconfig exists and invalid credentials entered
+			// If Oldconfig exists and invalid credentials entered during config prompt
 			if pmk.OldConfigExist {
 				if pmk.InvalidExistingConfig {
-					fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
-					zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+					// If user enters invalid credentials during prompt of config (due to invalid config found after config loading).
+					if RegionInvalid {
+						fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
+						zap.S().Debug("Invalid Region entered")
+					} else {
+						fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+						zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+					}
+
 				} else if pmk.OldConfigExist && pmk.LoopCounter == 0 {
-					zap.S().Debug("Invalid credentials found (Username/Password/Tenant)")
+					// If invalid credentials are found during config loading
+					if RegionInvalid {
+						fmt.Println("\n" + color.Red("x ") + "Invalid Region found")
+						zap.S().Debug("Invalid Region found")
+					} else {
+						fmt.Println("\n" + color.Red("x ") + "Invalid credentials found (Platform9 Account URL/Username/Password/Region/Tenant)")
+						zap.S().Debug("Invalid credentials found (Platform9 Account URL/Username/Password/Region/Tenant)")
+					}
 				}
+
 			} else {
-				fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
-				zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+				// If user enters invalid credentials during new config promput (due to config not found)
+				if RegionInvalid {
+					fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
+					zap.S().Debug("Invalid Region entered")
+				} else {
+					fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+					zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+				}
+
 			}
 		} else {
-			fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
-			zap.S().Debug("Invalid credentials entered (Username/Password/Tenant)")
+			// If user enters invalid credentials during config set through "pf9ctl config set"
+			if RegionInvalid {
+				fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
+				zap.S().Debug("Invalid Region entered")
+			} else {
+				fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+				zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+			}
+
 		}
 	}
 	// If existing initial config is Invalid
@@ -213,10 +263,14 @@ func configValidation(int) error {
 
 	// If any invalid credentials extered multiple times in new config prompt then to bail out the recursive loop (thrice)
 	if pmk.LoopCounter >= MaxLoopNoConfig && !(pmk.InvalidExistingConfig) {
-		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant)")
+		zap.S().Fatalf("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant)")
 	} else if pmk.LoopCounter >= MaxLoopNoConfig+1 && pmk.InvalidExistingConfig {
-		fmt.Println(color.Red("x ") + "Invalid credentials entered (Username/Password/Tenant)")
-		zap.S().Fatalf("Invalid credentials entered multiple times (Username/Password/Tenant)")
+		if RegionInvalid {
+			fmt.Println(color.Red("x ") + "Invalid Region entered")
+		} else {
+			fmt.Println(color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+		}
+		zap.S().Fatalf("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant)")
 	}
 	return nil
 }

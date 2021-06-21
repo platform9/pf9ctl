@@ -87,15 +87,15 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	}
 
 	// To get the hostOS.
-	hostOS, err := pmk.ValidatePlatform(allClients.Executor)
+	/*hostOS, err := pmk.ValidatePlatform(allClients.Executor)
 	if err != nil {
 		zap.S().Debug("Error: Invalid host OS. " + err.Error())
 		errStr := "Error: Invalid host OS. " + err.Error()
 		return fmt.Errorf(errStr)
-	}
+	}*/
 
 	// To Fetch FQDN
-	FQDN, err := pmk.FetchRegionFQDN(ctx, auth, hostOS)
+	FQDN, err := pmk.FetchRegionFQDN(ctx, auth)
 	if err != nil {
 		zap.S().Debug("unable to fetch fqdn: %w")
 		return fmt.Errorf("unable to fetch fqdn: %w", err)
