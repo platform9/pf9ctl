@@ -332,6 +332,7 @@ func (d *Debian) checkIfdpkgISLock() (bool, error) {
 		if err != nil {
 			return true, nil
 		} else {
+			zap.S().Infof("Unable to acquire the dpkg lock on %s", file)
 			return false, fmt.Errorf("Unable to acquire the dpkg")
 		}
 	}
@@ -348,7 +349,7 @@ func (d *Debian) checkIfaptISLock() (bool, error) {
 }
 
 func (d *Debian) checkIfSystemIsBootedWithSystemd() (bool, error) {
-	_, err := d.exec.RunWithStdout("bash", "-c", "pidof systemd | grep '1'")
+	_, err := d.exec.RunWithStdout("bash", "-c", "pidof systemd | grep '1$'")
 	if err != nil {
 		return false, errors.New("PID of systemd is not 1")
 	} else {
