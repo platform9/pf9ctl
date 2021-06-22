@@ -660,3 +660,103 @@ func TestNoexecPermissionCheck(t *testing.T) {
 		})
 	}
 }
+
+func TestDpkgLockCheck(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. successful execution if dpkg is not locked it return nil error.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", fmt.Errorf("Unable to acquire the dpkg lock")
+					},
+				},
+			},
+			want: want{
+				result: true,
+				err:    nil,
+			},
+		},
+		//Failure case. if dpkg is locked it return error.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+				err:    fmt.Errorf("Unable to acquire the dpkg"),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			d := &Debian{exec: tc.exec}
+			result, err := d.checkIfdpkgISLock()
+			assert.Equal(t, tc.result, result)
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}
+
+func TestAptLockCheck(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. if apt is not being used it return error and exit status non-zero.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", fmt.Errorf("apt is being used")
+					},
+				},
+			},
+			want: want{
+				result: true,
+				err:    nil,
+			},
+		},
+		//Failure case. if apt is being used then it returns exit status zero and nil error.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+				err:    errors.New("apt is locked"),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			d := &Debian{exec: tc.exec}
+			result, err := d.checkIfaptISLock()
+			assert.Equal(t, tc.result, result)
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}
