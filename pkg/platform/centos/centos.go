@@ -273,7 +273,7 @@ func (c *CentOS) Version() (string, error) {
 	out, err := c.exec.RunWithStdout(
 		"bash",
 		"-c",
-		"cat /etc/*release | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
+		"cat /etc/*release | grep 'Red Hat Enterprise Linux Server release' -m 1 | cut -f7 -d ' ' && cat /etc/*release | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
