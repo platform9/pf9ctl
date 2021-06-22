@@ -71,9 +71,6 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkIfaptISLock()
 	checks = append(checks, platform.Check{"Check lock on apt", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = d.checkIfSystemIsBootedWithSystemd()
-	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
-
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
 		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
