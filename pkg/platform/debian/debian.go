@@ -347,12 +347,3 @@ func (d *Debian) checkIfaptISLock() (bool, error) {
 		return false, errors.New("apt is locked")
 	}
 }
-
-func (d *Debian) checkIfSystemIsBootedWithSystemd() (bool, error) {
-	_, err := d.exec.RunWithStdout("bash", "-c", "pidof systemd | grep '1$'")
-	if err != nil {
-		return false, errors.New("PID of systemd is not 1")
-	} else {
-		return true, nil
-	}
-}
