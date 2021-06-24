@@ -66,6 +66,9 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.checkNoexecPermission()
 	checks = append(checks, platform.Check{"Check exec permission on /tmp", true, result, err, fmt.Sprintf("%s", err)})
 
+	result, err = c.checkPIDofSystemd()
+	checks = append(checks, platform.Check{"Check if system booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
+
 	if !util.SwapOffDisabled {
 		result, err = c.disableSwap()
 		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
@@ -311,5 +314,14 @@ func (c *CentOS) checkNoexecPermission() (bool, error) {
 		return true, nil
 	} else {
 		return false, errors.New("/tmp is not having exec permission")
+	}
+}
+
+func (c *CentOS) checkPIDofSystemd() (bool, error) {
+	_, err := c.exec.RunWithStdout("bash", "-c", "ps -p 1 -o comm= | grep systemd")
+	if err != nil {
+		return false, errors.New("System is not booted with systemd")
+	} else {
+		return true, nil
 	}
 }
