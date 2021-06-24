@@ -72,7 +72,7 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Check lock on apt", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkPIDofSystemd()
-	checks = append(checks, platform.Check{"Check if system booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
