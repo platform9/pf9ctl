@@ -5,7 +5,6 @@ go 1.14
 require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/briandowns/spinner v1.12.0
-	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.10.0
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/go-cmp v0.2.0
@@ -14,7 +13,6 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mholt/archiver/v3 v3.5.0
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/pierrec/lz4 v2.6.0+incompatible // indirect
 	github.com/pkg/sftp v1.12.0
 	github.com/plus3it/gorecurcopy v0.0.1
@@ -24,7 +22,6 @@ require (
 	github.com/spf13/viper v1.6.3
 	github.com/stretchr/testify v1.6.1
 	github.com/ulikunitz/xz v0.5.10 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a

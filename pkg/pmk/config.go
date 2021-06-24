@@ -12,6 +12,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
+	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 var (
@@ -54,7 +55,7 @@ func StoreConfig(ctx Config, loc string) error {
 // LoadConfig returns the information for communication with PF9 controller.
 func LoadConfig(loc string) (Config, error) {
 
-	zap.S().Debug("Loading configuration details")
+	zap.S().Debug("Loading configuration details. pf9ctl version: ", util.Version)
 
 	f, err := os.Open(loc)
 	// We will execute it if no config found or if config found but have invalid credentials
