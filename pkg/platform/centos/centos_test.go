@@ -663,3 +663,53 @@ func TestNoexecPermissionCheck(t *testing.T) {
 		})
 	}
 }
+
+func TestPIDofSystemdCheck(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. if system is booted with systemd then its pid will be 1.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				result: true,
+				err:    nil,
+			},
+		},
+		//Failure case. if PID of systemd is not 1 then check will return error.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", fmt.Errorf("ERROR")
+					},
+				},
+			},
+			want: want{
+				result: false,
+				err:    errors.New("System is not booted with systemd"),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			result, err := c.checkPIDofSystemd()
+			assert.Equal(t, tc.result, result)
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}
