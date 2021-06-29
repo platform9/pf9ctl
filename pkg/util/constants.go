@@ -46,7 +46,7 @@ var (
 	// PyCliLink is the Symlink of the Python CLI
 	PyCliLink      = "/usr/bin/pf9ctl"
 	Centos         = "centos"
-	Redhat         = "redhat"
+	Redhat         = "red hat"
 	Ubuntu         = "ubuntu"
 	CertsExpireErr = "certificate has expired or is not yet valid"
 
