@@ -20,6 +20,7 @@ import (
 
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
+var IsRemoteExecutor bool
 
 const (
 	// Response Status Codes
@@ -221,8 +222,14 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 		return err
 	}
 
-	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
-	_, err = exec.RunWithStdout("bash", "-c", cmd)
+	if IsRemoteExecutor {
+		cmd = fmt.Sprintf(`bash /tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+		_, err = exec.RunWithStdout(cmd)
+	} else {
+		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+		_, err = exec.RunWithStdout("bash", "-c", cmd)
+	}
+
 	if err != nil {
 		return fmt.Errorf("Unable to run installer script")
 	}
