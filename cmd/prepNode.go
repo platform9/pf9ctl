@@ -69,7 +69,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
 		}
 
-		executor, err := getExecutor()
+		executor, err := getExecutor(ctx.ProxyURL)
 		if err != nil {
 			zap.S().Debug("Error connecting to host %s", err.Error())
 			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
@@ -184,7 +184,7 @@ func checkAndValidateRemote() bool {
 }
 
 // getExecutor creates the right Executor
-func getExecutor() (cmdexec.Executor, error) {
+func getExecutor(proxyURL string) (cmdexec.Executor, error) {
 	if checkAndValidateRemote() {
 		var pKey []byte
 		var err error
@@ -194,8 +194,8 @@ func getExecutor() (cmdexec.Executor, error) {
 				zap.S().Fatalf("Unable to read the sshKey %s, %s", sshKey, err.Error())
 			}
 		}
-		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password)
+		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password, proxyURL)
 	}
 	zap.S().Debug("Using local executor")
-	return cmdexec.LocalExecutor{}, nil
+	return cmdexec.LocalExecutor{ProxyUrl: proxyURL}, nil
 }

@@ -30,6 +30,7 @@ type Client interface {
 type client struct {
 	sshClient  *ssh.Client
 	sftpClient *sftp.Client
+	proxyURL   string
 }
 
 const (
@@ -38,7 +39,7 @@ const (
 
 // NewClient creates a new Client that can be used to perform action on a
 // machine
-func NewClient(host string, port int, username string, privateKey []byte, password string) (Client, error) {
+func NewClient(host string, port int, username string, privateKey []byte, password, proxyURL string) (Client, error) {
 
 	authMethods := make([]ssh.AuthMethod, 1)
 	// give preferece to privateKey
@@ -67,6 +68,7 @@ func NewClient(host string, port int, username string, privateKey []byte, passwo
 	return &client{
 		sshClient:  sshClient,
 		sftpClient: sftpClient,
+		proxyURL:   proxyURL,
 	}, nil
 }
 
@@ -88,6 +90,9 @@ func (c *client) RunCommand(cmd string) ([]byte, []byte, error) {
 	// Prepend sudo if runAsSudo set to true
 	if runAsSudo {
 		cmd = fmt.Sprintf("sudo %s", cmd)
+	}
+	if c.proxyURL != "" {
+		cmd = fmt.Sprintf("https_proxy=%s %s", c.proxyURL, cmd)
 	}
 	err = session.Start(cmd)
 	if err != nil {
