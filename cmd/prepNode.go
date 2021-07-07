@@ -175,6 +175,7 @@ func checkAndValidateRemote() bool {
 			}
 			foundRemote = true
 			supportBundle.RemoteBundle = true
+			pmk.IsRemoteExecutor = true
 			return foundRemote
 		}
 	}
