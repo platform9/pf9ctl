@@ -46,7 +46,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 		}
 
-		executor, err := getExecutor()
+		executor, err := getExecutor(ctx.ProxyURL)
 		if err != nil {
 			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
 			zap.S().Debug("Error connecting to host %s", err.Error())

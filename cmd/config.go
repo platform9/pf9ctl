@@ -65,7 +65,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// invoked the configcreate command from pkg/pmk
 		ctx, _ = pmk.ConfigCmdCreateRun()
 
-		executor, err := getExecutor()
+		executor, err := getExecutor(ctx.ProxyURL)
 		if err != nil {
 			zap.S().Fatalf("Error connecting to host %s", err.Error())
 		}

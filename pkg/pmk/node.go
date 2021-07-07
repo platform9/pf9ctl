@@ -222,14 +222,19 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 		return err
 	}
 
-	if IsRemoteExecutor {
-		cmd = fmt.Sprintf(`bash /tmp/installer.sh --no-proxy --skip-os-check --no-ntp %s`, installOptions)
-		_, err = exec.RunWithStdout(cmd)
+	if ctx.ProxyURL != "" {
+		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy http://%s --skip-os-check --no-ntp`, ctx.ProxyURL)
 	} else {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --no-ntp %s`, installOptions)
-		_, err = exec.RunWithStdout("bash", "-c", cmd)
+		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --no-ntp`)
 	}
 
+	if IsRemoteExecutor {
+		cmd = fmt.Sprintf(`bash %s %s`, cmd, installOptions)
+		_, err = exec.RunWithStdout(cmd)
+	} else {
+		cmd = fmt.Sprintf(`%s %s`, cmd, installOptions)
+		_, err = exec.RunWithStdout("bash", "-c", cmd)
+	}
 	if err != nil {
 		return fmt.Errorf("Unable to run installer script")
 	}
@@ -308,7 +313,12 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 		return err
 	}
 
-	cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+	if ctx.ProxyURL != "" {
+		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy https://%s --skip-os-check --ntpd %s`, ctx.ProxyURL, installOptions)
+	} else {
+		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+	}
+
 	_, err = exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err

@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"testing"
+
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 //Local executor test case
@@ -12,7 +13,7 @@ func TestGetExecutor(t *testing.T) {
 	var TestErr error = nil
 
 	t.Run("LocalExecutorTest", func(t *testing.T) {
-		executor, err := getExecutor()
+		executor, err := getExecutor("https://www.google.com")
 		if err != nil {
 			t.Errorf("Error occured : %s", err)
 		}

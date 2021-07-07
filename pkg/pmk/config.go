@@ -4,15 +4,16 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/color"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
-	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 var (
@@ -31,6 +32,7 @@ type Config struct {
 	Region        string        `json:"region"`
 	WaitPeriod    time.Duration `json:"wait_period"`
 	AllowInsecure bool          `json:"allow_insecure"`
+	ProxyURL      string        `json:"proxy_url"`
 }
 
 // StoreConfig simply updates the in-memory object
@@ -98,6 +100,13 @@ func LoadConfig(loc string) (Config, error) {
 	ctx.Password = string(decodedBytePassword)
 	//s.Stop()
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
+
+	if ctx.ProxyURL != "" {
+		if err = os.Setenv("https_proxy", ctx.ProxyURL); err != nil {
+			return Config{}, errors.New("Error setting proxy as environment variable")
+		}
+	}
+
 	return ctx, err
 }
 
