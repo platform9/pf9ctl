@@ -60,6 +60,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	pmk.Context.Tenant = tenant
 	pmk.Context.WaitPeriod = time.Duration(60)
 	pmk.Context.AllowInsecure = false
+	pmk.Context.ProxyURL = proxyURL
 
 	for credentialFlag {
 		// invoked the configcreate command from pkg/pmk
@@ -146,7 +147,7 @@ var configCmdSet = &cobra.Command{
 	Long:  `Create a new config that can be used to query Platform9 controller`,
 	Run:   configCmdCreateRun,
 	Args: func(configCmdSet *cobra.Command, args []string) error {
-		if configCmdSet.Flags().Changed("account_url") || configCmdSet.Flags().Changed("username") || configCmdSet.Flags().Changed("password") || configCmdSet.Flags().Changed("region") || configCmdSet.Flags().Changed("tenant") {
+		if configCmdSet.Flags().Changed("account_url") || configCmdSet.Flags().Changed("username") || configCmdSet.Flags().Changed("password") || configCmdSet.Flags().Changed("region") || configCmdSet.Flags().Changed("tenant") || configCmdSet.Flags().Changed("proxyUrl") {
 			SetConfigByParameters = true
 		}
 		return nil
@@ -163,6 +164,7 @@ var (
 	account_url string
 	username    string
 	Password    string
+	proxyURL    string
 	region      string
 	tenant      string
 )
@@ -171,6 +173,7 @@ func init() {
 	configCmdSet.Flags().StringVarP(&account_url, "account_url", "u", "", "sets account_url")
 	configCmdSet.Flags().StringVarP(&username, "username", "e", "", "sets username")
 	configCmdSet.Flags().StringVarP(&Password, "password", "p", "", "sets password (use 'single quotes' to pass password)")
+	configCmdSet.Flags().StringVarP(&proxyURL, "proxy_url", "l", "", "sets proxy URL")
 	configCmdSet.Flags().StringVarP(&region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&tenant, "tenant", "t", "", "sets tenant")
 }

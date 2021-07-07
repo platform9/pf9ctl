@@ -148,6 +148,12 @@ func ConfigCmdCreateRun() (Config, error) {
 		service, _ = reader.ReadString('\n')
 		Context.Tenant = strings.TrimSuffix(service, "\n")
 	}
+	var proxyURL string
+	if Context.ProxyURL == "" {
+		fmt.Print("Proxy URL: ")
+		proxyURL, _ = reader.ReadString('\n')
+		Context.ProxyURL = strings.TrimSuffix(proxyURL, "\n")
+	}
 
 	if Context.Region == "" {
 		Context.Region = "RegionOne"
