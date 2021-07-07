@@ -7,13 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var proxy_url = "127.0.0.1:3128"
+
 //Local executor test case
 func TestGetExecutor(t *testing.T) {
-	var exec cmdexec.LocalExecutor
+	exec := cmdexec.LocalExecutor{ProxyUrl: proxy_url}
 	var TestErr error = nil
 
 	t.Run("LocalExecutorTest", func(t *testing.T) {
-		executor, err := getExecutor("https://www.google.com")
+		executor, err := getExecutor(proxy_url)
 		if err != nil {
 			t.Errorf("Error occured : %s", err)
 		}
