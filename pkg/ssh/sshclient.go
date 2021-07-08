@@ -32,6 +32,10 @@ type client struct {
 	sftpClient *sftp.Client
 }
 
+var (
+	SudoPassword string
+)
+
 const (
 	runAsSudo = true
 )
@@ -51,7 +55,6 @@ func NewClient(host string, port int, username string, privateKey []byte, passwo
 	} else {
 		authMethods[0] = ssh.Password(password)
 	}
-
 	sshConfig := &ssh.ClientConfig{
 		User: string(username),
 		Auth: authMethods,
@@ -73,6 +76,7 @@ func NewClient(host string, port int, username string, privateKey []byte, passwo
 // RunCommand runs a command on the machine and returns stdout and stderr
 // separately
 func (c *client) RunCommand(cmd string) ([]byte, []byte, error) {
+
 	session, err := c.sshClient.NewSession()
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create session: %s", err)
@@ -87,8 +91,14 @@ func (c *client) RunCommand(cmd string) ([]byte, []byte, error) {
 	}
 	// Prepend sudo if runAsSudo set to true
 	if runAsSudo {
-		cmd = fmt.Sprintf("sudo %s", cmd)
+		// Prepend Sudo and add if Password is required to access Sudo
+		if SudoPassword != "" {
+			cmd = fmt.Sprintf("echo %s | sudo -S su ; sudo %s", SudoPassword, cmd)
+		} else {
+			cmd = fmt.Sprintf("sudo %s", cmd)
+		}
 	}
+
 	err = session.Start(cmd)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to run command: %s", err)

@@ -57,6 +57,11 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
 		}
 
+		if FoundRemote {
+			// Check if Remote Host needs Password to access Sudo
+			SudoPasswordCheck(c.Executor)
+		}
+
 		// Validate the user credentials entered during config set and will loop back again if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
 			//Clearing the invalid config entered. So that it will ask for new information again.
