@@ -24,8 +24,11 @@ const (
 	// Disk size in GiBs
 	MinAvailDisk = 15
 
-	CheckPass = "PASS"
-	CheckFail = "FAIL"
+	CheckPass       = "PASS"
+	CheckFail       = "FAIL"
+	Invalid         = "Invalid"
+	Valid           = "Valid"
+	InvalidPassword = "Sorry, try again."
 )
 
 var (

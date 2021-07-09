@@ -220,7 +220,7 @@ func SudoPasswordCheck(exec cmdexec.Executor) error {
 			sudopassword, _ := terminal.ReadPassword(0)
 			ssh.SudoPassword = string(sudopassword)
 			// Validate Sudo Password entered.
-			if ssh.SudoPassword == "" || validateSudoPassword(exec) == "Invalid" {
+			if ssh.SudoPassword == "" || validateSudoPassword(exec) == util.Invalid {
 				fmt.Printf("\n" + color.Red("x ") + "Invalid Sudo Password provided of Remote Host\n")
 				if loopcounter >= 4 {
 					fmt.Printf("\n")
@@ -242,8 +242,8 @@ func validateSudoPassword(exec cmdexec.Executor) string {
 
 	_ = pmk.CheckSudo(exec)
 	// Validate Sudo Password entered for Remote Host from stderr.
-	if strings.Contains(cmdexec.StdErrSudoPassword, "Sorry, try again.") {
-		return "Invalid"
+	if strings.Contains(cmdexec.StdErrSudoPassword, util.InvalidPassword) {
+		return util.Invalid
 	}
-	return "Valid"
+	return util.Valid
 }
