@@ -42,6 +42,8 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 // RemoteExecutor as the name implies runs commands usign SSH on remote host
 type RemoteExecutor struct {
 	Client ssh.Client
+	// host name for debugging purposes
+	DebugContext   string
 }
 
 // Run runs a command locally returning just success or failure
@@ -57,7 +59,7 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 		cmd = fmt.Sprintf("%s \"%s\"", cmd, arg)
 	}
 	stdout, stderr, err := r.Client.RunCommand(cmd)
-	zap.S().Debug("Running command ", cmd, "stdout:", string(stdout), "stderr:", string(stderr))
+	zap.S().Debug(r.DebugContext, " Running command ", cmd, "stdout:", string(stdout), "stderr:", string(stderr))
 	return string(stdout), err
 }
 
@@ -67,6 +69,6 @@ func NewRemoteExecutor(host string, port int, username string, privateKey []byte
 	if err != nil {
 		return nil, err
 	}
-	re := &RemoteExecutor{Client: client}
+	re := &RemoteExecutor{Client: client, DebugContext: fmt.Sprintf("[%s]", host)}
 	return re, nil
 }
