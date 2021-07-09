@@ -316,7 +316,7 @@ func (d *Debian) disableSwap() (bool, error) {
 }
 
 func (d *Debian) checkNoexecPermission() (bool, error) {
-	_, err := d.exec.RunWithStdout("bash", "-c", `mount | grep " /tmp " | grep noexec`)
+	_, err := d.exec.RunWithStdout("bash", "-c", `mount | grep ' /tmp ' | grep 'noexec'`)
 	if err != nil {
 		return true, nil
 	} else {
