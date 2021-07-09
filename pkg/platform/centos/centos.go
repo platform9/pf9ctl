@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	packages                   = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils", "net-tools", "epel-release", "jq"}
+	packages                   = []string{"curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils", "net-tools", "epel-release", "jq"}
 	packageInstallError        = "Packages not found and could not be installed"
 	MissingPkgsInstalledCentos bool
 	k8sPresentError            = errors.New("A Kubernetes cluster is already running on node")
