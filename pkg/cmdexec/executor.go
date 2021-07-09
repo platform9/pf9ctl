@@ -1,5 +1,4 @@
 // Copyright © 2020 The Platform9 Systems Inc.
-
 package cmdexec
 
 import (
@@ -9,6 +8,9 @@ import (
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"go.uber.org/zap"
 )
+
+// To fetch the stderr after executing command
+var StdErrSudoPassword string
 
 // Executor interace abstracts us from local or remote execution
 type Executor interface {
@@ -57,6 +59,8 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 		cmd = fmt.Sprintf("%s \"%s\"", cmd, arg)
 	}
 	stdout, stderr, err := r.Client.RunCommand(cmd)
+	// To fetch the stderr after executing command.
+	StdErrSudoPassword = string(stderr)
 	zap.S().Debug("Running command ", cmd, "stdout:", string(stdout), "stderr:", string(stderr))
 	return string(stdout), err
 }

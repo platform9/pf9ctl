@@ -319,7 +319,7 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 	return nil
 }
 
-func checkSudo(exec cmdexec.Executor) bool {
+func CheckSudo(exec cmdexec.Executor) bool {
 	_, err := exec.RunWithStdout("-l")
 	return err == nil
 }

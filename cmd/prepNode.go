@@ -13,6 +13,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/ssh"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -42,6 +43,7 @@ var (
 	ips            []string
 	skipChecks     bool
 	disableSwapOff bool
+	FoundRemote    = false
 )
 
 func init() {
@@ -82,6 +84,11 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 		defer c.Segment.Close()
 
+		if FoundRemote {
+			// Check if Remote Host needs Password to access Sudo
+			SudoPasswordCheck(c.Executor)
+		}
+
 		// Validate the user credentials entered during config set and will bail out if invalid
 		if err := validateUserCredentials(ctx, c); err != nil {
 			//Clearing the invalid config entered. So that it will ask for new information again.
@@ -100,6 +107,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 			credentialFlag = false
 		}
 	}
+
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(ctx, c)
 	if err != nil {
@@ -142,7 +150,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 // checkAndValidateRemote check if any of the command line
 func checkAndValidateRemote() bool {
-	foundRemote := false
 	for _, ip := range ips {
 		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
 			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
@@ -173,14 +180,14 @@ func checkAndValidateRemote() bool {
 				}
 				fmt.Printf("\n")
 			}
-			foundRemote = true
+			FoundRemote = true
 			supportBundle.RemoteBundle = true
-			pmk.IsRemoteExecutor = true
-			return foundRemote
+      pmk.IsRemoteExecutor = true
+			return FoundRemote
 		}
 	}
 	zap.S().Debug("Using local executor")
-	return foundRemote
+	return FoundRemote
 }
 
 // getExecutor creates the right Executor
@@ -194,8 +201,50 @@ func getExecutor() (cmdexec.Executor, error) {
 				zap.S().Fatalf("Unable to read the sshKey %s, %s", sshKey, err.Error())
 			}
 		}
+
 		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password)
 	}
 	zap.S().Debug("Using local executor")
 	return cmdexec.LocalExecutor{}, nil
+}
+
+// To check if Remote Host needs Password to access Sudo and prompt for Sudo Password if exists.
+func SudoPasswordCheck(exec cmdexec.Executor) error {
+
+	_, err := exec.RunWithStdout("-l | grep '(ALL) PASSWD: ALL'")
+	if err == nil {
+		// To bail out if Sudo Password entered is invalid multiple times.
+		loopcounter := 1
+		for true {
+			loopcounter += 1
+			fmt.Printf("Enter Sudo password for Remote Host: ")
+			sudopassword, _ := terminal.ReadPassword(0)
+			ssh.SudoPassword = string(sudopassword)
+			// Validate Sudo Password entered.
+			if ssh.SudoPassword == "" || validateSudoPassword(exec) == util.Invalid {
+				fmt.Printf("\n" + color.Red("x ") + "Invalid Sudo Password provided of Remote Host\n")
+				if loopcounter >= 4 {
+					fmt.Printf("\n")
+					zap.S().Fatalf(color.Red("x ") + "Invalid Sudo Password entered multiple times")
+				} else {
+					continue
+				}
+			} else {
+				break
+			}
+		}
+		fmt.Printf("\n")
+	}
+
+	return nil
+}
+
+func validateSudoPassword(exec cmdexec.Executor) string {
+
+	_ = pmk.CheckSudo(exec)
+	// Validate Sudo Password entered for Remote Host from stderr.
+	if strings.Contains(cmdexec.StdErrSudoPassword, util.InvalidPassword) {
+		return util.Invalid
+	}
+	return util.Valid
 }
