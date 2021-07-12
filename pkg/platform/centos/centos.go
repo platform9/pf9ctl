@@ -309,7 +309,7 @@ func (c *CentOS) disableSwap() (bool, error) {
 }
 
 func (c *CentOS) checkNoexecPermission() (bool, error) {
-	_, err := c.exec.RunWithStdout("bash", "-c", `mount | grep " /tmp " | grep noexec`)
+	_, err := c.exec.RunWithStdout("bash", "-c", `mount | grep ' /tmp ' | grep 'noexec'`)
 	if err != nil {
 		return true, nil
 	} else {
