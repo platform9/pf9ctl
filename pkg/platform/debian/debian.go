@@ -19,6 +19,7 @@ var (
 	packageInstallError        = "Packages not found and could not be installed"
 	MissingPkgsInstalledDebian bool
 	k8sPresentError            = errors.New("A Kubernetes cluster is already running on node")
+	Osversion                  string
 )
 
 // Debian represents debian based host machine
@@ -125,7 +126,7 @@ func (d *Debian) checkOSPackages() (bool, error) {
 	errLines := []string{packageInstallError}
 
 	zap.S().Debug("Checking OS Packages")
-
+	d.checkIfSystemdTimesyncdServiceRunning()
 	for _, p := range packages {
 		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg-query -s %s", p))
 		if err != nil {
@@ -285,6 +286,7 @@ func (d *Debian) Version() (string, error) {
 		"bash",
 		"-c",
 		"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
+	Osversion = out
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
@@ -354,5 +356,31 @@ func (d *Debian) checkPIDofSystemd() (bool, error) {
 		return false, errors.New("System is not booted with systemd")
 	} else {
 		return true, nil
+	}
+}
+
+func (d *Debian) checkIfSystemdTimesyncdServiceRunning() {
+	zap.S().Debug("Checking if systemd-timesyncd service is running")
+	if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl status systemd-timesyncd | grep 'active (running)'"); err != nil {
+		zap.S().Debug("systemd-timesyncd is not running. checking for ntp")
+		_, err := d.exec.RunWithStdout("bash", "-c", "systemctl status ntp | grep 'active (running)'")
+		if err != nil {
+			zap.S().Debug("NTP service is not running")
+			if strings.Contains(string(Osversion), "16") || strings.Contains(string(Osversion), "18") {
+				zap.S().Debug("installing ntp")
+				d.installOSPackages("ntp")
+			} else {
+				zap.S().Debug("installing systemd-timesyncd")
+				d.installOSPackages("systemd-timesyncd")
+				zap.S().Debug("Starting systemd-timesyncd service")
+				if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start systemd-timesyncd"); err != nil {
+					zap.S().Fatalf("Failed to start systemd-timesyncd")
+				}
+			}
+		} else {
+			zap.S().Debug("NTP service is running. skiping the installation.")
+		}
+	} else {
+		zap.S().Debug("systemd-timesyncd service is running. Skiping the installation.")
 	}
 }
