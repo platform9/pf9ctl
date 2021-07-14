@@ -126,7 +126,9 @@ func (d *Debian) checkOSPackages() (bool, error) {
 	errLines := []string{packageInstallError}
 
 	zap.S().Debug("Checking OS Packages")
-	d.checkIfSystemdTimesyncdServiceRunning()
+	if err := d.checkIfSystemdTimesyncdServiceRunning(); err != nil {
+		zap.S().Debug(err)
+	}
 	for _, p := range packages {
 		err := d.exec.Run("bash", "-c", fmt.Sprintf("dpkg-query -s %s", p))
 		if err != nil {
@@ -359,28 +361,27 @@ func (d *Debian) checkPIDofSystemd() (bool, error) {
 	}
 }
 
-func (d *Debian) checkIfSystemdTimesyncdServiceRunning() {
+func (d *Debian) checkIfSystemdTimesyncdServiceRunning() error {
 	zap.S().Debug("Checking if systemd-timesyncd service is running")
 	if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl status systemd-timesyncd | grep 'active (running)'"); err != nil {
 		zap.S().Debug("systemd-timesyncd is not running. checking for ntp")
 		_, err := d.exec.RunWithStdout("bash", "-c", "systemctl status ntp | grep 'active (running)'")
 		if err != nil {
 			zap.S().Debug("NTP service is not running")
-			if strings.Contains(string(Osversion), "16") || strings.Contains(string(Osversion), "18") {
-				zap.S().Debug("installing ntp")
-				d.installOSPackages("ntp")
+			zap.S().Debug("Starting systemd-timesyncd service")
+			if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start systemd-timesyncd"); err != nil {
+				zap.S().Fatalf("Failed to start systemd-timesyncd")
+				return errors.New("Failed to start systemd-timesyncd")
 			} else {
-				zap.S().Debug("installing systemd-timesyncd")
-				d.installOSPackages("systemd-timesyncd")
-				zap.S().Debug("Starting systemd-timesyncd service")
-				if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start systemd-timesyncd"); err != nil {
-					zap.S().Fatalf("Failed to start systemd-timesyncd")
-				}
+				zap.S().Debug("Started systemd-timesyncd service")
+				return nil
 			}
 		} else {
-			zap.S().Debug("NTP service is running. skiping the installation.")
+			zap.S().Debug("NTP service is running.")
+			return nil
 		}
 	} else {
-		zap.S().Debug("systemd-timesyncd service is running. Skiping the installation.")
+		zap.S().Debug("systemd-timesyncd service is running.")
+		return nil
 	}
 }
