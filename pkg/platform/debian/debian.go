@@ -368,7 +368,7 @@ func (d *Debian) checkIfSystemdTimesyncdServiceRunning() (bool, error) {
 			zap.S().Debug("NTP service is not running")
 			zap.S().Debug("Starting systemd-timesyncd service")
 			if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start systemd-timesyncd"); err != nil {
-				zap.S().Fatalf("Failed to start systemd-timesyncd")
+				zap.S().Debug("Failed to start systemd-timesyncd")
 				return false, errors.New("Failed to start systemd-timesyncd")
 			} else {
 				zap.S().Debug("Started systemd-timesyncd service")
