@@ -150,7 +150,7 @@ func ConfigCmdCreateRun() (Config, error) {
 	}
 	var proxyURL string
 	if Context.ProxyURL == "" {
-		fmt.Print("Proxy URL: ")
+		fmt.Print("Proxy URL [None]: ")
 		proxyURL, _ = reader.ReadString('\n')
 		Context.ProxyURL = strings.TrimSuffix(proxyURL, "\n")
 	}
