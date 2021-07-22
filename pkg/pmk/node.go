@@ -223,10 +223,10 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	}
 
 	if IsRemoteExecutor {
-		cmd = fmt.Sprintf(`bash /tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+		cmd = fmt.Sprintf(`bash /tmp/installer.sh --no-proxy --skip-os-check --no-ntp %s`, installOptions)
 		_, err = exec.RunWithStdout(cmd)
 	} else {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --no-ntp %s`, installOptions)
 		_, err = exec.RunWithStdout("bash", "-c", cmd)
 	}
 
