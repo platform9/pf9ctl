@@ -29,7 +29,11 @@ type LocalExecutor struct {
 
 // Run runs a command locally returning just success or failure
 func (c LocalExecutor) Run(name string, args ...string) error {
-	args = append([]string{name}, args...)
+	if c.ProxyUrl != "" {
+		args = append([]string{httpsProxy + "=" + c.ProxyUrl, name}, args...)
+	} else {
+		args = append([]string{name}, args...)
+	}
 	cmd := exec.Command("sudo", args...)
 	cmd.Env = append(cmd.Env, httpsProxy+"="+c.ProxyUrl)
 	return cmd.Run()
@@ -37,7 +41,11 @@ func (c LocalExecutor) Run(name string, args ...string) error {
 
 // RunWithStdout runs a command locally returning stdout and err
 func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error) {
-	args = append([]string{"-E", name}, args...)
+	if c.ProxyUrl != "" {
+		args = append([]string{httpsProxy + "=" + c.ProxyUrl, name}, args...)
+	} else {
+		args = append([]string{name}, args...)
+	}
 	cmd := exec.Command("sudo", args...)
 	cmd.Env = append(cmd.Env, httpsProxy+"="+c.ProxyUrl)
 	byt, err := cmd.Output()
