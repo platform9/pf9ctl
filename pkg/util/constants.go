@@ -79,5 +79,5 @@ func init() {
 
 //This is the current version of cli.
 const (
-	Version string = "pf9ctl version: v1.5"
+	Version string = "pf9ctl version: v1.6"
 )
