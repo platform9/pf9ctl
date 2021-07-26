@@ -16,6 +16,10 @@
     - Ubuntu (16.04,18.04,20.04)
     - Centos (7.x ,8.3)
 
+### Proxy support
+
+The CLI allows configuration where all HTTPS requests can be routed through a proxy. See the `Configuration` section to see how to configure the proxy URL.
+
 ### Usage
 - Downloading the CLI 
 ```sh
@@ -95,6 +99,7 @@ Flags:
   -u, --account_url string   sets account_url
   -h, --help                 help for set
   -p, --password string      sets password (use 'single quotes' to pass password)
+  -l, --proxy_url string     sets proxy URL
   -r, --region string        sets region
   -t, --tenant string        sets tenant
   -e, --username string      sets username
