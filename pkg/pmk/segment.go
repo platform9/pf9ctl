@@ -60,6 +60,7 @@ func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err
 			Event:  name,
 			Properties: analytics.NewProperties().
 				Set("keystoneData", data).
+				Set("dufqdn", data_struct.DUFqdn).
 				Set("email", data_struct.Email).
 				Set("status", status).
 				Set("errorMsg", err),

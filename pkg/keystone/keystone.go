@@ -12,11 +12,11 @@ import (
 )
 
 type KeystoneAuth struct {
+	DUFqdn    string
 	Token     string
 	UserID    string
 	ProjectID string
 	Email     string
-
 }
 
 type Keystone interface {
@@ -80,8 +80,8 @@ func (k KeystoneImpl) GetAuth(
 	project := t["project"].(map[string]interface{})
 	user := t["user"].(map[string]interface{})
 	token := resp.Header["X-Subject-Token"][0]
-
 	return KeystoneAuth{
+		DUFqdn:    k.fqdn,
 		Token:     token,
 		UserID:    user["id"].(string),
 		ProjectID: project["id"].(string),
