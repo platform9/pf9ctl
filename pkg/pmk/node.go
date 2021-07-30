@@ -223,7 +223,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy http://%s --skip-os-check --no-ntp`, ctx.ProxyURL)
+		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy %s --skip-os-check --no-ntp`, ctx.ProxyURL)
 	} else {
 		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --no-ntp`)
 	}
@@ -314,7 +314,7 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy https://%s --skip-os-check --ntpd %s`, ctx.ProxyURL, installOptions)
+		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy %s --skip-os-check --ntpd %s`, ctx.ProxyURL, installOptions)
 	} else {
 		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
 	}
