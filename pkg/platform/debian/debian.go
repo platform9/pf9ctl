@@ -113,13 +113,22 @@ func (d *Debian) checkDocker() error {
 }
 
 func (d *Debian) checkExistingInstallation() (bool, error) {
-
-	out, err := d.exec.RunWithStdout("bash", "-c", "dpkg -l | { grep -i 'pf9-' || true; }")
-	if err != nil {
-		return false, err
+	var pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
+	var (
+		out string
+		err error
+	)
+	for _, p := range pf9Packages {
+		cmd := fmt.Sprintf("dpkg -l | { grep -i '%s' || true; }", p)
+		out, err = d.exec.RunWithStdout("bash", "-c", cmd)
+		if err != nil {
+			return false, err
+		}
+		if out != "" {
+			return false, err
+		}
 	}
-
-	return out == "", nil
+	return true, nil
 }
 
 func (d *Debian) checkOSPackages() (bool, error) {

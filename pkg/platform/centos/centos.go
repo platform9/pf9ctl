@@ -106,13 +106,22 @@ func (c *CentOS) checkDocker() error {
 }
 
 func (c *CentOS) checkExistingInstallation() (bool, error) {
-
-	out, err := c.exec.RunWithStdout("bash", "-c", "yum list installed | { grep -i 'pf9-' || true; }")
-	if err != nil {
-		return false, nil
+	var pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
+	var (
+		out string
+		err error
+	)
+	for _, p := range pf9Packages {
+		cmd := fmt.Sprintf("yum list installed | { grep -i '%s' || true; }", p)
+		out, err = c.exec.RunWithStdout("bash", "-c", cmd)
+		if err != nil {
+			return false, err
+		}
+		if out != "" {
+			return false, err
+		}
 	}
-
-	return out == "", nil
+	return true, nil
 }
 
 func (c *CentOS) checkOSPackages() (bool, error) {
