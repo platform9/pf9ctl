@@ -21,6 +21,7 @@ import (
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
 var IsRemoteExecutor bool
+var downloadPath string
 
 const (
 	// Response Status Codes
@@ -208,7 +209,13 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	if ctx.AllowInsecure {
 		insecureDownload = "-k"
 	}
-	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  /tmp/installer.sh`, insecureDownload, url)
+	if debian.IStmpDirectoryHaveExecPermission || centos.IStmpDirectoryHaveExecPermission {
+		downloadPath = "/tmp"
+	} else {
+		downloadPath = "pf9"
+	}
+
+	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  %s/installer.sh`, insecureDownload, url, downloadPath)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
@@ -216,16 +223,16 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	zap.S().Debug("Hostagent download completed successfully")
 
 	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
-
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
+	giveExecPermission := fmt.Sprintf("chmod +x %s/installer.sh", downloadPath)
+	_, err = exec.RunWithStdout("bash", "-c", giveExecPermission)
 	if err != nil {
 		return err
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy http://%s --skip-os-check --no-ntp`, ctx.ProxyURL)
+		cmd = fmt.Sprintf(`%s/installer.sh --location=%s --proxy http://%s --skip-os-check --no-ntp`, downloadPath, downloadPath, ctx.ProxyURL)
 	} else {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --no-ntp`)
+		cmd = fmt.Sprintf(`%s/installer.sh --location=%s --no-proxy --skip-os-check --no-ntp`, downloadPath, downloadPath)
 	}
 
 	if IsRemoteExecutor {

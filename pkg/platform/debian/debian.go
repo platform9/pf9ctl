@@ -15,10 +15,11 @@ import (
 )
 
 var (
-	packages                   = []string{"curl", "uuid-runtime", "net-tools", "jq"}
-	packageInstallError        = "Packages not found and could not be installed"
-	MissingPkgsInstalledDebian bool
-	k8sPresentError            = errors.New("A Kubernetes cluster is already running on node")
+	packages                         = []string{"curl", "uuid-runtime", "net-tools", "jq"}
+	packageInstallError              = "Packages not found and could not be installed"
+	MissingPkgsInstalledDebian       bool
+	k8sPresentError                  = errors.New("A Kubernetes cluster is already running on node")
+	IStmpDirectoryHaveExecPermission bool
 )
 
 // Debian represents debian based host machine
@@ -63,7 +64,7 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkNoexecPermission()
-	checks = append(checks, platform.Check{"Check exec permission on /tmp", true, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check exec permission on /tmp", false, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkIfdpkgISLock()
 	checks = append(checks, platform.Check{"Check lock on dpkg", true, result, err, fmt.Sprintf("%s", err)})
@@ -320,9 +321,11 @@ func (d *Debian) disableSwap() (bool, error) {
 func (d *Debian) checkNoexecPermission() (bool, error) {
 	_, err := d.exec.RunWithStdout("bash", "-c", `mount | grep ' /tmp ' | grep 'noexec'`)
 	if err != nil {
+		IStmpDirectoryHaveExecPermission = true
 		return true, nil
 	} else {
-		return false, errors.New("/tmp is not having exec permission")
+		IStmpDirectoryHaveExecPermission = false
+		return false, errors.New("/tmp is not having exec permission using pf9 directory to download installer")
 	}
 }
 

@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	packages                   = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils", "net-tools", "epel-release", "jq"}
-	packageInstallError        = "Packages not found and could not be installed"
-	MissingPkgsInstalledCentos bool
-	k8sPresentError            = errors.New("A Kubernetes cluster is already running on node")
+	packages                         = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils", "net-tools", "epel-release", "jq"}
+	packageInstallError              = "Packages not found and could not be installed"
+	MissingPkgsInstalledCentos       bool
+	k8sPresentError                  = errors.New("A Kubernetes cluster is already running on node")
+	IStmpDirectoryHaveExecPermission bool
 )
 
 // CentOS reprents centos based host machine
@@ -64,7 +65,7 @@ func (c *CentOS) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.checkNoexecPermission()
-	checks = append(checks, platform.Check{"Check exec permission on /tmp", true, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check exec permission on /tmp", false, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.checkPIDofSystemd()
 	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
@@ -311,9 +312,11 @@ func (c *CentOS) disableSwap() (bool, error) {
 func (c *CentOS) checkNoexecPermission() (bool, error) {
 	_, err := c.exec.RunWithStdout("bash", "-c", `mount | grep ' /tmp ' | grep 'noexec'`)
 	if err != nil {
+		IStmpDirectoryHaveExecPermission = true
 		return true, nil
 	} else {
-		return false, errors.New("/tmp is not having exec permission")
+		IStmpDirectoryHaveExecPermission = false
+		return false, errors.New("/tmp is not having exec permission using pf9 directory to download installer")
 	}
 }
 

@@ -635,7 +635,7 @@ func TestNoexecPermissionCheck(t *testing.T) {
 			},
 			want: want{
 				result: false,
-				err:    errors.New("/tmp is not having exec permission"),
+				err:    errors.New("/tmp is not having exec permission using pf9 directory to download installer"),
 			},
 		},
 		//Failure case. if output of grep command is empty then it returns nil error.
