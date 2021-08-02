@@ -280,9 +280,8 @@ func openOSReleaseFile(exec cmdexec.Executor) (string, error) {
 
 func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 	var out string
-	var pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
 	if hostOS == "debian" {
-		for _, p := range pf9Packages {
+		for _, p := range util.Pf9Packages {
 			cmd := fmt.Sprintf("dpkg -l | { grep -i '%s' || true; }", p)
 			out, _ = exec.RunWithStdout("bash", "-c", cmd)
 			if out != "" {
@@ -292,7 +291,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 	} else {
 		// not checking for redhat because if it has already passed validation
 		// it must be either debian or redhat based
-		for _, p := range pf9Packages {
+		for _, p := range util.Pf9Packages {
 			cmd := fmt.Sprintf("yum list installed | { grep -i '%s' || true; }", p)
 			out, _ = exec.RunWithStdout("bash", "-c", cmd)
 			if out != "" {
