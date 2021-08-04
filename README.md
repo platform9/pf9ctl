@@ -99,7 +99,7 @@ Flags:
   -u, --account_url string   sets account_url
   -h, --help                 help for set
   -p, --password string      sets password (use 'single quotes' to pass password)
-  -l, --proxy_url string     sets proxy URL
+  -l, --proxy_url string     sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>
   -r, --region string        sets region
   -t, --tenant string        sets tenant
   -e, --username string      sets username
