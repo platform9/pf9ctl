@@ -173,7 +173,7 @@ func init() {
 	configCmdSet.Flags().StringVarP(&account_url, "account_url", "u", "", "sets account_url")
 	configCmdSet.Flags().StringVarP(&username, "username", "e", "", "sets username")
 	configCmdSet.Flags().StringVarP(&Password, "password", "p", "", "sets password (use 'single quotes' to pass password)")
-	configCmdSet.Flags().StringVarP(&proxyURL, "proxy_url", "l", "", "sets proxy URL, can be specified with or without the protocol")
+	configCmdSet.Flags().StringVarP(&proxyURL, "proxy_url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
 	configCmdSet.Flags().StringVarP(&region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&tenant, "tenant", "t", "", "sets tenant")
 }
