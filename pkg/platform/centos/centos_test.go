@@ -713,3 +713,53 @@ func TestPIDofSystemdCheck(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckFirewalldService(t *testing.T) {
+	type want struct {
+		result bool
+		err    error
+	}
+
+	cases := map[string]struct {
+		args
+		want
+	}{
+		//Success case. if firewalld service is not running then continue.
+		"CheckPass": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "0", nil
+					},
+				},
+			},
+			want: want{
+				result: false,
+				err:    errors.New("firewalld service is running"),
+			},
+		},
+		//Failure case. if firewalld service is running then bail out.
+		"CheckFail": {
+			args: args{
+				exec: &cmdexec.MockExecutor{
+					MockRunWithStdout: func(name string, args ...string) (string, error) {
+						return "1", fmt.Errorf("ERROR")
+					},
+				},
+			},
+			want: want{
+				result: true,
+				err:    nil,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			c := &CentOS{exec: tc.exec}
+			result, err := c.checkFirewalldIsRunning()
+			assert.Equal(t, tc.result, result)
+			assert.Equal(t, tc.err, err)
+		})
+	}
+}
