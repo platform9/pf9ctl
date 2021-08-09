@@ -209,11 +209,8 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	if ctx.AllowInsecure {
 		insecureDownload = "-k"
 	}
-	if debian.IStmpDirectoryHaveExecPermission || centos.IStmpDirectoryHaveExecPermission {
-		downloadPath = "/tmp"
-	} else {
-		downloadPath = "pf9"
-	}
+
+	downloadPath = "pf9"
 
 	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  %s/installer.sh`, insecureDownload, url, downloadPath)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
