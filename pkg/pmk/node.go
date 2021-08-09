@@ -303,29 +303,40 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 	zap.S().Debug("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("https://%s/private/platform9-install-%s.sh", regionURL, hostOS)
-	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
+
+	downloadPath = "pf9"
+
+	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a %s/agent_install", auth.ProjectID, downloadPath)
 	//use insecure by default
-	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o /tmp/installer.sh`, auth.Token, url)
+	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o %s/installer.sh`, auth.Token, url, downloadPath)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}
 
 	zap.S().Debug("Hostagent download completed successfully")
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
+
+	giveExecPermission := fmt.Sprintf("chmod +x %s/installer.sh", downloadPath)
+	_, err = exec.RunWithStdout("bash", "-c", giveExecPermission)
 	if err != nil {
 		return err
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy https://%s --skip-os-check --ntpd %s`, ctx.ProxyURL, installOptions)
+		cmd = fmt.Sprintf(`%s/installer.sh --location=%s --proxy http://%s --skip-os-check --no-ntp`, downloadPath, downloadPath, ctx.ProxyURL)
 	} else {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+		cmd = fmt.Sprintf(`%s/installer.sh --location=%s --no-proxy --skip-os-check --no-ntp`, downloadPath, downloadPath)
 	}
 
-	_, err = exec.RunWithStdout("bash", "-c", cmd)
+	if IsRemoteExecutor {
+		cmd = fmt.Sprintf(`bash %s %s`, cmd, installOptions)
+		_, err = exec.RunWithStdout(cmd)
+	} else {
+		cmd = fmt.Sprintf(`%s %s`, cmd, installOptions)
+		_, err = exec.RunWithStdout("bash", "-c", cmd)
+	}
 	if err != nil {
-		return err
+		return fmt.Errorf("Unable to run installer script")
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
