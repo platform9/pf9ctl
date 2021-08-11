@@ -821,7 +821,7 @@ func TestIfSystemdTimesyncdServiceRunning(t *testing.T) {
 		args
 		want
 	}{
-		//Success case. If systemd-timesyncd service is running.
+		//Success case. If systemd-timesyncd/chronyd/ntp service is running.
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -835,7 +835,7 @@ func TestIfSystemdTimesyncdServiceRunning(t *testing.T) {
 				err:    nil,
 			},
 		},
-		//Failure case. If systemd-timesyncd service is not running.
+		//Failure case. If faild to start systemd-timesyncd/chronyd/ntp service.
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -846,7 +846,7 @@ func TestIfSystemdTimesyncdServiceRunning(t *testing.T) {
 			},
 			want: want{
 				result: false,
-				err:    errors.New("Failed to start systemd-timesyncd"),
+				err:    errors.New("Time synchronization service not found"),
 			},
 		},
 	}

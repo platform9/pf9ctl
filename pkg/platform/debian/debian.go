@@ -371,20 +371,37 @@ func (d *Debian) checkPIDofSystemd() (bool, error) {
 func (d *Debian) checkIfSystemdTimesyncdServiceRunning() (bool, error) {
 	zap.S().Debug("Checking if systemd-timesyncd service is running")
 	if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl status systemd-timesyncd | grep 'active (running)'"); err != nil {
-		zap.S().Debug("systemd-timesyncd is not running. checking for ntp")
-		_, err := d.exec.RunWithStdout("bash", "-c", "systemctl status ntp | grep 'active (running)'")
-		if err != nil {
-			zap.S().Debug("NTP service is not running")
-			zap.S().Debug("Starting systemd-timesyncd service")
-			if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start systemd-timesyncd"); err != nil {
-				zap.S().Debug("Failed to start systemd-timesyncd")
-				return false, errors.New("Failed to start systemd-timesyncd")
+		zap.S().Debug("systemd-timesyncd is not running. checking for chronyd")
+		if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl status chronyd | grep 'active (running)'"); err != nil {
+			zap.S().Debug("chronyd service is not running. checking for ntp")
+			if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl status ntp | grep 'active (running)'"); err != nil {
+				zap.S().Debug("ntp service is not running")
+				zap.S().Debug("Starting systemd-timesyncd service")
+				if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start systemd-timesyncd"); err != nil {
+					zap.S().Debug("Failed to start systemd-timesyncd. Starting chronyd service")
+					if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start chronyd"); err != nil {
+						zap.S().Debug("Failed to start chronyd. Starting ntp service")
+						if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start ntp"); err != nil {
+							zap.S().Debug("Time synchronization service not found")
+							return false, errors.New("Time synchronization service not found")
+						} else {
+							zap.S().Debug("Started ntp service")
+							return true, nil
+						}
+					} else {
+						zap.S().Debug("Started chronyd service")
+						return true, nil
+					}
+				} else {
+					zap.S().Debug("Started systemd-timesyncd service")
+					return true, nil
+				}
 			} else {
-				zap.S().Debug("Started systemd-timesyncd service")
+				zap.S().Debug("ntp service is running.")
 				return true, nil
 			}
 		} else {
-			zap.S().Debug("NTP service is running.")
+			zap.S().Debug("chronyd service is running.")
 			return true, nil
 		}
 	} else {
