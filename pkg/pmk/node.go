@@ -239,6 +239,13 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 		cmd = fmt.Sprintf(`%s %s`, cmd, installOptions)
 		_, err = exec.RunWithStdout("bash", "-c", cmd)
 	}
+
+	zap.S().Debug("Removing temporary directory created to extract installer")
+	_, err = exec.RunWithStdout("bash", "-c", "rm -rf pf9-install-*")
+	if err != nil {
+		zap.S().Debug("error removing temporary directory")
+	}
+
 	if err != nil {
 		return fmt.Errorf("Unable to run installer script")
 	}
