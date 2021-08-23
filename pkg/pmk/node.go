@@ -208,7 +208,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	if ctx.AllowInsecure {
 		insecureDownload = "-k"
 	}
-	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  /tmp/installer.sh`, insecureDownload, url)
+	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  pf9/installer.sh`, insecureDownload, url)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
@@ -217,15 +217,15 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 
 	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
 
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
+	_, err = exec.RunWithStdout("bash", "-c", "chmod +x pf9/installer.sh")
 	if err != nil {
 		return err
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy %s --skip-os-check --no-ntp`, ctx.ProxyURL)
+		cmd = fmt.Sprintf(`pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, ctx.ProxyURL)
 	} else {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --no-ntp`)
+		cmd = fmt.Sprintf(`pf9/installer.sh --no-proxy --skip-os-check --no-ntp`)
 	}
 
 	if IsRemoteExecutor {
@@ -235,6 +235,19 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 		cmd = fmt.Sprintf(`%s %s`, cmd, installOptions)
 		_, err = exec.RunWithStdout("bash", "-c", cmd)
 	}
+
+	zap.S().Debug("Removing temporary directory created to extract installer")
+	_, err = exec.RunWithStdout("bash", "-c", "rm -rf pf9/pf9-install-*")
+	if err != nil {
+		zap.S().Debug("error removing temporary directory")
+	}
+
+	zap.S().Debug("Removing installer script")
+	_, err = exec.RunWithStdout("bash", "-c", "rm -rf pf9/installer.sh")
+	if err != nil {
+		zap.S().Debug("error removing installer script")
+	}
+
 	if err != nil {
 		return fmt.Errorf("Unable to run installer script")
 	}
