@@ -4,6 +4,7 @@ package cmdexec
 import (
 	"fmt"
 	"os/exec"
+	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"go.uber.org/zap"
@@ -53,7 +54,16 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 	if exitError, ok := err.(*exec.ExitError); ok {
 		stderr = string(exitError.Stderr)
 	}
-	zap.S().Debug("Ran command ", "sudo", args)
+
+	// To append args to a single command
+	command := ""
+	for _, arg := range args {
+		command = fmt.Sprintf("%s \"%s\"", command, arg)
+	}
+	// Remove user password if command has passwordflag
+	command = PasswordRemover(command)
+	zap.S().Debug("Ran command sudo", command)
+
 	zap.S().Debug("stdout:", string(byt), "stderr:", stderr)
 	return string(byt), err
 }
@@ -82,7 +92,11 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 	stdout, stderr, err := r.Client.RunCommand(cmd)
 	// To fetch the stderr after executing command.
 	StdErrSudoPassword = string(stderr)
-	zap.S().Debug("Running command ", cmd, "stdout:", string(stdout), "stderr:", string(stderr))
+
+	// Remove user password if command has passwordflag
+	command := PasswordRemover(cmd)
+
+	zap.S().Debug("Running command ", command, "stdout:", string(stdout), "stderr:", string(stderr))
 	return string(stdout), err
 }
 
@@ -94,4 +108,16 @@ func NewRemoteExecutor(host string, port int, username string, privateKey []byte
 	}
 	re := &RemoteExecutor{Client: client, proxyURL: proxyURL}
 	return re, nil
+}
+
+// To Remove the user Password from commands as part of logs
+func PasswordRemover(cmd string) string {
+	// To find the command that contains password flag
+	passwordFlag := "--password"
+	if strings.Contains(cmd, passwordFlag) {
+		index := strings.LastIndex(cmd, passwordFlag)
+		// If password flag found, then remove the user password.
+		cmd = cmd[:index] + passwordFlag + "='*****'"
+	}
+	return cmd
 }
