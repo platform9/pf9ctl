@@ -70,6 +70,7 @@ var (
 
 	VarDir    = "/var/log/pf9"
 	EtcDir    = "/etc/pf9"
+	Pf9LogLoc = "pf9/log"
 	Pf9DirLoc = filepath.Join(homeDir, "/")
 )
 
