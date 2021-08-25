@@ -60,7 +60,7 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 	for _, arg := range args {
 		command = fmt.Sprintf("%s \"%s\"", command, arg)
 	}
-	// Remove user password if command has passwordflag
+	// Avoid password from getting logged, if the command contains password flag.
 	command = PasswordRemover(command)
 	zap.S().Debug("Ran command sudo", command)
 
@@ -93,7 +93,7 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 	// To fetch the stderr after executing command.
 	StdErrSudoPassword = string(stderr)
 
-	// Remove user password if command has passwordflag
+	// Avoid password from getting logged, if the command contains password flag.
 	command := PasswordRemover(cmd)
 
 	zap.S().Debug("Running command ", command, "stdout:", string(stdout), "stderr:", string(stderr))
@@ -110,7 +110,7 @@ func NewRemoteExecutor(host string, port int, username string, privateKey []byte
 	return re, nil
 }
 
-// To Remove the user Password from commands as part of logs
+// Avoid password from getting logged, if the command contains password flag
 func PasswordRemover(cmd string) string {
 	// To find the command that contains password flag
 	passwordFlag := "--password"
