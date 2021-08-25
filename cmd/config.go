@@ -185,6 +185,7 @@ func validateUserCredentials(pmk.Config, pmk.Client) error {
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
+		ctx.MfaToken,
 	)
 
 	if err != nil {

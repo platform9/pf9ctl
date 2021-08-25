@@ -65,6 +65,7 @@ func PrepNode(ctx Config, allClients Client) error {
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
+		ctx.MfaToken,
 	)
 
 	if err != nil {
