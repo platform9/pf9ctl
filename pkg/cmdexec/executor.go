@@ -113,11 +113,23 @@ func NewRemoteExecutor(host string, port int, username string, privateKey []byte
 // Avoid password from getting logged, if the command contains password flag
 func PasswordRemover(cmd string) string {
 	// To find the command that contains password flag
-	passwordFlag := "--password"
-	if strings.Contains(cmd, passwordFlag) {
-		index := strings.LastIndex(cmd, passwordFlag)
+	confidential := []string{"--password"}
+
+	for _, flag := range confidential {
 		// If password flag found, then remove the user password.
-		cmd = cmd[:index] + passwordFlag + "='*****'"
+		if strings.Contains(cmd, flag) {
+
+			index := strings.Index(cmd, flag)
+			lastindexbreak := strings.Index(cmd[index:], " ")
+
+			// If flag is at last of command.
+			if lastindexbreak < 0 {
+				cmd = cmd[:index] + flag + "='*****']"
+			} else {
+				// If flag is in between of command.
+				cmd = cmd[:index] + flag + "='*****'" + cmd[index+lastindexbreak:]
+			}
+		}
 	}
 	return cmd
 }
