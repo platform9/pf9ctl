@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/platform9/pf9ctl/pkg/util"
+
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"go.uber.org/zap"
 )
@@ -113,20 +115,19 @@ func NewRemoteExecutor(host string, port int, username string, privateKey []byte
 // Avoid password from getting logged, if the command contains password flag
 func PasswordRemover(cmd string) string {
 	// To find the command that contains password flag
-	confidential := []string{"--password"}
 
-	for _, flag := range confidential {
+	for _, flag := range util.Confidential {
 		// If password flag found, then remove the user password.
 		if strings.Contains(cmd, flag) {
 
 			index := strings.Index(cmd, flag)
 			lastindexbreak := strings.Index(cmd[index:], " ")
 
-			// If flag is at last of command.
+			// If password is the last flag in the command.
 			if lastindexbreak < 0 {
 				cmd = cmd[:index] + flag + "='*****']"
 			} else {
-				// If flag is in between of command.
+				// If password flag is present in the middle or start of the command.
 				cmd = cmd[:index] + flag + "='*****'" + cmd[index+lastindexbreak:]
 			}
 		}
