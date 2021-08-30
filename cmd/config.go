@@ -66,6 +66,10 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// invoked the configcreate command from pkg/pmk
 		ctx, _ = pmk.ConfigCmdCreateRun()
 
+		if err = os.Setenv("https_proxy", ctx.ProxyURL); err != nil {
+			zap.S().Fatal("Error setting proxy as environment variable")
+		}
+
 		executor, err := getExecutor(ctx.ProxyURL)
 		if err != nil {
 			zap.S().Fatalf("Error connecting to host %s", err.Error())
