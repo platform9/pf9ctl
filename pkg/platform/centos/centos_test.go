@@ -734,11 +734,11 @@ func TestCheckFirewalldService(t *testing.T) {
 				},
 			},
 			want: want{
-				result: false,
-				err:    errors.New("firewalld service is running"),
+				result: true,
+				err:    nil,
 			},
 		},
-		//Failure case. if firewalld service is running then bail out.
+		//Failure case. if firewalld service is running then print message service is running.
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -748,8 +748,8 @@ func TestCheckFirewalldService(t *testing.T) {
 				},
 			},
 			want: want{
-				result: true,
-				err:    nil,
+				result: false,
+				err:    errors.New("firewalld service is running"),
 			},
 		},
 	}
