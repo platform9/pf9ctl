@@ -97,7 +97,7 @@ func (k KeystoneImpl) GetAuth(
 	}
 
 	zap.S().Debugf("API request body :%s\n", body)
-	
+
 	resp, err := http.Post(url, "application/json", strings.NewReader(body))
 	if err != nil {
 		zap.S().Debugf("Error calling keystone API:%s\n", err.Error())
