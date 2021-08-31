@@ -3,6 +3,7 @@ package cmdexec
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -15,6 +16,7 @@ var StdErrSudoPassword string
 
 const (
 	httpsProxy = "https_proxy"
+	env_path   = "PATH"
 )
 
 // Executor interace abstracts us from local or remote execution
@@ -37,6 +39,7 @@ func (c LocalExecutor) Run(name string, args ...string) error {
 	}
 	cmd := exec.Command("sudo", args...)
 	cmd.Env = append(cmd.Env, httpsProxy+"="+c.ProxyUrl)
+	cmd.Env = append(cmd.Env, env_path+"="+os.Getenv("PATH"))
 	return cmd.Run()
 }
 
