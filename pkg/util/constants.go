@@ -72,6 +72,8 @@ var (
 	EtcDir    = "/etc/pf9"
 	Pf9LogLoc = "pf9/log"
 	Pf9DirLoc = filepath.Join(homeDir, "/")
+
+	Confidential = []string{"--password"}
 )
 
 func init() {
