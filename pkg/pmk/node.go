@@ -220,7 +220,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 
 	//Pass keystone token if MFA token is provided
 	if (ctx.MfaToken != "") {
-		installOptions = fmt.Sprintf(`--no-project --controller=%s  --keystone-token='%s'`, regionURL, auth.Token)
+		installOptions = fmt.Sprintf(`--no-project --controller=%s  --user-token='%s'`, regionURL, auth.Token)
 	} else {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
 	}
