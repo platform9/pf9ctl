@@ -77,6 +77,9 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkIfSystemdTimesyncdServiceRunning()
 	checks = append(checks, platform.Check{"Check time synchronization", true, result, err, fmt.Sprintf("%s", err)})
 
+	result, err = d.checkFirewalldIsRunning()
+	checks = append(checks, platform.Check{"Check if firewalld service is running", false, result, err, fmt.Sprintf("%s", err)})
+
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
 		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
@@ -389,6 +392,15 @@ func (d *Debian) checkIfSystemdTimesyncdServiceRunning() (bool, error) {
 		}
 	} else {
 		zap.S().Debug("systemd-timesyncd service is running.")
+		return true, nil
+	}
+}
+
+func (d *Debian) checkFirewalldIsRunning() (bool, error) {
+	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld | grep 'inactive'")
+	if err != nil {
+		return false, errors.New("firewalld service is running")
+	} else {
 		return true, nil
 	}
 }
