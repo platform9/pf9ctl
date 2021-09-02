@@ -73,7 +73,7 @@ var (
 	Pf9LogLoc = "pf9/log"
 	Pf9DirLoc = filepath.Join(homeDir, "/")
 
-	Confidential = []string{"--password"}
+	Confidential = []string{"--password", "--user-token"}
 )
 
 func init() {
