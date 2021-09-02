@@ -21,6 +21,7 @@ import (
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
 var IsRemoteExecutor bool
+var homeDir = util.HomeDir
 
 const (
 	// Response Status Codes
@@ -208,8 +209,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	if ctx.AllowInsecure {
 		insecureDownload = "-k"
 	}
-	homeDir := util.HomeDir
-	fmt.Println("home dir is : ", homeDir)
+
 	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  %s/pf9/installer.sh`, insecureDownload, url, homeDir)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
@@ -241,15 +241,15 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 
 	zap.S().Debug("Removing temporary directory created to extract installer")
 	removeTmpDirCmd := fmt.Sprintf("rm -rf %s/pf9/pf9-install-*", homeDir)
-	_, err = exec.RunWithStdout("bash", "-c", removeTmpDirCmd)
-	if err != nil {
+	_, err1 := exec.RunWithStdout("bash", "-c", removeTmpDirCmd)
+	if err1 != nil {
 		zap.S().Debug("error removing temporary directory")
 	}
 
 	zap.S().Debug("Removing installer script")
 	removeInstallerCmd := fmt.Sprintf("rm -rf %s/pf9/installer.sh", homeDir)
-	_, err = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
-	if err != nil {
+	_, err1 = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
+	if err1 != nil {
 		zap.S().Debug("error removing installer script")
 	}
 
@@ -325,27 +325,49 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 	zap.S().Debug("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("https://%s/private/platform9-install-%s.sh", regionURL, hostOS)
-	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
+	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a %s/pf9/agent_install", auth.ProjectID, homeDir)
 	//use insecure by default
-	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o /tmp/installer.sh`, auth.Token, url)
+	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o %s/pf9/installer.sh`, auth.Token, url, homeDir)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}
 
 	zap.S().Debug("Hostagent download completed successfully")
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
+	changePermission := fmt.Sprintf("chmod +x %s/pf9/installer.sh", homeDir)
+	_, err = exec.RunWithStdout("bash", "-c", changePermission)
 	if err != nil {
 		return err
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy %s --skip-os-check --ntpd %s`, ctx.ProxyURL, installOptions)
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, homeDir, ctx.ProxyURL)
 	} else {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --no-proxy --skip-os-check --no-ntp`, homeDir)
 	}
 
-	_, err = exec.RunWithStdout("bash", "-c", cmd)
+	if IsRemoteExecutor {
+		cmd = fmt.Sprintf(`bash %s %s`, cmd, installOptions)
+		_, err = exec.RunWithStdout(cmd)
+	} else {
+		cmd = fmt.Sprintf(`%s %s`, cmd, installOptions)
+		_, err = exec.RunWithStdout("bash", "-c", cmd)
+	}
+
+	zap.S().Debug("Removing temporary directory created to extract installer")
+	removeTmpDirCmd := fmt.Sprintf("rm -rf %s/pf9/pf9-install-*", homeDir)
+	_, err1 := exec.RunWithStdout("bash", "-c", removeTmpDirCmd)
+	if err1 != nil {
+		zap.S().Debug("error removing temporary directory")
+	}
+
+	zap.S().Debug("Removing installer script")
+	removeInstallerCmd := fmt.Sprintf("rm -rf %s/pf9/installer.sh", homeDir)
+	_, err1 = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
+	if err1 != nil {
+		zap.S().Debug("error removing installer script")
+	}
+
 	if err != nil {
 		return err
 	}
