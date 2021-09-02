@@ -208,7 +208,9 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	if ctx.AllowInsecure {
 		insecureDownload = "-k"
 	}
-	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  pf9/installer.sh`, insecureDownload, url)
+	homeDir := util.HomeDir
+	fmt.Println("home dir is : ", homeDir)
+	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  %s/pf9/installer.sh`, insecureDownload, url, homeDir)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
@@ -217,15 +219,16 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 
 	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
 
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x pf9/installer.sh")
+	changePermission := fmt.Sprintf("chmod +x %s/pf9/installer.sh", homeDir)
+	_, err = exec.RunWithStdout("bash", "-c", changePermission)
 	if err != nil {
 		return err
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, ctx.ProxyURL)
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, homeDir, ctx.ProxyURL)
 	} else {
-		cmd = fmt.Sprintf(`pf9/installer.sh --no-proxy --skip-os-check --no-ntp`)
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --no-proxy --skip-os-check --no-ntp`, homeDir)
 	}
 
 	if IsRemoteExecutor {
@@ -237,13 +240,15 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	}
 
 	zap.S().Debug("Removing temporary directory created to extract installer")
-	_, err = exec.RunWithStdout("bash", "-c", "rm -rf pf9/pf9-install-*")
+	removeTmpDirCmd := fmt.Sprintf("rm -rf %s/pf9/pf9-install-*", homeDir)
+	_, err = exec.RunWithStdout("bash", "-c", removeTmpDirCmd)
 	if err != nil {
 		zap.S().Debug("error removing temporary directory")
 	}
 
 	zap.S().Debug("Removing installer script")
-	_, err = exec.RunWithStdout("bash", "-c", "rm -rf pf9/installer.sh")
+	removeInstallerCmd := fmt.Sprintf("rm -rf %s/pf9/installer.sh", homeDir)
+	_, err = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
 	if err != nil {
 		zap.S().Debug("error removing installer script")
 	}

@@ -44,9 +44,9 @@ var (
 )
 
 var (
-	homeDir, _ = os.UserHomeDir()
+	HomeDir, _ = os.UserHomeDir()
 	// PyCliPath is the path of virtual env directory of the Python CLI
-	PyCliPath = filepath.Join(homeDir, "pf9/pf9-venv")
+	PyCliPath = filepath.Join(HomeDir, "pf9/pf9-venv")
 	// PyCliLink is the Symlink of the Python CLI
 	PyCliLink      = "/usr/bin/pf9ctl"
 	Centos         = "centos"
@@ -55,7 +55,7 @@ var (
 	CertsExpireErr = "certificate has expired or is not yet valid"
 
 	//Pf9Dir is the base pf9dir
-	Pf9Dir = filepath.Join(homeDir, "pf9")
+	Pf9Dir = filepath.Join(HomeDir, "pf9")
 	//Pf9LogDir is the base path for creating log dir
 	Pf9LogDir = filepath.Join(Pf9Dir, "log")
 	// Pf9DBDir is the base dir for storing pf9 db config
@@ -70,7 +70,7 @@ var (
 
 	VarDir    = "/var/log/pf9"
 	EtcDir    = "/etc/pf9"
-	Pf9DirLoc = filepath.Join(homeDir, "/")
+	Pf9DirLoc = filepath.Join(HomeDir, "/")
 )
 
 func init() {
