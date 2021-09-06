@@ -80,6 +80,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
+		ctx.MfaToken,
 	)
 	if err != nil {
 		zap.S().Debug("Unable to locate keystone credentials: %s\n", err.Error())
