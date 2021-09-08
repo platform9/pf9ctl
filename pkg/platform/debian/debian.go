@@ -75,7 +75,7 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkIfTimesyncServiceRunning()
-	checks = append(checks, platform.Check{"Check time synchronization", true, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check time synchronization", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
@@ -369,81 +369,110 @@ func (d *Debian) checkPIDofSystemd() (bool, error) {
 }
 
 func (d *Debian) checkIfTimesyncServiceRunning() (bool, error) {
-	zap.S().Debug("Checking if systemd-timesyncd service is running")
-	err := d.IsSystemdTimesyncdIsRunning()
+
+	err := d.checkIfAnyTimeSyncServiceIsRunning()
 	if err != nil {
-		if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start systemd-timesyncd"); err != nil {
-			zap.S().Debug("failed to start systemd-timesyncd service")
-			zap.S().Debug("Checking if ntp service is running")
-			err := d.IsNtpRunning()
+		err := d.DownloadAndInstallSystemdTimesyncd()
+		if err != nil {
+			zap.S().Debug("error installing systemd-timesyncd")
+			return false, err
+		} else {
+			zap.S().Debug("installed systemd-timesyncd")
+			err := d.start("systemd-timesyncd")
 			if err != nil {
-				if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start ntp"); err != nil {
-					zap.S().Debug("failed to start ntp service")
-					zap.S().Debug("Checking if chronyd service is running")
-					err := d.IsChronydRunning()
-					if err != nil {
-						err := d.DownloadAndInstallSystemdTimesyncd()
-						if err != nil {
-							return false, err
-						} else {
-							return true, nil
-						}
-					} else {
-						zap.S().Debug("chronyd service is running")
-						return true, nil
-					}
-				} else {
-					zap.S().Debug("started ntp service")
-					return true, nil
-				}
+				zap.S().Debug("failed to start systemd-timesyncd")
+				return false, err
 			} else {
-				zap.S().Debug("ntp service is running")
+				return true, nil
+			}
+
+		}
+	} else {
+		return true, nil
+	}
+
+	/*if err := d.IsPresent("systemd-timesyncd.service"); err != nil {
+		//check anothor
+		return false, err
+	} else {
+		if err := d.IsRunning("systemd-timesyncd.service"); err != nil {
+			//start it
+			if err := d.start("systemd-timesyncd.service"); err != nil {
+				return false, err
+			} else {
 				return true, nil
 			}
 		} else {
-			zap.S().Debug("started systemd-timesyncd service")
 			return true, nil
 		}
-	} else {
-		zap.S().Debug("systemd-timesyncd service is running")
-		return true, nil
-	}
+	}*/
 }
 
-func (d *Debian) IsSystemdTimesyncdIsRunning() error {
-	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl status systemd-timesyncd | grep 'active (running)'")
+func (d *Debian) checkIfAnyTimeSyncServiceIsRunning() error {
+	var timeSyncPkgs = []string{"systemd-timesyncd.service", "ntp.service", "chronyd.service"}
+	var err error
+	for _, service := range timeSyncPkgs {
+		err = d.IsPresent(service)
+		if err != nil {
+			zap.S().Debugf("%s is not present. checking for another service", service)
+		} else {
+			err = d.IsRunning(service)
+			if err != nil {
+				err = d.start(service)
+				if err != nil {
+					return err
+				} else {
+					return nil
+				}
+			} else {
+				return nil
+			}
+		}
+	}
+	return err
+}
+
+func (d *Debian) IsPresent(service string) error {
+	zap.S().Debugf("checking if %s is present", service)
+	cmd := fmt.Sprintf(`systemctl list-unit-files --all | grep "%s"`, service)
+	_, err := d.exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
-		zap.S().Debug("systemd-timesyncd service is not running")
-		return errors.New("systemd-timesyncd service is not running")
+		zap.S().Debugf("%s is not present", service)
+		return err
 	} else {
-		zap.S().Debug("systemd-timesyncd service is running")
+		zap.S().Debugf("%s is present", service)
 		return nil
 	}
 }
 
-func (d *Debian) IsNtpRunning() error {
-	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl status ntp | grep 'active (running)'")
+func (d *Debian) IsRunning(service string) error {
+	zap.S().Debugf("checking if %s is running", service)
+	cmd := fmt.Sprintf("systemctl status %s | grep 'active (running)'", service)
+	_, err := d.exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
-		zap.S().Debug("ntp service is not running")
-		return errors.New("ntp service is not running")
+		zap.S().Debugf("%s is not running", service)
+		return err
 	} else {
-		zap.S().Debug("ntp service is running")
+		zap.S().Debugf("%s is running", service)
 		return nil
 	}
 }
 
-func (d *Debian) IsChronydRunning() error {
-	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl status chronyd | grep 'active (running)'")
+func (d *Debian) start(service string) error {
+	zap.S().Debugf("starting %s", service)
+	cmd := fmt.Sprintf("systemctl start %s", service)
+	_, err := d.exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
-		zap.S().Debug("chronyd service is not running")
-		return errors.New("chronyd service is not running")
+		zap.S().Debugf("failed to start %s", service)
+		return err
 	} else {
-		zap.S().Debug("chronyd service is running")
+		zap.S().Debugf("%s is started", service)
 		return nil
 	}
 }
 
 func (d *Debian) DownloadAndInstallSystemdTimesyncd() error {
+	zap.S().Debug("timesync package not found installing systemd-timesyncd")
 	err := d.installOSPackages("systemd-timesyncd")
 	if err != nil {
 		return errors.New("could not install systemd-timesyncd package")
