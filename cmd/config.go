@@ -68,7 +68,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 
 		if ctx.ProxyURL != "" {
 			if !overrideProxy {
-				fmt.Println("\nProxyURL specified will be effective only after success of this execution.\nTo override immediately, re-run 'config set' with -o flag\n")
+				fmt.Println("\nProxyURL specified will be effective only after success of this execution.\nTo override immediately, re-run 'config set' with -o flag")
 			} else {
 				if err = os.Setenv("https_proxy", ctx.ProxyURL); err != nil {
 					zap.S().Fatal("Error setting proxy as environment variable")
