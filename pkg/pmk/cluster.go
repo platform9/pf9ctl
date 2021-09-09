@@ -30,6 +30,7 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
+		ctx.MfaToken,
 	)
 	if err != nil {
 		zap.S().Fatalf("keystone authentication failed: %s", err.Error())

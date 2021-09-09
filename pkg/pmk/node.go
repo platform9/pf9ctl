@@ -66,6 +66,7 @@ func PrepNode(ctx Config, allClients Client) error {
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
+		ctx.MfaToken,
 	)
 
 	if err != nil {
@@ -217,7 +218,14 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	}
 	zap.S().Debug("Hostagent download completed successfully")
 
-	installOptions := fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
+	var installOptions string
+
+	//Pass keystone token if MFA token is provided
+	if (ctx.MfaToken != "") {
+		installOptions = fmt.Sprintf(`--no-project --controller=%s  --user-token='%s'`, regionURL, auth.Token)
+	} else {
+		installOptions = fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
+	}
 
 	changePermission := fmt.Sprintf("chmod +x %s/pf9/installer.sh", homeDir)
 	_, err = exec.RunWithStdout("bash", "-c", changePermission)

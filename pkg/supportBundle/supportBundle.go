@@ -80,6 +80,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
+		ctx.MfaToken,
 	)
 	if err != nil {
 		zap.S().Debug("Unable to locate keystone credentials: %s\n", err.Error())
@@ -168,7 +169,7 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time) (string, error
 
 	//Check whether the source directories exist in remote node.
 	if !RemoteBundle {
-		_, errPf9 := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.Pf9Dir))
+		_, errPf9 := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.Pf9LogDir))
 		if err != nil {
 			zap.S().Debug("Log files directory not Found!!", errPf9)
 		}
@@ -215,8 +216,8 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time) (string, error
 
 	} else {
 		// Generation of supportBundle in local host case.
-		_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s pf9 %s %s",
-			targetfile, util.Pf9DirLoc, util.VarDir, util.EtcDir))
+		_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s %s %s %s",
+			targetfile, util.Pf9DirLoc, util.Pf9LogLoc, util.VarDir, util.EtcDir))
 		if errbundle != nil {
 			zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle", errbundle)
 			return targetfile, ErrPartialBundle

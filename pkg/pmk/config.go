@@ -33,6 +33,7 @@ type Config struct {
 	WaitPeriod    time.Duration `json:"wait_period"`
 	AllowInsecure bool          `json:"allow_insecure"`
 	ProxyURL      string        `json:"proxy_url"`
+	MfaToken      string        `json:"mfa_token"`
 }
 
 // StoreConfig simply updates the in-memory object
@@ -41,6 +42,10 @@ func StoreConfig(ctx Config, loc string) error {
 
 	// obscure the password
 	ctx.Password = base64.StdEncoding.EncodeToString([]byte(ctx.Password))
+
+	// Clear the MFA token as it will be required afresh every time
+	ctx.MfaToken = ""
+
 	f, err := os.Create(loc)
 	if err != nil {
 		return err
@@ -161,6 +166,13 @@ func ConfigCmdCreateRun() (Config, error) {
 
 	if Context.Tenant == "" {
 		Context.Tenant = "service"
+	}
+
+	var mfaToken string
+	if Context.MfaToken == "" {
+		fmt.Print("MFA Token [None]: ")
+		mfaToken, _ = reader.ReadString('\n')
+		Context.MfaToken = strings.TrimSuffix(mfaToken, "\n")
 	}
 
 	return Context, nil

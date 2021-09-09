@@ -62,6 +62,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
+		ctx.MfaToken,
 	)
 
 	if err != nil {
