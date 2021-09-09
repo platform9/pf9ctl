@@ -239,6 +239,18 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 		_, err = exec.RunWithStdout("bash", "-c", cmd)
 	}
 
+	removeTempDirAndInstaller(exec)
+
+	if err != nil {
+		return fmt.Errorf("Unable to run installer script")
+	}
+
+	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
+	zap.S().Debug("Platform9 packages installed successfully")
+	return nil
+}
+
+func removeTempDirAndInstaller(exec cmdexec.Executor) {
 	zap.S().Debug("Removing temporary directory created to extract installer")
 	removeTmpDirCmd := fmt.Sprintf("rm -rf %s/pf9/pf9-install-*", homeDir)
 	_, err1 := exec.RunWithStdout("bash", "-c", removeTmpDirCmd)
@@ -252,14 +264,6 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	if err1 != nil {
 		zap.S().Debug("error removing installer script")
 	}
-
-	if err != nil {
-		return fmt.Errorf("Unable to run installer script")
-	}
-
-	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
-	zap.S().Debug("Platform9 packages installed successfully")
-	return nil
 }
 
 func ValidatePlatform(exec cmdexec.Executor) (string, error) {
@@ -354,19 +358,7 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 		_, err = exec.RunWithStdout("bash", "-c", cmd)
 	}
 
-	zap.S().Debug("Removing temporary directory created to extract installer")
-	removeTmpDirCmd := fmt.Sprintf("rm -rf %s/pf9/pf9-install-*", homeDir)
-	_, err1 := exec.RunWithStdout("bash", "-c", removeTmpDirCmd)
-	if err1 != nil {
-		zap.S().Debug("error removing temporary directory")
-	}
-
-	zap.S().Debug("Removing installer script")
-	removeInstallerCmd := fmt.Sprintf("rm -rf %s/pf9/installer.sh", homeDir)
-	_, err1 = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
-	if err1 != nil {
-		zap.S().Debug("error removing installer script")
-	}
+	removeTempDirAndInstaller(exec)
 
 	if err != nil {
 		return err
