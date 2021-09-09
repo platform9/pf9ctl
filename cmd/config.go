@@ -66,8 +66,14 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// invoked the configcreate command from pkg/pmk
 		ctx, _ = pmk.ConfigCmdCreateRun()
 
-		if err = os.Setenv("https_proxy", ctx.ProxyURL); err != nil {
-			zap.S().Fatal("Error setting proxy as environment variable")
+		if ctx.ProxyURL != "" {
+			if !overrideProxy {
+				fmt.Println("\nProxyURL specified will be effective only after success of this execution.\nTo override immediately, re-run 'config set' with -o flag\n")
+			} else {
+				if err = os.Setenv("https_proxy", ctx.ProxyURL); err != nil {
+					zap.S().Fatal("Error setting proxy as environment variable")
+				}
+			}
 		}
 
 		executor, err := getExecutor(ctx.ProxyURL)
@@ -165,12 +171,13 @@ func init() {
 }
 
 var (
-	account_url string
-	username    string
-	Password    string
-	proxyURL    string
-	region      string
-	tenant      string
+	account_url   string
+	username      string
+	Password      string
+	proxyURL      string
+	region        string
+	tenant        string
+	overrideProxy bool
 )
 
 func init() {
@@ -180,6 +187,7 @@ func init() {
 	configCmdSet.Flags().StringVarP(&proxyURL, "proxy_url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
 	configCmdSet.Flags().StringVarP(&region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&tenant, "tenant", "t", "", "sets tenant")
+	configCmdSet.Flags().BoolVarP(&overrideProxy, "overrideProxy", "o", false, "override proxy for current execution")
 }
 
 // This function will validate the user credentials entered during config set and bail out if invalid
