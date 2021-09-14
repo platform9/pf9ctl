@@ -70,7 +70,10 @@ var (
 
 	VarDir    = "/var/log/pf9"
 	EtcDir    = "/etc/pf9"
+	Pf9LogLoc = "pf9/log"
 	Pf9DirLoc = filepath.Join(homeDir, "/")
+
+	Confidential = []string{"--password", "--user-token"}
 )
 
 func init() {
@@ -81,5 +84,5 @@ func init() {
 
 //This is the current version of cli.
 const (
-	Version string = "pf9ctl version: v1.7"
+	Version string = "pf9ctl version: v1.8"
 )

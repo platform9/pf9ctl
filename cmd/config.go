@@ -66,6 +66,16 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		// invoked the configcreate command from pkg/pmk
 		ctx, _ = pmk.ConfigCmdCreateRun()
 
+		if ctx.ProxyURL != "" {
+			if !overrideProxy {
+				fmt.Println("\nProxyURL specified will be effective only after success of this execution.\nTo override immediately, re-run 'config set' with -o flag")
+			} else {
+				if err = os.Setenv("https_proxy", ctx.ProxyURL); err != nil {
+					zap.S().Fatal("Error setting proxy as environment variable")
+				}
+			}
+		}
+
 		executor, err := getExecutor(ctx.ProxyURL)
 		if err != nil {
 			zap.S().Fatalf("Error connecting to host %s", err.Error())
@@ -84,7 +94,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 				if RegionInvalid {
 					zap.S().Fatalf("Invalid credentials entered (Region)")
 				} else {
-					zap.S().Fatalf("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant), use 'single quotes' to pass password")
+					zap.S().Fatalf("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token), use 'single quotes' to pass password")
 				}
 				credentialFlag = false
 			} else {
@@ -161,12 +171,13 @@ func init() {
 }
 
 var (
-	account_url string
-	username    string
-	Password    string
-	proxyURL    string
-	region      string
-	tenant      string
+	account_url   string
+	username      string
+	Password      string
+	proxyURL      string
+	region        string
+	tenant        string
+	overrideProxy bool
 )
 
 func init() {
@@ -176,6 +187,7 @@ func init() {
 	configCmdSet.Flags().StringVarP(&proxyURL, "proxy_url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
 	configCmdSet.Flags().StringVarP(&region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&tenant, "tenant", "t", "", "sets tenant")
+	configCmdSet.Flags().BoolVarP(&overrideProxy, "overrideProxy", "o", false, "override proxy for current execution")
 }
 
 // This function will validate the user credentials entered during config set and bail out if invalid
@@ -185,6 +197,7 @@ func validateUserCredentials(pmk.Config, pmk.Client) error {
 		ctx.Username,
 		ctx.Password,
 		ctx.Tenant,
+		ctx.MfaToken,
 	)
 
 	if err != nil {
@@ -217,8 +230,8 @@ func configValidation(bool, int) error {
 						fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
 						zap.S().Debug("Invalid Region entered")
 					} else {
-						fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
-						zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+						fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
+						zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
 					}
 
 				} else if pmk.OldConfigExist && pmk.LoopCounter == 0 {
@@ -227,8 +240,8 @@ func configValidation(bool, int) error {
 						fmt.Println("\n" + color.Red("x ") + "Invalid Region found")
 						zap.S().Debug("Invalid Region found")
 					} else {
-						fmt.Println("\n" + color.Red("x ") + "Invalid credentials found (Platform9 Account URL/Username/Password/Region/Tenant)")
-						zap.S().Debug("Invalid credentials found (Platform9 Account URL/Username/Password/Region/Tenant)")
+						fmt.Println("\n" + color.Red("x ") + "Invalid credentials found (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
+						zap.S().Debug("Invalid credentials found (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
 					}
 				}
 
@@ -238,8 +251,8 @@ func configValidation(bool, int) error {
 					fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
 					zap.S().Debug("Invalid Region entered")
 				} else {
-					fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
-					zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+					fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
+					zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
 				}
 
 			}
@@ -249,8 +262,8 @@ func configValidation(bool, int) error {
 				fmt.Println("\n" + color.Red("x ") + "Invalid Region entered")
 				zap.S().Debug("Invalid Region entered")
 			} else {
-				fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
-				zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+				fmt.Println("\n" + color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
+				zap.S().Debug("Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
 			}
 
 		}
@@ -266,14 +279,14 @@ func configValidation(bool, int) error {
 
 	// If any invalid credentials extered multiple times in new config prompt then to bail out the recursive loop (thrice)
 	if pmk.LoopCounter >= MaxLoopNoConfig && !(pmk.InvalidExistingConfig) {
-		zap.S().Fatalf("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant)")
+		zap.S().Fatalf("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
 	} else if pmk.LoopCounter >= MaxLoopNoConfig+1 && pmk.InvalidExistingConfig {
 		if RegionInvalid {
 			fmt.Println(color.Red("x ") + "Invalid Region entered")
 		} else {
-			fmt.Println(color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant)")
+			fmt.Println(color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
 		}
-		zap.S().Fatalf("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant)")
+		zap.S().Fatalf("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
 	}
 	return nil
 }

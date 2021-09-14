@@ -3,7 +3,11 @@ package cmdexec
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"strings"
+
+	"github.com/platform9/pf9ctl/pkg/util"
 
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"go.uber.org/zap"
@@ -14,6 +18,7 @@ var StdErrSudoPassword string
 
 const (
 	httpsProxy = "https_proxy"
+	env_path   = "PATH"
 )
 
 // Executor interace abstracts us from local or remote execution
@@ -36,6 +41,7 @@ func (c LocalExecutor) Run(name string, args ...string) error {
 	}
 	cmd := exec.Command("sudo", args...)
 	cmd.Env = append(cmd.Env, httpsProxy+"="+c.ProxyUrl)
+	cmd.Env = append(cmd.Env, env_path+"="+os.Getenv("PATH"))
 	return cmd.Run()
 }
 
@@ -53,7 +59,17 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 	if exitError, ok := err.(*exec.ExitError); ok {
 		stderr = string(exitError.Stderr)
 	}
-	zap.S().Debug("Ran command ", "sudo", args)
+
+	// To append args to a single command
+	command := ""
+	for _, arg := range args {
+		command = fmt.Sprintf("%s \"%s\"", command, arg)
+	}
+
+        // Avoid confidential info in the command from getting logged
+	command = ConfidentialInfoRemover(command)
+	zap.S().Debug("Ran command sudo", command)
+
 	zap.S().Debug("stdout:", string(byt), "stderr:", stderr)
 	return string(byt), err
 }
@@ -82,7 +98,11 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 	stdout, stderr, err := r.Client.RunCommand(cmd)
 	// To fetch the stderr after executing command.
 	StdErrSudoPassword = string(stderr)
-	zap.S().Debug("Running command ", cmd, "stdout:", string(stdout), "stderr:", string(stderr))
+
+	// Avoid confidential info in the command from getting logged
+	command := ConfidentialInfoRemover(cmd)
+
+	zap.S().Debug("Running command ", command, "stdout:", string(stdout), "stderr:", string(stderr))
 	return string(stdout), err
 }
 
@@ -94,4 +114,27 @@ func NewRemoteExecutor(host string, port int, username string, privateKey []byte
 	}
 	re := &RemoteExecutor{Client: client, proxyURL: proxyURL}
 	return re, nil
+}
+
+// Avoid confidential information from getting logged
+func ConfidentialInfoRemover(cmd string) string {
+	// To find the command that contains confidential info
+
+	for _, flag := range util.Confidential {
+		// If confidential flags are found, remove those
+		if strings.Contains(cmd, flag) {
+
+			index := strings.Index(cmd, flag)
+			lastindexbreak := strings.Index(cmd[index:], " ")
+
+			// If confidential parameter is the last flag in the command.
+			if lastindexbreak < 0 {
+				cmd = cmd[:index] + flag + "='*****']"
+			} else {
+				// If confidential parameter flag is present in the middle or start of the command.
+				cmd = cmd[:index] + flag + "='*****'" + cmd[index+lastindexbreak:]
+			}
+		}
+	}
+	return cmd
 }
