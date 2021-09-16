@@ -4,6 +4,8 @@ go 1.14
 
 require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
+	github.com/gophercloud/gophercloud v0.21.0
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	github.com/briandowns/spinner v1.12.0
 	github.com/fatih/color v1.10.0
 	github.com/golang/snappy v0.0.3 // indirect
