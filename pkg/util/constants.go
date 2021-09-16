@@ -12,6 +12,15 @@ var PortErr string
 var ProcessesList []string //Kubernetes clusters processes list
 var SwapOffDisabled bool   //If this is true the swapOff functionality will be disabled.
 
+var EBSPermissions []string
+var Route53Permissions []string
+var EC2Permission []string
+var VPCPermission []string
+var IAMPermissions []string
+var AutoScalingPermissions []string
+var EKSPermissions []string
+var GoogleCloudPermissions []string
+
 const (
 
 	// number of CPUs
@@ -80,6 +89,169 @@ func init() {
 	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "8285", "3306"}
 	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "kube-controller"}
 	Pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
+
+	GoogleCloudPermissions = []string{
+		"roles/iam.serviceAccountUser",
+		"roles/container.admin",
+		"roles/compute.viewer",
+		"roles/viewer",
+	}
+
+	EBSPermissions = []string{
+		"elasticloadbalancing:AddTags",
+		"elasticloadbalancing:ApplySecurityGroupsToLoadBalancer",
+		"elasticloadbalancing:AttachLoadBalancerToSubnets",
+		"elasticloadbalancing:ConfigureHealthCheck",
+		"elasticloadbalancing:CreateLoadBalancer",
+		"elasticloadbalancing:CreateLoadBalancerListeners",
+		"elasticloadbalancing:DeleteLoadBalancer",
+		"elasticloadbalancing:DescribeLoadBalancerAttributes",
+		"elasticloadbalancing:DescribeLoadBalancers",
+		"elasticloadbalancing:DescribeTags",
+		"elasticloadbalancing:ModifyLoadBalancerAttributes",
+		"elasticloadbalancing:RemoveTags",
+	}
+
+	Route53Permissions = []string{
+		"route53:ChangeResourceRecordSets",
+		"route53:GetChange",
+		"route53:GetHostedZone",
+		"route53:ListHostedZones",
+		"route53:ListResourceRecordSets",
+	}
+
+	EC2Permission = []string{
+		"ec2:AllocateAddress",
+		"ec2:AssociateRouteTable",
+		"ec2:AttachInternetGateway",
+		"ec2:AuthorizeSecurityGroupEgress",
+		"ec2:AuthorizeSecurityGroupIngress",
+		"ec2:CreateInternetGateway",
+		"ec2:CreateNatGateway",
+		"ec2:CreateRoute",
+		"ec2:CreateRouteTable",
+		"ec2:CreateSecurityGroup",
+		"ec2:CreateSubnet",
+		"ec2:CreateTags",
+		"ec2:DeleteInternetGateway",
+		"ec2:DeleteNatGateway",
+		"ec2:DeleteRoute",
+		"ec2:DeleteRouteTable",
+		"ec2:DeleteSecurityGroup",
+		"ec2:DeleteSubnet",
+		"ec2:DeleteTags",
+		"ec2:DescribeAccountAttributes",
+		"ec2:DescribeAddresses",
+		"ec2:DescribeAvailabilityZones",
+		"ec2:DescribeImages",
+		"ec2:DescribeInstances",
+		"ec2:DescribeInternetGateways",
+		"ec2:DescribeKeyPairs",
+		"ec2:DescribeNatGateways",
+		"ec2:DescribeNetworkAcls",
+		"ec2:DescribeNetworkInterfaces",
+		"ec2:DescribeRegions",
+		"ec2:DescribeRouteTables",
+		"ec2:DescribeSecurityGroups",
+		"ec2:DescribeSubnets",
+		"ec2:DetachInternetGateway",
+		"ec2:DisassociateRouteTable",
+		"ec2:ImportKeyPair",
+		"ec2:ModifySubnetAttribute",
+		"ec2:ReleaseAddress",
+		"ec2:ReplaceRouteTableAssociation",
+		"ec2:RevokeSecurityGroupEgress",
+		"ec2:RevokeSecurityGroupIngress",
+		"ec2:RunInstances",
+		"ec2:TerminateInstances",
+	}
+
+	VPCPermission = []string{
+		"ec2:CreateVpc",
+		"ec2:DeleteVpc",
+		"ec2:DescribeVpcAttribute",
+		"ec2:DescribeVpcClassicLink",
+		"ec2:DescribeVpcClassicLinkDnsSupport",
+		"ec2:DescribeVpcs",
+		"ec2:ModifyVpcAttribute",
+	}
+
+	IAMPermissions = []string{
+		"iam:AddRoleToInstanceProfile",
+		"iam:CreateInstanceProfile",
+		"iam:CreateRole",
+		"iam:CreateServiceLinkedRole",
+		"iam:DeleteInstanceProfile",
+		"iam:DeleteRole",
+		"iam:DeleteRolePolicy",
+		"iam:GetInstanceProfile",
+		"iam:GetRole",
+		"iam:GetRolePolicy",
+		"iam:GetUser",
+		"iam:ListAttachedRolePolicies",
+		"iam:ListInstanceProfilesForRole",
+		"iam:ListRolePolicies",
+		"iam:PassRole",
+		"iam:PutRolePolicy",
+		"iam:RemoveRoleFromInstanceProfile",
+	}
+
+	AutoScalingPermissions = []string{
+		"autoscaling:AttachLoadBalancers",
+		"autoscaling:CreateAutoScalingGroup",
+		"autoscaling:CreateLaunchConfiguration",
+		"autoscaling:CreateOrUpdateTags",
+		"autoscaling:DeleteAutoScalingGroup",
+		"autoscaling:DeleteLaunchConfiguration",
+		"autoscaling:DeleteTags",
+		"autoscaling:DescribeAutoScalingGroups",
+		"autoscaling:DescribeLaunchConfigurations",
+		"autoscaling:DescribeLoadBalancers",
+		"autoscaling:DescribeScalingActivities",
+		"autoscaling:DetachLoadBalancers",
+		"autoscaling:EnableMetricsCollection",
+		"autoscaling:UpdateAutoScalingGroup",
+		"autoscaling:SuspendProcesses",
+		"autoscaling:ResumeProcesses",
+		"elasticloadbalancing:DescribeInstanceHealth",
+	}
+
+	EKSPermissions = []string{
+		"eks:ListAddons",
+		"eks:ListClusters",
+		"eks:ListFargateProfiles",
+		"eks:ListIdentityProviderConfigs",
+		"eks:ListNodegroups",
+		"eks:ListUpdates",
+		"eks:AccessKubernetesApi",
+		"eks:DescribeAddon",
+		"eks:DescribeAddonVersions",
+		"eks:DescribeCluster",
+		"eks:DescribeFargateProfile",
+		"eks:DescribeIdentityProviderConfig",
+		"eks:DescribeNodegroup",
+		"eks:DescribeUpdate",
+		"eks:ListTagsForResource",
+		"eks:TagResource",
+		"eks:UntagResource",
+		"eks:AssociateEncryptionConfig",
+		"eks:AssociateIdentityProviderConfig",
+		"eks:CreateAddon",
+		"eks:CreateCluster",
+		"eks:CreateFargateProfile",
+		"eks:CreateNodegroup",
+		"eks:DeleteAddon",
+		"eks:DeleteCluster",
+		"eks:DeleteFargateProfile",
+		"eks:DeleteNodegroup",
+		"eks:DisassociateIdentityProviderConfig",
+		"eks:UpdateAddon",
+		"eks:UpdateClusterConfig",
+		"eks:UpdateClusterVersion",
+		"eks:UpdateNodegroupConfig",
+		"eks:UpdateNodegroupVersion",
+	}
+
 }
 
 //This is the current version of cli.
