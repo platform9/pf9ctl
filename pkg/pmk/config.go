@@ -25,15 +25,23 @@ var (
 
 // Config stores information to contact with the pf9 controller.
 type Config struct {
-	Fqdn          string        `json:"fqdn"`
-	Username      string        `json:"username"`
-	Password      string        `json:"password"`
-	Tenant        string        `json:"tenant"`
-	Region        string        `json:"region"`
-	WaitPeriod    time.Duration `json:"wait_period"`
-	AllowInsecure bool          `json:"allow_insecure"`
-	ProxyURL      string        `json:"proxy_url"`
-	MfaToken      string        `json:"mfa_token"`
+	Fqdn              string        `json:"fqdn"`
+	Username          string        `json:"username"`
+	Password          string        `json:"password"`
+	Tenant            string        `json:"tenant"`
+	Region            string        `json:"region"`
+	WaitPeriod        time.Duration `json:"wait_period"`
+	AllowInsecure     bool          `json:"allow_insecure"`
+	ProxyURL          string        `json:"proxy_url"`
+	MfaToken          string        `json:"mfa_token"`
+	AwsIamUsername    string        `json:"aws_iam_username"`
+	AwsAccessKey      string        `json:"aws_access_key"`
+	AwsSecretKey      string        `json:"aws_secret_key"`
+	AwsRegion         string        `json:"aws_region"`
+	AzureTetant       string        `json:"azure_tenant"`
+	AzureApplication  string        `json:"azure_application"`
+	AzureSubscription string        `json:"azure_subscription"`
+	AzureSecret       string        `json:"azure_secret"`
 }
 
 // StoreConfig simply updates the in-memory object
@@ -81,11 +89,18 @@ func LoadConfig(loc string) (Config, error) {
 				zap.S().Debug("Existing config is invalid, prompting for new config.")
 			}
 
-			ctx, err := ConfigCmdCreateRun()
+			IsNewConfig = true
+
+			if loc == "amazon.json" {
+				return ConfigCmdCreateAmazonRun()
+			} else if loc == "azure.json" {
+				return ConfigCmdCreateAzureRun()
+			} else {
+				return ConfigCmdCreateRun()
+			}
 
 			// It is set true when we are setting config for the first time using check-node/prep-node
-			IsNewConfig = true
-			return ctx, err
+
 		}
 		return Config{}, err
 	}
@@ -116,6 +131,78 @@ func LoadConfig(loc string) (Config, error) {
 }
 
 var Context Config
+
+func ConfigCmdCreateAmazonRun() (Config, error) {
+
+	zap.S().Debug("==========Running set config==========")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	if Context.AwsIamUsername == "" {
+		fmt.Printf("Amazon IAM User: ")
+		awsIamUsername, _ := reader.ReadString('\n')
+		Context.AwsIamUsername = strings.TrimSuffix(awsIamUsername, "\n")
+	}
+
+	if Context.AwsAccessKey == "" {
+		fmt.Printf("Amazon Access Key: ")
+		accessKey, _ := reader.ReadString('\n')
+		Context.AwsAccessKey = strings.TrimSuffix(accessKey, "\n")
+	}
+
+	if Context.AwsSecretKey == "" {
+		fmt.Printf("Amazon Secret Key: ")
+		secretKey, _ := reader.ReadString('\n')
+		Context.AwsSecretKey = strings.TrimSuffix(secretKey, "\n")
+	}
+	var region string
+	if Context.AwsRegion == "" {
+		fmt.Printf("Region [us-east-1]: ")
+		region, _ = reader.ReadString('\n')
+		Context.AwsRegion = strings.TrimSuffix(region, "\n")
+	}
+
+	if Context.AwsRegion == "" {
+		Context.AwsRegion = "us-east-1"
+	}
+
+	return Context, nil
+
+}
+
+func ConfigCmdCreateAzureRun() (Config, error) {
+
+	zap.S().Debug("==========Running set config==========")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	if Context.AzureTetant == "" {
+		fmt.Printf("Azure TenantID: ")
+		azureTenant, _ := reader.ReadString('\n')
+		Context.AzureTetant = strings.TrimSuffix(azureTenant, "\n")
+	}
+
+	if Context.AzureApplication == "" {
+		fmt.Printf("Azure ApplicationID: ")
+		azureApp, _ := reader.ReadString('\n')
+		Context.AzureApplication = strings.TrimSuffix(azureApp, "\n")
+	}
+
+	if Context.AzureSubscription == "" {
+		fmt.Printf("Azure SubscriptionID: ")
+		azureSub, _ := reader.ReadString('\n')
+		Context.AzureSubscription = strings.TrimSuffix(azureSub, "\n")
+	}
+
+	if Context.AzureSecret == "" {
+		fmt.Printf("Azure Secret Key: ")
+		azureSecret, _ := reader.ReadString('\n')
+		Context.AzureSecret = strings.TrimSuffix(azureSecret, "\n")
+	}
+
+	return Context, nil
+
+}
 
 // ConfigCmdCreatRun will initiate the config set and return a config given by user
 func ConfigCmdCreateRun() (Config, error) {

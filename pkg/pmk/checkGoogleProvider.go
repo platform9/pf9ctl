@@ -8,6 +8,7 @@ import (
 	iamGoogle "google.golang.org/api/iam/v1"
 	"google.golang.org/api/option"
 
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
@@ -33,7 +34,7 @@ func CheckGoogleProvider(path string) error {
 			return fmt.Errorf("Unable check google provider %w", err)
 		}
 
-		fmt.Printf("%#v Success\n", resp.Name)
+		fmt.Printf(color.Green("✓ ")+"%#v Success\n", resp.Name)
 	}
 
 	return nil

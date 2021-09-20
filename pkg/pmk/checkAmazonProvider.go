@@ -37,27 +37,26 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) error {
 
 	//checkpermission function takes the arn, svc and an array of permissions needed and checks if the user has all of them
 	//this can be easily upgraded by just copy pasting one checkPermission block of code and changing the permission array
-	if checkPermissions(arn, svc, util.EBSPermissions) == true {
+	if checkPermissions(arn, svc, util.EBSPermissions) {
 		fmt.Println(color.Green("✓ ") + "ELB Access")
 	} else {
 		return fmt.Errorf(color.Red("X ") + "ELB Access Error ")
 	}
 
-	if checkPermissions(arn, svc, util.Route53Permissions) == true {
+	if checkPermissions(arn, svc, util.Route53Permissions) {
 		fmt.Println(color.Green("✓ ") + "Route53 Access")
 	} else {
 		return fmt.Errorf(color.Red("X ") + "Route53 Access Error")
 	}
 
-	//gets all of the users availability zones
-	zoneSess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-
 	zoneSess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(awsRegion),
 		Credentials: credentials.NewStaticCredentials(awsID, awsSecret, ""),
 	})
+
+	if err != nil {
+		return fmt.Errorf(color.Red("X ") + "Amazon client error " + err.Error())
+	}
 
 	zoneSvc := ec2.New(zoneSess)
 
@@ -128,7 +127,7 @@ func checkPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
 		return false
 	}
 	//and then checks if the user is allowed to use them by calling checkArray
-	if checkIfAllowed(result.EvaluationResults) == false {
+	if !checkIfAllowed(result.EvaluationResults) {
 		fmt.Println("Access Error")
 		return false
 	}

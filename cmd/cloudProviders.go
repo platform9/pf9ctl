@@ -37,24 +37,12 @@ var checkGoogleProviderCmd = &cobra.Command{
 }
 
 var checkAmazonProviderCmd = &cobra.Command{
-	Use:   "check-amazon-provider IAM-User access-key-id secret-access-key region",
+	Use:   "check-amazon-provider",
 	Short: "checks if user has amazon cloud permisisons",
 	Long:  "Checks if user has the correct permissions to use the amazon cloud provider",
 	Args: func(checkGoogleProviderCmd *cobra.Command, args []string) error {
-		if len(args) > 4 {
-			return errors.New("Only IAM USer, keyID, secretKey and region are required")
-		} else if len(args) < 3 {
-			return errors.New("Not all required fields were sent.")
-		}
-		awsIamUser = args[0]
-		awsKeyID = args[1]
-		awsSecretKey = args[2]
-
-		//if the region is sent it will set it
-		if len(args) == 4 {
-			awsRegion = args[3]
-		} else { //if it is not set it will then use aws default region
-			awsRegion = "us-east-1"
+		if len(args) > 0 {
+			return errors.New("No parameters are required.")
 		}
 		return nil
 	},
@@ -62,19 +50,13 @@ var checkAmazonProviderCmd = &cobra.Command{
 }
 
 var checkAzureProviderCmd = &cobra.Command{
-	Use:   "check-azure-provider tenantID applicationID subscriptionID secretKey",
+	Use:   "check-azure-provider",
 	Short: "checks if user has azure cloud permisisons",
 	Long:  "Checks if service principal has the correct permissions to use the azure cloud provider",
 	Args: func(checkGoogleProviderCmd *cobra.Command, args []string) error {
-		if len(args) > 4 {
-			return errors.New("Only tenantID, applicationID, subscriptioID and secretKey are required")
-		} else if len(args) < 4 {
-			return errors.New("Not all required fields were sent.")
+		if len(args) > 0 {
+			return errors.New("No parameters are required.")
 		}
-		azureTenantID = args[0]
-		azureAppID = args[1]
-		azureSubID = args[2]
-		azureSecretKey = args[3]
 		return nil
 	},
 	Run: checkAzureProviderRun,
@@ -98,7 +80,13 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 
 func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 
-	if err := pmk.CheckAmazonPovider(awsIamUser, awsKeyID, awsSecretKey, awsRegion); err != nil {
+	ctx, err := pmk.LoadConfig("amazon.json")
+
+	if err != nil {
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	}
+
+	if err := pmk.CheckAmazonPovider(ctx.AwsIamUsername, ctx.AwsAccessKey, ctx.AwsSecretKey, ctx.AwsRegion); err != nil {
 		zap.S().Fatalf("Unable to verify amazon provider ", err)
 		return
 	}
@@ -107,7 +95,13 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 
 func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 
-	if err := pmk.CheckAzureProvider(azureTenantID, azureAppID, azureSubID, azureSecretKey); err != nil {
+	ctx, err := pmk.LoadConfig("azure.json")
+
+	if err != nil {
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	}
+
+	if err := pmk.CheckAzureProvider(ctx.AzureTetant, ctx.AzureApplication, ctx.AzureSubscription, ctx.AzureSecret); err != nil {
 		zap.S().Fatalf("Unable to verify azure provider ", err)
 		return
 	}
