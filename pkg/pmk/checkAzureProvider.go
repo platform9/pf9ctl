@@ -16,7 +16,7 @@ import (
 
 //////////////////////////////////////////
 
-func CheckAzureProvider(tenantID, appID, subID, secretKey string) error {
+func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 
 	//Gets environment values and saves them in temporary varaibles so they can be returned later
 	oldAppID := os.Getenv("AZURE_CLIENT_ID")
@@ -40,7 +40,8 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) error {
 		client.Authorizer = authorizer
 
 	} else {
-		return fmt.Errorf(color.Red(" X ") + "No Access " + err.Error())
+		fmt.Println(color.Red(" X ") + err.Error())
+		return
 	}
 
 	//Gets the principalID of the application so that we can find the role of the service principal
@@ -50,49 +51,47 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) error {
 	setEnvs(oldAppID, oldTenantID, oldSubID, oldSecretKey)
 
 	if err != nil {
-		return fmt.Errorf("Error getting PrincipalID " + err.Error())
+		fmt.Println(color.Red(" X ") + err.Error())
+		return
 	}
 
 	//Gets the preparer for the list of principals with a filter
 	request, err := client.ListPreparer(ctx, "principalId eq '"+principalID+"'")
 	if err != nil {
-		return fmt.Errorf(color.Red(" X ") + "No Access " + err.Error())
+		fmt.Println(color.Red(" X ") + err.Error())
+		return
 	}
 
 	//Gets a sender for the list of principals using the preparer
 	response, err := client.ListSender(request)
 
 	if err != nil {
-		return fmt.Errorf(color.Red(" X ") + "No Access " + err.Error())
+		fmt.Println(color.Red(" X ") + err.Error())
+		return
 	}
 
 	//Gets a responder for the list of principals using the request
 	result, err := client.ListResponder(response)
 
 	if err != nil {
-		return fmt.Errorf(color.Red(" X ") + "No Access " + err.Error())
+		fmt.Println(color.Red(" X ") + err.Error())
+		return
 	}
 
 	//Iterates through the list returned
-	for i, s := range *result.Value {
-
-		//If there is more than one principal throw an error since only one should be get
-		if i != 0 {
-			return fmt.Errorf("No Access, got more than one principal")
-		}
+	for _, s := range *result.Value {
 
 		//The contributor role has a static ID so it checks the RoleDefiniitonID of the service principal by comparing it to
 		//an almost static string where only the subscriptionID is different
 		if *s.Properties.RoleDefinitionID == "/subscriptions/"+subID+"/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c" {
-			fmt.Println(color.Green("✓ ") + "Has access")
-			return nil
+			fmt.Println(color.Green("\n✓ ") + "Has access")
+			return
 		}
 
 	}
 
 	//if the result.Value lengt is 0 then the loop never happens and that means the principal was never found
 	fmt.Println(color.Red(" X ") + "Principal not found")
-	return nil
 
 }
 

@@ -71,10 +71,7 @@ func init() {
 
 func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 
-	if err := pmk.CheckGoogleProvider(path); err != nil {
-		zap.S().Fatalf("Unable to verify google provider ", err)
-		return
-	}
+	pmk.CheckGoogleProvider(path)
 
 }
 
@@ -86,11 +83,7 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
-	if err := pmk.CheckAmazonPovider(ctx.AwsIamUsername, ctx.AwsAccessKey, ctx.AwsSecretKey, ctx.AwsRegion); err != nil {
-		zap.S().Fatalf("Unable to verify amazon provider ", err)
-		return
-	}
-
+	pmk.CheckAmazonPovider(ctx.AwsIamUsername, ctx.AwsAccessKey, ctx.AwsSecretKey, ctx.AwsRegion)
 }
 
 func checkAzureProviderRun(cmd *cobra.Command, args []string) {
@@ -98,12 +91,9 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 	ctx, err := pmk.LoadConfig("azure.json")
 
 	if err != nil {
-		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+		zap.S().Fatalf("Unable to load the context: %s\n")
 	}
 
-	if err := pmk.CheckAzureProvider(ctx.AzureTetant, ctx.AzureApplication, ctx.AzureSubscription, ctx.AzureSecret); err != nil {
-		zap.S().Fatalf("Unable to verify azure provider ", err)
-		return
-	}
+	pmk.CheckAzureProvider(ctx.AzureTetant, ctx.AzureApplication, ctx.AzureSubscription, ctx.AzureSecret)
 
 }

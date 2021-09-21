@@ -146,18 +146,18 @@ func ConfigCmdCreateAmazonRun() (Config, error) {
 
 	if Context.AwsAccessKey == "" {
 		fmt.Printf("Amazon Access Key: ")
-		accessKey, _ := reader.ReadString('\n')
-		Context.AwsAccessKey = strings.TrimSuffix(accessKey, "\n")
+		accessKey, _ := terminal.ReadPassword(0)
+		Context.AwsAccessKey = string(accessKey)
 	}
 
 	if Context.AwsSecretKey == "" {
-		fmt.Printf("Amazon Secret Key: ")
-		secretKey, _ := reader.ReadString('\n')
-		Context.AwsSecretKey = strings.TrimSuffix(secretKey, "\n")
+		fmt.Printf("\nAmazon Secret Key: ")
+		secretKey, _ := terminal.ReadPassword(0)
+		Context.AwsSecretKey = string(secretKey)
 	}
 	var region string
 	if Context.AwsRegion == "" {
-		fmt.Printf("Region [us-east-1]: ")
+		fmt.Printf("\nRegion [us-east-1]: ")
 		region, _ = reader.ReadString('\n')
 		Context.AwsRegion = strings.TrimSuffix(region, "\n")
 	}
@@ -174,30 +174,28 @@ func ConfigCmdCreateAzureRun() (Config, error) {
 
 	zap.S().Debug("==========Running set config==========")
 
-	reader := bufio.NewReader(os.Stdin)
-
 	if Context.AzureTetant == "" {
 		fmt.Printf("Azure TenantID: ")
-		azureTenant, _ := reader.ReadString('\n')
-		Context.AzureTetant = strings.TrimSuffix(azureTenant, "\n")
+		azureTenant, _ := terminal.ReadPassword(0)
+		Context.AzureTetant = string(azureTenant)
 	}
 
 	if Context.AzureApplication == "" {
-		fmt.Printf("Azure ApplicationID: ")
-		azureApp, _ := reader.ReadString('\n')
-		Context.AzureApplication = strings.TrimSuffix(azureApp, "\n")
+		fmt.Printf("\nAzure ApplicationID: ")
+		azureApp, _ := terminal.ReadPassword(0)
+		Context.AzureApplication = string(azureApp)
 	}
 
 	if Context.AzureSubscription == "" {
-		fmt.Printf("Azure SubscriptionID: ")
-		azureSub, _ := reader.ReadString('\n')
-		Context.AzureSubscription = strings.TrimSuffix(azureSub, "\n")
+		fmt.Printf("\nAzure SubscriptionID: ")
+		azureSub, _ := terminal.ReadPassword(0)
+		Context.AzureSubscription = string(azureSub)
 	}
 
 	if Context.AzureSecret == "" {
-		fmt.Printf("Azure Secret Key: ")
-		azureSecret, _ := reader.ReadString('\n')
-		Context.AzureSecret = strings.TrimSuffix(azureSecret, "\n")
+		fmt.Printf("\nAzure Secret Key: ")
+		azureSecret, _ := terminal.ReadPassword(0)
+		Context.AzureSecret = string(azureSecret)
 	}
 
 	return Context, nil

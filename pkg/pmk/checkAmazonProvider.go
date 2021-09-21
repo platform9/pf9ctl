@@ -13,7 +13,7 @@ import (
 	iamAws "github.com/aws/aws-sdk-go/service/iam"
 )
 
-func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) error {
+func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 
 	//creates a new session using static credentials that the user passes and "" stands for token that is of no use in this situation
 
@@ -31,7 +31,8 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) error {
 	//gets the user with the passed username
 	resultUser, errUser := svc.GetUser(inputUser)
 	if errUser != nil {
-		return fmt.Errorf("Amazon user error " + errUser.Error())
+		fmt.Println(color.Red("X ") + errUser.Error())
+		return
 	}
 	arn := resultUser.User.Arn
 
@@ -40,13 +41,13 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) error {
 	if checkPermissions(arn, svc, util.EBSPermissions) {
 		fmt.Println(color.Green("✓ ") + "ELB Access")
 	} else {
-		return fmt.Errorf(color.Red("X ") + "ELB Access Error ")
+		fmt.Println(color.Red("X ") + "ELB Access Error ")
 	}
 
 	if checkPermissions(arn, svc, util.Route53Permissions) {
 		fmt.Println(color.Green("✓ ") + "Route53 Access")
 	} else {
-		return fmt.Errorf(color.Red("X ") + "Route53 Access Error")
+		fmt.Println(color.Red("X ") + "Route53 Access Error")
 	}
 
 	zoneSess, err := session.NewSession(&aws.Config{
@@ -55,56 +56,61 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) error {
 	})
 
 	if err != nil {
-		return fmt.Errorf(color.Red("X ") + "Amazon client error " + err.Error())
+		fmt.Println(color.Red("X ") + "Availability Zones error")
+	} else {
+
+		zoneSvc := ec2.New(zoneSess)
+
+		resultAvalZones, err := zoneSvc.DescribeAvailabilityZones(nil)
+		if err != nil {
+
+			fmt.Println(color.Red("X ") + "Availability Zones error")
+		}
+
+		//checks if the user less than 2 availability zones
+		if len(resultAvalZones.AvailabilityZones) < 2 {
+
+			fmt.Println(color.Red("X ")+"Availability Zones error, Minimum 2 availabiliy zones required but found %d", len(resultAvalZones.AvailabilityZones))
+
+		} else {
+			fmt.Println(color.Green("✓ ") + "Availability Zones success")
+		}
 	}
-
-	zoneSvc := ec2.New(zoneSess)
-
-	resultAvalZones, err := zoneSvc.DescribeAvailabilityZones(nil)
-	if err != nil {
-		return fmt.Errorf(color.Red("X ") + "Availability Zones error" + err.Error())
-	}
-
-	//checks if the user less than 2 availability zones
-	if len(resultAvalZones.AvailabilityZones) < 2 {
-		return fmt.Errorf("Availability Zones error, Minimum 2 availabiliy zones required but found %d", len(resultAvalZones.AvailabilityZones))
-
-	}
-	fmt.Println(color.Green("✓ ") + "Availability Zones success")
 
 	if checkPermissions(arn, svc, util.EC2Permission) {
 		fmt.Println(color.Green("✓ ") + "EC2 Access")
 	} else {
-		return fmt.Errorf(color.Red("X ") + "EC2 Access Error")
-
+		fmt.Println(color.Red("X ") + "EC2 Access Error")
 	}
 
 	if checkPermissions(arn, svc, util.VPCPermission) {
 		fmt.Println(color.Green("✓ ") + "VPC Access")
 	} else {
-		return fmt.Errorf(color.Red("X ") + "VPC Access Error")
+
+		fmt.Println(color.Red("X ") + "VPC Access Error")
 	}
 
 	if checkPermissions(arn, svc, util.IAMPermissions) {
 		fmt.Println(color.Green("✓ ") + "IAM Access")
 	} else {
-		return fmt.Errorf(color.Red("X ") + "IAM Access Error")
+
+		fmt.Println(color.Red("X ") + "IAM Access Error")
 	}
 
 	if checkPermissions(arn, svc, util.AutoScalingPermissions) {
 		fmt.Println(color.Green("✓ ") + "Autoscaling Access")
 	} else {
-		return fmt.Errorf(color.Red("X ") + "Autoscaling Access Error")
+
+		fmt.Println(color.Red("X ") + "Autoscaling Access Error")
 
 	}
 
 	if checkPermissions(arn, svc, util.EKSPermissions) {
 		fmt.Println(color.Green("✓ ") + "EKS Access")
 	} else {
-		return fmt.Errorf(color.Red("X ") + "EKS Access Error")
-	}
 
-	return nil
+		fmt.Println(color.Red("X ") + "EKS Access Error")
+	}
 
 }
 
@@ -128,7 +134,6 @@ func checkPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
 	}
 	//and then checks if the user is allowed to use them by calling checkArray
 	if !checkIfAllowed(result.EvaluationResults) {
-		fmt.Println("Access Error")
 		return false
 	}
 
