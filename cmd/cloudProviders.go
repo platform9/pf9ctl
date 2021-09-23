@@ -9,28 +9,26 @@ import (
 )
 
 var (
-	path           string
-	awsIamUser     string
-	awsKeyID       string
-	awsSecretKey   string
-	awsRegion      string
-	azureAppID     string
-	azureTenantID  string
-	azureSubID     string
-	azureSecretKey string
+	awsIamUser         string
+	awsKeyID           string
+	awsSecretKey       string
+	awsRegion          string
+	azureAppID         string
+	azureTenantID      string
+	azureSubID         string
+	azureSecretKey     string
+	googleProjectName  string
+	googleServiceEmail string
 )
 
 var checkGoogleProviderCmd = &cobra.Command{
-	Use:   "check-google-provider path-to-json",
+	Use:   "check-google-provider",
 	Short: "checks if user has google cloud permisisons",
 	Long:  "Checks if service principle json has the correct permissions to use the google cloud provider",
 	Args: func(checkGoogleProviderCmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("Only path to service principle json is required")
-		} else if len(args) < 1 {
-			return errors.New("Path to service principle json is required")
+		if len(args) > 0 {
+			return errors.New("No parameters are required.")
 		}
-		path = args[0]
 		return nil
 	},
 	Run: checkGoogleProviderRun,
@@ -71,7 +69,13 @@ func init() {
 
 func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 
-	pmk.CheckGoogleProvider(path)
+	ctx, err := pmk.LoadConfig("google.json")
+
+	if err != nil {
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	}
+
+	pmk.CheckGoogleProvider(ctx.GoogleProjectName, ctx.GoogleServiceEmail)
 
 }
 

@@ -5,20 +5,19 @@ import (
 	"fmt"
 
 	context "golang.org/x/net/context"
-	iamGoogle "google.golang.org/api/iam/v1"
-	"google.golang.org/api/option"
+	"google.golang.org/api/iam/v1"
 
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
-func CheckGoogleProvider(path string) {
+func CheckGoogleProvider(projectName, serviceAccountEmail string) {
 
 	//for the Google Cloud prerequisites the service app only has to have four roles given to it
 	ctx := context.Background()
 
 	//the user sends the path to json file
-	iamService, err := iamGoogle.NewService(ctx, option.WithCredentialsFile(path))
+	iamService, err := iam.NewService(ctx)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -27,15 +26,35 @@ func CheckGoogleProvider(path string) {
 	//the four roles needed
 	names := util.GoogleCloudPermissions
 
-	//iterate through all roles needed so it can be upgraded easier later (if perhaps more roles have to be checked)
-	for _, s := range names {
+	resource := "projects/" + projectName + "/serviceAccounts/" + serviceAccountEmail
 
-		resp, err := iamService.Projects.Roles.Get(s).Context(ctx).Do()
-		if err != nil {
-			fmt.Printf(color.Red("X ")+"%#v Failed\n", resp.Name)
-		}
+	resp, err := iamService.Projects.ServiceAccounts.GetIamPolicy(resource).Context(ctx).Do()
 
-		fmt.Printf(color.Green("✓ ")+"%#v Success\n", resp.Name)
+	if err != nil || resp == nil {
+		fmt.Printf(color.Red("X ")+"%#v Failed\n", err)
+		return
 	}
 
+	for _, name := range names {
+
+		if !CheckIfRoleExists(resp.Bindings, name) {
+			fmt.Println(color.Red("X ") + name)
+		} else {
+			fmt.Println(color.Green("✓ ") + name)
+		}
+
+	}
+
+}
+
+func CheckIfRoleExists(bindings []*iam.Binding, name string) bool {
+
+	for _, binding := range bindings {
+
+		if binding.Role == name {
+			return true
+		}
+
+	}
+	return false
 }

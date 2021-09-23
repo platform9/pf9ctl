@@ -25,23 +25,25 @@ var (
 
 // Config stores information to contact with the pf9 controller.
 type Config struct {
-	Fqdn              string        `json:"fqdn"`
-	Username          string        `json:"username"`
-	Password          string        `json:"password"`
-	Tenant            string        `json:"tenant"`
-	Region            string        `json:"region"`
-	WaitPeriod        time.Duration `json:"wait_period"`
-	AllowInsecure     bool          `json:"allow_insecure"`
-	ProxyURL          string        `json:"proxy_url"`
-	MfaToken          string        `json:"mfa_token"`
-	AwsIamUsername    string        `json:"aws_iam_username"`
-	AwsAccessKey      string        `json:"aws_access_key"`
-	AwsSecretKey      string        `json:"aws_secret_key"`
-	AwsRegion         string        `json:"aws_region"`
-	AzureTetant       string        `json:"azure_tenant"`
-	AzureApplication  string        `json:"azure_application"`
-	AzureSubscription string        `json:"azure_subscription"`
-	AzureSecret       string        `json:"azure_secret"`
+	Fqdn               string        `json:"fqdn"`
+	Username           string        `json:"username"`
+	Password           string        `json:"password"`
+	Tenant             string        `json:"tenant"`
+	Region             string        `json:"region"`
+	WaitPeriod         time.Duration `json:"wait_period"`
+	AllowInsecure      bool          `json:"allow_insecure"`
+	ProxyURL           string        `json:"proxy_url"`
+	MfaToken           string        `json:"mfa_token"`
+	AwsIamUsername     string        `json:"aws_iam_username"`
+	AwsAccessKey       string        `json:"aws_access_key"`
+	AwsSecretKey       string        `json:"aws_secret_key"`
+	AwsRegion          string        `json:"aws_region"`
+	AzureTetant        string        `json:"azure_tenant"`
+	AzureApplication   string        `json:"azure_application"`
+	AzureSubscription  string        `json:"azure_subscription"`
+	AzureSecret        string        `json:"azure_secret"`
+	GoogleProjectName  string        `json:"google_project_name"`
+	GoogleServiceEmail string        `json:"google_service_email"`
 }
 
 // StoreConfig simply updates the in-memory object
@@ -95,6 +97,8 @@ func LoadConfig(loc string) (Config, error) {
 				return ConfigCmdCreateAmazonRun()
 			} else if loc == "azure.json" {
 				return ConfigCmdCreateAzureRun()
+			} else if loc == "google.json" {
+				return ConfigCmdCreateGoogleRun()
 			} else {
 				return ConfigCmdCreateRun()
 			}
@@ -196,6 +200,28 @@ func ConfigCmdCreateAzureRun() (Config, error) {
 		fmt.Printf("\nAzure Secret Key: ")
 		azureSecret, _ := terminal.ReadPassword(0)
 		Context.AzureSecret = string(azureSecret)
+	}
+
+	return Context, nil
+
+}
+
+func ConfigCmdCreateGoogleRun() (Config, error) {
+
+	zap.S().Debug("==========Running set config==========")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	if Context.AwsIamUsername == "" {
+		fmt.Printf("Project Name: ")
+		googleProjectName, _ := reader.ReadString('\n')
+		Context.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
+	}
+
+	if Context.AwsIamUsername == "" {
+		fmt.Printf("Service Account Email: ")
+		googleServiceEmail, _ := reader.ReadString('\n')
+		Context.GoogleServiceEmail = strings.TrimSuffix(googleServiceEmail, "\n")
 	}
 
 	return Context, nil
