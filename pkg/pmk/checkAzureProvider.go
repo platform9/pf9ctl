@@ -78,20 +78,35 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 		return
 	}
 
-	//Iterates through the list returned
+	//if the result.Value lengt is 0 that means the principal was never found
+	if len(*result.Value) == 0 {
+		fmt.Println(color.Red(" X ") + "Principal not found")
+		return
+	}
+
+	if CheckRoleAssignment(result, subID) {
+		fmt.Println(color.Green("\n✓ ") + "Has access")
+	} else {
+		fmt.Println(color.Red(" X ") + "Does not have access")
+	}
+
+}
+
+func CheckRoleAssignment(result assignment.RoleAssignmentListResult, subID string) bool {
+
+	fmt.Printf("%+v", result.Value)
+	//Iterates through the list
 	for _, s := range *result.Value {
 
 		//The contributor role has a static ID so it checks the RoleDefiniitonID of the service principal by comparing it to
-		//an almost static string where only the subscriptionID is different
+		//a string where only the subscriptionID is different
 		if *s.Properties.RoleDefinitionID == "/subscriptions/"+subID+"/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c" {
-			fmt.Println(color.Green("\n✓ ") + "Has access")
-			return
+			return true
 		}
 
 	}
 
-	//if the result.Value lengt is 0 then the loop never happens and that means the principal was never found
-	fmt.Println(color.Red(" X ") + "Principal not found")
+	return false
 
 }
 

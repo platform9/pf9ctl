@@ -10,7 +10,7 @@ import (
 	"google.golang.org/api/iam/v1"
 )
 
-var bindingsInfo string = `[
+var googleBindingsInfo string = `[
 		{
 			"role": "roles/iam.serviceAccountUser"
 		},
@@ -25,11 +25,11 @@ var bindingsInfo string = `[
 		}
 	]`
 
-func TestRoles(t *testing.T) {
+func TestGoogleRoles(t *testing.T) {
 
 	iamBindings := []*iam.Binding{}
 
-	err := json.Unmarshal([]byte(bindingsInfo), &iamBindings)
+	err := json.Unmarshal([]byte(googleBindingsInfo), &iamBindings)
 	Ok(t, err)
 
 	if err != nil {

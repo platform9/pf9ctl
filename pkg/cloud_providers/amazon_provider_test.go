@@ -9,7 +9,7 @@ import (
 	. "github.com/platform9/pf9ctl/pkg/test_utils"
 )
 
-var permissionInfo []*iamAws.EvaluationResult = []*iamAws.EvaluationResult{
+var amazonPermissionsInfo []*iamAws.EvaluationResult = []*iamAws.EvaluationResult{
 	{
 		EvalActionName:   aws.String("elasticloadbalancing:AddTags"),
 		EvalDecision:     aws.String("allowed"),
@@ -37,15 +37,15 @@ var permissionInfo []*iamAws.EvaluationResult = []*iamAws.EvaluationResult{
 	},
 }
 
-func TestPermissions(t *testing.T) {
+func TestAmazonPermissions(t *testing.T) {
 
-	Equals(t, pmk.CheckIfAllowed(permissionInfo), false)
+	Equals(t, pmk.CheckIfAllowed(amazonPermissionsInfo), false)
 
-	permissionInfo = permissionInfo[:len(permissionInfo)-1]
+	amazonPermissionsInfo = amazonPermissionsInfo[:len(amazonPermissionsInfo)-1]
 
-	Equals(t, pmk.CheckIfAllowed(permissionInfo), false)
+	Equals(t, pmk.CheckIfAllowed(amazonPermissionsInfo), false)
 
-	permissionInfo = permissionInfo[:len(permissionInfo)-1]
+	amazonPermissionsInfo = amazonPermissionsInfo[:len(amazonPermissionsInfo)-1]
 
-	Equals(t, pmk.CheckIfAllowed(permissionInfo), true)
+	Equals(t, pmk.CheckIfAllowed(amazonPermissionsInfo), true)
 }
