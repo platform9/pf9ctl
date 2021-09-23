@@ -39,13 +39,18 @@ var amazonPermissionsInfo []*iamAws.EvaluationResult = []*iamAws.EvaluationResul
 
 func TestAmazonPermissions(t *testing.T) {
 
+	//Will return false cause of the implicitDeny and denied flags
 	Equals(t, pmk.CheckIfAllowed(amazonPermissionsInfo), false)
 
+	//removing denied flag
 	amazonPermissionsInfo = amazonPermissionsInfo[:len(amazonPermissionsInfo)-1]
 
+	//will return false cause of the implicitDeny flag
 	Equals(t, pmk.CheckIfAllowed(amazonPermissionsInfo), false)
 
+	//removing implicitDeny flag
 	amazonPermissionsInfo = amazonPermissionsInfo[:len(amazonPermissionsInfo)-1]
 
+	//will return true since all EvalDecision flags are "allowed"
 	Equals(t, pmk.CheckIfAllowed(amazonPermissionsInfo), true)
 }

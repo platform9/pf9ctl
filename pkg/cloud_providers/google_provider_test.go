@@ -36,8 +36,10 @@ func TestGoogleRoles(t *testing.T) {
 		zap.S().Errorf("Failed to decode endpoint information, Error: %s", err)
 	}
 
+	//will return true since all three roles are in the array in the response
 	Equals(t, pmk.CheckIfRoleExists(iamBindings, "roles/iam.serviceAccountUser"), true)
 	Equals(t, pmk.CheckIfRoleExists(iamBindings, "roles/container.admin"), true)
 	Equals(t, pmk.CheckIfRoleExists(iamBindings, "roles/compute.viewer"), true)
+	//will return false if the role is not in the array in the response
 	Equals(t, pmk.CheckIfRoleExists(iamBindings, "roles/viewerFake"), false)
 }

@@ -85,7 +85,7 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 	}
 
 	if CheckRoleAssignment(result, subID) {
-		fmt.Println(color.Green("\n✓ ") + "Has access")
+		fmt.Println(color.Green("✓ ") + "Has access")
 	} else {
 		fmt.Println(color.Red(" X ") + "Does not have access")
 	}
@@ -94,7 +94,6 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 
 func CheckRoleAssignment(result assignment.RoleAssignmentListResult, subID string) bool {
 
-	fmt.Printf("%+v", result.Value)
 	//Iterates through the list
 	for _, s := range *result.Value {
 

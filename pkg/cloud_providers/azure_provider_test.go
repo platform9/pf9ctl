@@ -9,6 +9,7 @@ import (
 	. "github.com/platform9/pf9ctl/pkg/test_utils"
 )
 
+//One response where the service principal has contributor role
 var azureRolesInfoContributor string = `{
 
 	"value": [
@@ -21,6 +22,7 @@ var azureRolesInfoContributor string = `{
 	]
 } `
 
+//one example where the service principal does not have the contributor role (has another one)
 var azureRolesInfoNonContributor string = `{
 
 	"value": [
@@ -42,11 +44,14 @@ func TestAzureRole(t *testing.T) {
 	err := json.Unmarshal([]byte(azureRolesInfoContributor), &rolesInfo)
 
 	Ok(t, err)
-
+	//will return true since the subscription is correct and it has the contributor role
 	Equals(t, pmk.CheckRoleAssignment(rolesInfo, "6G3sg567b74"), true)
+	//will return false since the subcription does not match the one in the response
 	Equals(t, pmk.CheckRoleAssignment(rolesInfo, "6G3sg567b77"), false)
+	//now it will use the response with the wrong role
 	err = json.Unmarshal([]byte(azureRolesInfoNonContributor), &rolesInfo)
 	Ok(t, err)
+	//will return false both times since the role is not contributor role, subscriptionid doesn't matter
 	Equals(t, pmk.CheckRoleAssignment(rolesInfo, "6G3sg567b74"), false)
 	Equals(t, pmk.CheckRoleAssignment(rolesInfo, "6G3sg567b77"), false)
 

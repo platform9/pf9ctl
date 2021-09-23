@@ -202,6 +202,8 @@ func ConfigCmdCreateAzureRun() (Config, error) {
 		Context.AzureSecret = string(azureSecret)
 	}
 
+	fmt.Printf("\n")
+
 	return Context, nil
 
 }
