@@ -25,11 +25,10 @@ var bindingsInfo string = `[
 		}
 	]`
 
-func TestGetRole(t *testing.T) {
+func TestRoles(t *testing.T) {
 
 	iamBindings := []*iam.Binding{}
 
-	//err := json.NewDecoder(ioutil.NopCloser(bytes.NewBufferString(bindingsInfo))).Decode(&iamBinding)
 	err := json.Unmarshal([]byte(bindingsInfo), &iamBindings)
 	Ok(t, err)
 

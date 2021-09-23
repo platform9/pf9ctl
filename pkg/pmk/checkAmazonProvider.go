@@ -38,13 +38,13 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 
 	//checkpermission function takes the arn, svc and an array of permissions needed and checks if the user has all of them
 	//this can be easily upgraded by just copy pasting one checkPermission block of code and changing the permission array
-	if checkPermissions(arn, svc, util.EBSPermissions) {
+	if CheckPermissions(arn, svc, util.EBSPermissions) {
 		fmt.Println(color.Green("✓ ") + "ELB Access")
 	} else {
 		fmt.Println(color.Red("X ") + "ELB Access Error ")
 	}
 
-	if checkPermissions(arn, svc, util.Route53Permissions) {
+	if CheckPermissions(arn, svc, util.Route53Permissions) {
 		fmt.Println(color.Green("✓ ") + "Route53 Access")
 	} else {
 		fmt.Println(color.Red("X ") + "Route53 Access Error")
@@ -77,27 +77,27 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 		}
 	}
 
-	if checkPermissions(arn, svc, util.EC2Permission) {
+	if CheckPermissions(arn, svc, util.EC2Permission) {
 		fmt.Println(color.Green("✓ ") + "EC2 Access")
 	} else {
 		fmt.Println(color.Red("X ") + "EC2 Access Error")
 	}
 
-	if checkPermissions(arn, svc, util.VPCPermission) {
+	if CheckPermissions(arn, svc, util.VPCPermission) {
 		fmt.Println(color.Green("✓ ") + "VPC Access")
 	} else {
 
 		fmt.Println(color.Red("X ") + "VPC Access Error")
 	}
 
-	if checkPermissions(arn, svc, util.IAMPermissions) {
+	if CheckPermissions(arn, svc, util.IAMPermissions) {
 		fmt.Println(color.Green("✓ ") + "IAM Access")
 	} else {
 
 		fmt.Println(color.Red("X ") + "IAM Access Error")
 	}
 
-	if checkPermissions(arn, svc, util.AutoScalingPermissions) {
+	if CheckPermissions(arn, svc, util.AutoScalingPermissions) {
 		fmt.Println(color.Green("✓ ") + "Autoscaling Access")
 	} else {
 
@@ -105,7 +105,7 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 
 	}
 
-	if checkPermissions(arn, svc, util.EKSPermissions) {
+	if CheckPermissions(arn, svc, util.EKSPermissions) {
 		fmt.Println(color.Green("✓ ") + "EKS Access")
 	} else {
 
@@ -114,7 +114,7 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 
 }
 
-func checkPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
+func CheckPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
 
 	//turns the array of strings into an array of pointers
 	//this is done so it is easier to call checkpermissions since permissions can be pasted as strings
@@ -133,7 +133,7 @@ func checkPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
 		return false
 	}
 	//and then checks if the user is allowed to use them by calling checkArray
-	if !checkIfAllowed(result.EvaluationResults) {
+	if !CheckIfAllowed(result.EvaluationResults) {
 		return false
 	}
 
@@ -141,7 +141,7 @@ func checkPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
 
 }
 
-func checkIfAllowed(results []*iamAws.EvaluationResult) bool {
+func CheckIfAllowed(results []*iamAws.EvaluationResult) bool {
 
 	//takes an array of user permissions and checks if the EvalDecision flag is not equal to allowed in which case the user doenst have
 	//the permisison
