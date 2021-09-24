@@ -21,6 +21,8 @@ var AutoScalingPermissions []string
 var EKSPermissions []string
 var GoogleCloudPermissions []string
 
+var AzureContributorID string
+
 const (
 
 	// number of CPUs
@@ -89,6 +91,8 @@ func init() {
 	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "8285", "3306"}
 	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "kube-controller"}
 	Pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
+
+	AzureContributorID = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 
 	GoogleCloudPermissions = []string{
 		"roles/iam.serviceAccountUser",

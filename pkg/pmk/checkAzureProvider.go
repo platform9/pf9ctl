@@ -12,6 +12,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/platform9/pf9ctl/pkg/color"
+	"github.com/platform9/pf9ctl/pkg/util"
 )
 
 //////////////////////////////////////////
@@ -25,10 +26,7 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 	oldSubID := os.Getenv("AZURE_SUBSCRIPTION_ID")
 
 	//Sets the new data as environment so that azure sdk can use it correctly
-	os.Setenv("AZURE_CLIENT_ID", appID)
-	os.Setenv("AZURE_CLIENT_SECRET", secretKey)
-	os.Setenv("AZURE_TENANT_ID", tenantID)
-	os.Setenv("AZURE_SUBSCRIPTION_ID", subID)
+	setEnvs(appID, tenantID, subID, secretKey)
 
 	ctx := context.TODO()
 
@@ -99,7 +97,7 @@ func CheckRoleAssignment(result assignment.RoleAssignmentListResult, subID strin
 
 		//The contributor role has a static ID so it checks the RoleDefiniitonID of the service principal by comparing it to
 		//a string where only the subscriptionID is different
-		if *s.Properties.RoleDefinitionID == "/subscriptions/"+subID+"/providers/Microsoft.Authorization/roleDefinitions/b24988ac-6180-42a0-ab88-20f7382dd24c" {
+		if *s.Properties.RoleDefinitionID == "/subscriptions/"+subID+"/providers/Microsoft.Authorization/roleDefinitions/"+util.AzureContributorID {
 			return true
 		}
 

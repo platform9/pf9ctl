@@ -50,32 +50,7 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 		fmt.Println(color.Red("X ") + "Route53 Access Error")
 	}
 
-	zoneSess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(awsRegion),
-		Credentials: credentials.NewStaticCredentials(awsID, awsSecret, ""),
-	})
-
-	if err != nil {
-		fmt.Println(color.Red("X ") + "Availability Zones error")
-	} else {
-
-		zoneSvc := ec2.New(zoneSess)
-
-		resultAvalZones, err := zoneSvc.DescribeAvailabilityZones(nil)
-		if err != nil {
-
-			fmt.Println(color.Red("X ") + "Availability Zones error")
-		}
-
-		//checks if the user less than 2 availability zones
-		if len(resultAvalZones.AvailabilityZones) < 2 {
-
-			fmt.Println(color.Red("X ")+"Availability Zones error, Minimum 2 availabiliy zones required but found %d", len(resultAvalZones.AvailabilityZones))
-
-		} else {
-			fmt.Println(color.Green("✓ ") + "Availability Zones success")
-		}
-	}
+	CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion)
 
 	if CheckPermissions(arn, svc, util.EC2Permission) {
 		fmt.Println(color.Green("✓ ") + "EC2 Access")
@@ -143,7 +118,7 @@ func CheckPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
 
 func CheckIfAllowed(results []*iamAws.EvaluationResult) bool {
 
-	//takes an array of user permissions and checks if the EvalDecision flag is not equal to allowed in which case the user doenst have
+	//takes an array of user permissions and checks if the EvalDecision flag is not equal to allowed in which case the user does not have
 	//the permisison
 	for i := range results {
 		if *results[i].EvalDecision != "allowed" {
@@ -162,5 +137,34 @@ func getActionNames(actions []string) []*string {
 		actionNames = append(actionNames, &actions[i])
 	}
 	return actionNames
+
+}
+
+func CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion string) {
+
+	zoneSess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(awsRegion),
+		Credentials: credentials.NewStaticCredentials(awsID, awsSecret, ""),
+	})
+
+	if err != nil {
+		fmt.Println(color.Red("X ") + "Availability Zones error")
+		return
+	}
+
+	zoneSvc := ec2.New(zoneSess)
+
+	resultAvalZones, err := zoneSvc.DescribeAvailabilityZones(nil)
+	if err != nil {
+		fmt.Println(color.Red("X ") + "Availability Zones error")
+		return
+	}
+
+	//checks if the user less than 2 availability zones
+	if len(resultAvalZones.AvailabilityZones) < 2 {
+		fmt.Println(color.Red("X ")+"Availability Zones error, Minimum 2 availabiliy zones required but found %d", len(resultAvalZones.AvailabilityZones))
+	} else {
+		fmt.Println(color.Green("✓ ") + "Availability Zones success")
+	}
 
 }
