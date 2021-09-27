@@ -17,23 +17,25 @@ var (
 	azureTenantID      string
 	azureSubID         string
 	azureSecretKey     string
+	googlePath         string
 	googleProjectName  string
 	googleServiceEmail string
 	loadConfig         bool
 )
 
 var checkGoogleProviderCmd = &cobra.Command{
-	Use:   "check-google-provider [project-name service-account-email]",
+	Use:   "check-google-provider [service-json-path project-name service-account-email]",
 	Short: "checks if user has google cloud permisisons",
 	Long:  "Checks if service account has the correct roles to use the google cloud provider",
 	Args: func(checkGoogleProviderCmd *cobra.Command, args []string) error {
-		if len(args) != 0 && len(args) != 2 {
-			return errors.New("Only the Project Name and the Service Account Email is needed")
+		if len(args) != 0 && len(args) != 3 {
+			return errors.New("Only the Json path, Project Name and the Service Account Email are needed")
 		}
 
-		if len(args) == 2 {
-			googleProjectName = args[0]
-			googleServiceEmail = args[1]
+		if len(args) == 3 {
+			googleProjectName = args[1]
+			googleServiceEmail = args[2]
+			googlePath = args[0]
 			loadConfig = false
 		} else {
 			loadConfig = true
@@ -78,7 +80,7 @@ var checkAzureProviderCmd = &cobra.Command{
 	Long:  "Checks if service principal has the correct permissions to use the azure cloud provider",
 	Args: func(checkGoogleProviderCmd *cobra.Command, args []string) error {
 		if len(args) != 0 && len(args) != 4 {
-			return errors.New("Only the TenantID, ApplicationID, SubscriptionID and Secret Key are needed")
+			return errors.New("Only the TenantID, ClientID, SubscriptionID and Secret Key are needed")
 		}
 
 		if len(args) == 4 {
@@ -106,7 +108,7 @@ func init() {
 func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 
 	if !loadConfig {
-		pmk.CheckGoogleProvider(googleProjectName, googleServiceEmail)
+		pmk.CheckGoogleProvider(googlePath, googleProjectName, googleServiceEmail)
 		return
 	}
 
@@ -116,7 +118,7 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
-	pmk.CheckGoogleProvider(ctx.GoogleProjectName, ctx.GoogleServiceEmail)
+	pmk.CheckGoogleProvider(ctx.GooglePath, ctx.GoogleProjectName, ctx.GoogleServiceEmail)
 
 }
 
@@ -149,6 +151,6 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the context: %s\n")
 	}
 
-	pmk.CheckAzureProvider(ctx.AzureTetant, ctx.AzureApplication, ctx.AzureSubscription, ctx.AzureSecret)
+	pmk.CheckAzureProvider(ctx.AzureTetant, ctx.AzureClient, ctx.AzureSubscription, ctx.AzureSecret)
 
 }

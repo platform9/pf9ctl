@@ -6,18 +6,18 @@ import (
 
 	context "golang.org/x/net/context"
 	"google.golang.org/api/iam/v1"
+	"google.golang.org/api/option"
 
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
-func CheckGoogleProvider(projectName, serviceAccountEmail string) {
+func CheckGoogleProvider(path, projectName, serviceAccountEmail string) {
 
 	//for the Google Cloud prerequisites the service app only has to have four roles given to it
 	ctx := context.Background()
 
-	//the user sends the path to json file
-	iamService, err := iam.NewService(ctx)
+	iamService, err := iam.NewService(ctx, option.WithCredentialsFile(path))
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -38,9 +38,9 @@ func CheckGoogleProvider(projectName, serviceAccountEmail string) {
 	for _, name := range names {
 
 		if !CheckIfRoleExists(resp.Bindings, name) {
-			fmt.Println(color.Red("X ") + name)
+			fmt.Println(color.Red("X ") + " Failed " + name)
 		} else {
-			fmt.Println(color.Green("✓ ") + name)
+			fmt.Println(color.Green("✓ ") + " Success " + name)
 		}
 
 	}

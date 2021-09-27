@@ -39,9 +39,10 @@ type Config struct {
 	AwsSecretKey       string        `json:"aws_secret_key"`
 	AwsRegion          string        `json:"aws_region"`
 	AzureTetant        string        `json:"azure_tenant"`
-	AzureApplication   string        `json:"azure_application"`
+	AzureClient        string        `json:"azure_application"`
 	AzureSubscription  string        `json:"azure_subscription"`
 	AzureSecret        string        `json:"azure_secret"`
+	GooglePath         string        `json:"google_path"`
 	GoogleProjectName  string        `json:"google_project_name"`
 	GoogleServiceEmail string        `json:"google_service_email"`
 }
@@ -184,10 +185,10 @@ func ConfigCmdCreateAzureRun() (Config, error) {
 		Context.AzureTetant = string(azureTenant)
 	}
 
-	if Context.AzureApplication == "" {
+	if Context.AzureClient == "" {
 		fmt.Printf("\nAzure ApplicationID: ")
-		azureApp, _ := terminal.ReadPassword(0)
-		Context.AzureApplication = string(azureApp)
+		azureClient, _ := terminal.ReadPassword(0)
+		Context.AzureClient = string(azureClient)
 	}
 
 	if Context.AzureSubscription == "" {
@@ -214,13 +215,19 @@ func ConfigCmdCreateGoogleRun() (Config, error) {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	if Context.AwsIamUsername == "" {
+	if Context.GooglePath == "" {
+		fmt.Printf("Service JSON path: ")
+		googleProjectName, _ := reader.ReadString('\n')
+		Context.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
+	}
+
+	if Context.GoogleProjectName == "" {
 		fmt.Printf("Project Name: ")
 		googleProjectName, _ := reader.ReadString('\n')
 		Context.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
 	}
 
-	if Context.AwsIamUsername == "" {
+	if Context.GoogleServiceEmail == "" {
 		fmt.Printf("Service Account Email: ")
 		googleServiceEmail, _ := reader.ReadString('\n')
 		Context.GoogleServiceEmail = strings.TrimSuffix(googleServiceEmail, "\n")

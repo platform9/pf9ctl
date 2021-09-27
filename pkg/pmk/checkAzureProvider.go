@@ -120,7 +120,7 @@ func setEnvs(appID, tenantID, subID, secretKey string) {
 func getPrincipalID(tenantID string, appID string) (string, error) {
 
 	ctx := context.Background()
-	//creates a application client so it can get the principalID using applicationID
+	//creates a application client so it can get the principalID using appID
 	client := graphrbac.NewApplicationsClient(tenantID)
 	//this authorizer has to be used or else there will be "Token missmatch" or "Invalid audience" errors
 	authorizer, err := auth.NewAuthorizerFromEnvironmentWithResource(azure.PublicCloud.ResourceIdentifiers.Graph)
