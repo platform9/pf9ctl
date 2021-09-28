@@ -75,7 +75,7 @@ var checkAmazonProviderCmd = &cobra.Command{
 }
 
 var checkAzureProviderCmd = &cobra.Command{
-	Use:   "check-azure-provider",
+	Use:   "check-azure-provider [tenantID clientID subscriptionID secretKey]",
 	Short: "checks if user has azure cloud permisisons",
 	Long:  "Checks if service principal has the correct permissions to use the azure cloud provider",
 	Args: func(checkGoogleProviderCmd *cobra.Command, args []string) error {

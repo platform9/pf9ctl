@@ -329,3 +329,33 @@ Global Flags:
 2021-05-26T11:58:01.9579Z	INFO	Worker node(s) [bf5364cf-e2fd-4500-97fb-0b01be26084f] attached to cluster
 2021-05-26T11:58:03.6328Z	INFO	Master node(s) [615c1042-48a3-42e8-8003-ac135d12e6f4] attached to cluster
 ```
+
+  **check-amazon-provider**
+```sh
+#pf9ctl check-amazon-provider iamUser access-key secret-key us-east-1
+
+✓ ELB Access
+✓ Route53 Access
+✓ Availability Zones success
+✓ EC2 Access
+✓ VPC Access
+✓ IAM Access
+✓ Autoscaling Access
+✓ EKS Access
+```
+  **check-google-provider**
+```sh
+#pf9ctl check-google-provider /home/duser/Downloads/service-account.json testProject user@email.com
+
+✓  Success roles/iam.serviceAccountUser
+✓  Failed roles/container.admin
+✓  Failed roles/compute.viewer
+✓  Success roles/viewer
+```
+
+  **check-azure-provider**
+```sh
+#pf9ctl check-google-provider tenantID clientID subscriptionID secretKey
+
+✓ Has access
+```
