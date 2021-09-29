@@ -438,7 +438,8 @@ func (d *Debian) IsPresent(service string) error {
 	zap.S().Debugf("checking if %s is present", service)
 	var cmd string
 	version := d.getVersion()
-	if strings.Contains(string(version), "16") {
+	mjrVersion := version[0:2]
+	if strings.Contains(string(mjrVersion), "16") {
 		cmd = fmt.Sprintf(`systemctl status %s | grep 'not-found'`, service)
 		_, err := d.exec.RunWithStdout("bash", "-c", cmd)
 		if err != nil {
