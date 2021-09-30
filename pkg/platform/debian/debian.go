@@ -299,10 +299,11 @@ func (d *Debian) Version() (string, error) {
 		"bash",
 		"-c",
 		"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
+	mjrVersion := out[0:2]
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if strings.Contains(string(out), "16") || strings.Contains(string(out), "18") || strings.Contains(string(out), "20") {
+	if strings.Contains(string(mjrVersion), "16") || strings.Contains(string(mjrVersion), "18") || strings.Contains(string(mjrVersion), "20") {
 		return "debian", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
@@ -381,10 +382,10 @@ func (d *Debian) checkIfTimesyncServiceRunning() (bool, error) {
 			return false, err
 		} else {
 			zap.S().Debug("installed timesync package")
-			//err := d.start("systemd-timesyncd")
 			version := d.getVersion()
+			mjrVersion := version[0:2]
 			var err error
-			if strings.Contains(string(version), "20") {
+			if strings.Contains(string(mjrVersion), "20") {
 				err = d.start("systemd-timesyncd")
 			} else {
 				err = d.start("ntp")
@@ -492,8 +493,9 @@ func (d *Debian) start(service string) error {
 func (d *Debian) DownloadAndInstallTimesyncPkg() error {
 	zap.S().Debug("timesync package not found installing timesync package")
 	version := d.getVersion()
+	mjrVersion := version[0:2]
 	var err error
-	if strings.Contains(string(version), "20") {
+	if strings.Contains(string(mjrVersion), "20") {
 		err = d.installOSPackages("systemd-timesyncd")
 	} else {
 		err = d.installOSPackages("ntp")
