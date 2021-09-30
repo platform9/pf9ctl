@@ -266,12 +266,16 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 		osVersion, err := platform.Version()
 		if err == nil {
 			return osVersion, nil
+		}else {
+			zap.S().Debugf("Error : %s", err)
 		}
 	case strings.Contains(strData, util.Ubuntu):
 		platform = debian.NewDebian(exec)
 		osVersion, err := platform.Version()
 		if err == nil {
 			return osVersion, nil
+		}else {
+			zap.S().Debugf("Error : %s", err)
 		}
 	}
 
