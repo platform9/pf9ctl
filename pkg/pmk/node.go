@@ -219,7 +219,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	var installOptions string
 
 	//Pass keystone token if MFA token is provided
-	if (ctx.MfaToken != "") {
+	if ctx.MfaToken != "" {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s  --user-token='%s'`, regionURL, auth.Token)
 	} else {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
@@ -266,12 +266,16 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 		osVersion, err := platform.Version()
 		if err == nil {
 			return osVersion, nil
+		} else {
+			zap.S().Debugf("Error : %s", err)
 		}
 	case strings.Contains(strData, util.Ubuntu):
 		platform = debian.NewDebian(exec)
 		osVersion, err := platform.Version()
 		if err == nil {
 			return osVersion, nil
+		} else {
+			zap.S().Debugf("Error : %s", err)
 		}
 	}
 

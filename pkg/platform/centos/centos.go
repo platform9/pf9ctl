@@ -292,7 +292,7 @@ func (c *CentOS) Version() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[3]\.*`, string(out)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[3-4]\.*`, string(out)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
