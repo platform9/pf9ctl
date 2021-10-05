@@ -181,13 +181,13 @@ var (
 )
 
 func init() {
-	configCmdSet.Flags().StringVarP(&account_url, "account_url", "u", "", "sets account_url")
+	configCmdSet.Flags().StringVarP(&account_url, "account-url", "u", "", "sets account-url")
 	configCmdSet.Flags().StringVarP(&username, "username", "e", "", "sets username")
 	configCmdSet.Flags().StringVarP(&Password, "password", "p", "", "sets password (use 'single quotes' to pass password)")
-	configCmdSet.Flags().StringVarP(&proxyURL, "proxy_url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
+	configCmdSet.Flags().StringVarP(&proxyURL, "proxy-url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
 	configCmdSet.Flags().StringVarP(&region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&tenant, "tenant", "t", "", "sets tenant")
-	configCmdSet.Flags().BoolVarP(&overrideProxy, "overrideProxy", "o", false, "override proxy for current execution")
+	configCmdSet.Flags().BoolVarP(&overrideProxy, "override-proxy", "o", false, "override proxy for current execution")
 }
 
 // This function will validate the user credentials entered during config set and bail out if invalid
