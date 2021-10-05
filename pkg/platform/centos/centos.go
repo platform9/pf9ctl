@@ -301,7 +301,7 @@ func (c *CentOS) Version() (string, error) {
 
 func (c *CentOS) installOSPackages(p string) error {
 	zap.S().Debug("Trying yum update...")
-	_, err := c.exec.RunWithStdout("bash", "-c", "yum update -y -q")
+	_, err := c.exec.RunWithStdout("bash", "-c", "yum clean all -q")
 	if err != nil {
 		return err
 	}
