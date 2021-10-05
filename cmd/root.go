@@ -36,8 +36,8 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := initializeBaseDirs(); err != nil {
-		fmt.Printf("Base directory initialization failed: %s\n", err.Error())
-		os.Exit(1)
+		// Fatalf does the same as Printf and os.Exit
+		zap.S().Fatalf("Base directory initialization failed: %s\n", err.Error())
 	}
 
 	if err := rootCmd.Execute(); err != nil {
