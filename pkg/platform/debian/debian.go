@@ -382,10 +382,9 @@ func (d *Debian) checkIfTimesyncServiceRunning() (bool, error) {
 			return false, err
 		} else {
 			zap.S().Debug("installed timesync package")
-			version := d.getVersion()
-			mjrVersion := version[0:5]
+			majorVersion, minorVersion, _ := d.getVersion()
 			var err error
-			if strings.Contains(string(mjrVersion), "20.04") {
+			if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
 				err = d.start("systemd-timesyncd")
 			} else {
 				err = d.start("ntp")
@@ -427,20 +426,27 @@ func (d *Debian) checkIfAnyTimeSyncServiceIsRunning() error {
 	return err
 }
 
-func (d *Debian) getVersion() string {
-	out, err := d.exec.RunWithStdout("bash", "-c", "cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
+func (d *Debian) getVersion() (string, string, string) {
+	major, err := d.exec.RunWithStdout("bash", "-c", "cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2 | cut -d.  -f 1")
 	if err != nil {
-		zap.S().Debug("Could not find os version")
+		zap.S().Debug("Error occured while parsing major os version")
 	}
-	return out
+	minor, err := d.exec.RunWithStdout("bash", "-c", "cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2 | cut -d.  -f 2")
+	if err != nil {
+		zap.S().Debug("Error occured while parsing minor os version")
+	}
+	patch, err := d.exec.RunWithStdout("bash", "-c", "cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2 | cut -d.  -f 3")
+	if err != nil {
+		zap.S().Debug("Error occured while parsing patch os version")
+	}
+	return major, minor, patch
 }
 
 func (d *Debian) IsPresent(service string) error {
 	zap.S().Debugf("checking if %s is present", service)
 	var cmd string
-	version := d.getVersion()
-	mjrVersion := version[0:5]
-	if strings.Contains(string(mjrVersion), "16.04") {
+	majorVersion, minorVersion, _ := d.getVersion()
+	if strings.Contains(string(majorVersion), "16") && strings.Contains(string(minorVersion), "04") {
 		cmd = fmt.Sprintf(`systemctl status %s | grep 'not-found'`, service)
 		_, err := d.exec.RunWithStdout("bash", "-c", cmd)
 		if err != nil {
@@ -492,10 +498,9 @@ func (d *Debian) start(service string) error {
 
 func (d *Debian) DownloadAndInstallTimesyncPkg() error {
 	zap.S().Debug("timesync package not found installing timesync package")
-	version := d.getVersion()
-	mjrVersion := version[0:5]
+	majorVersion, minorVersion, _ := d.getVersion()
 	var err error
-	if strings.Contains(string(mjrVersion), "20.04") {
+	if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
 		err = d.installOSPackages("systemd-timesyncd")
 	} else {
 		err = d.installOSPackages("ntp")
