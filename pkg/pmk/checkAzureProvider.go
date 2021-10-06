@@ -17,8 +17,9 @@ import (
 
 //////////////////////////////////////////
 
-func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
+func CheckAzureProvider(tenantID, appID, subID, secretKey string) bool {
 
+	success := true
 	//Gets environment values and saves them in temporary varaibles so they can be returned later
 	oldAppID := os.Getenv("AZURE_CLIENT_ID")
 	oldTenantID := os.Getenv("AZURE_TENANT_ID")
@@ -39,7 +40,7 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 
 	} else {
 		fmt.Println(color.Red(" X ") + err.Error())
-		return
+		return false
 	}
 
 	//Gets the principalID of the application so that we can find the role of the service principal
@@ -50,14 +51,14 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 
 	if err != nil {
 		fmt.Println(color.Red(" X ") + err.Error())
-		return
+		return false
 	}
 
 	//Gets the preparer for the list of principals with a filter
 	request, err := client.ListPreparer(ctx, "principalId eq '"+principalID+"'")
 	if err != nil {
 		fmt.Println(color.Red(" X ") + err.Error())
-		return
+		return false
 	}
 
 	//Gets a sender for the list of principals using the preparer
@@ -65,7 +66,7 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 
 	if err != nil {
 		fmt.Println(color.Red(" X ") + err.Error())
-		return
+		return false
 	}
 
 	//Gets a responder for the list of principals using the request
@@ -73,20 +74,22 @@ func CheckAzureProvider(tenantID, appID, subID, secretKey string) {
 
 	if err != nil {
 		fmt.Println(color.Red(" X ") + err.Error())
-		return
+		return false
 	}
 
 	//if the result.Value lengt is 0 that means the principal was never found
 	if len(*result.Value) == 0 {
 		fmt.Println(color.Red(" X ") + "Principal not found")
-		return
+		return false
 	}
 
 	if CheckRoleAssignment(result, subID) {
 		fmt.Println(color.Green("✓ ") + "Has access")
 	} else {
 		fmt.Println(color.Red(" X ") + "Does not have access")
+		success = false
 	}
+	return success
 
 }
 

@@ -13,7 +13,9 @@ import (
 	iamAws "github.com/aws/aws-sdk-go/service/iam"
 )
 
-func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
+func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) bool {
+
+	success := true
 
 	//creates a new session using static credentials that the user passes and "" stands for token that is of no use in this situation
 
@@ -32,7 +34,7 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 	resultUser, errUser := svc.GetUser(inputUser)
 	if errUser != nil {
 		fmt.Println(color.Red("X ") + errUser.Error())
-		return
+		return false
 	}
 	arn := resultUser.User.Arn
 
@@ -42,41 +44,46 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 		fmt.Println(color.Green("✓ ") + "ELB Access")
 	} else {
 		fmt.Println(color.Red("X ") + "ELB Access Error ")
+		success = false
 	}
 
 	if CheckPermissions(arn, svc, util.Route53Permissions) {
 		fmt.Println(color.Green("✓ ") + "Route53 Access")
 	} else {
 		fmt.Println(color.Red("X ") + "Route53 Access Error")
+		success = false
 	}
 
-	CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion)
+	if !CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion) {
+		success = false
+	}
 
 	if CheckPermissions(arn, svc, util.EC2Permission) {
 		fmt.Println(color.Green("✓ ") + "EC2 Access")
 	} else {
 		fmt.Println(color.Red("X ") + "EC2 Access Error")
+		success = false
 	}
 
 	if CheckPermissions(arn, svc, util.VPCPermission) {
 		fmt.Println(color.Green("✓ ") + "VPC Access")
 	} else {
-
 		fmt.Println(color.Red("X ") + "VPC Access Error")
+		success = false
 	}
 
 	if CheckPermissions(arn, svc, util.IAMPermissions) {
 		fmt.Println(color.Green("✓ ") + "IAM Access")
 	} else {
-
 		fmt.Println(color.Red("X ") + "IAM Access Error")
+		success = false
 	}
 
 	if CheckPermissions(arn, svc, util.AutoScalingPermissions) {
 		fmt.Println(color.Green("✓ ") + "Autoscaling Access")
 	} else {
-
 		fmt.Println(color.Red("X ") + "Autoscaling Access Error")
+		success = false
 
 	}
 
@@ -85,8 +92,9 @@ func CheckAmazonPovider(awsIamUser, awsID, awsSecret, awsRegion string) {
 	} else {
 
 		fmt.Println(color.Red("X ") + "EKS Access Error")
+		success = false
 	}
-
+	return success
 }
 
 func CheckPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
@@ -119,7 +127,7 @@ func CheckPermissions(arn *string, svc *iamAws.IAM, actions []string) bool {
 func CheckIfAllowed(results []*iamAws.EvaluationResult) bool {
 
 	//takes an array of user permissions and checks if the EvalDecision flag is not equal to allowed in which case the user does not have
-	//the permisison
+	//the permissions
 	for i := range results {
 		if *results[i].EvalDecision != "allowed" {
 			return false
@@ -140,7 +148,7 @@ func getActionNames(actions []string) []*string {
 
 }
 
-func CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion string) {
+func CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion string) bool {
 
 	zoneSess, err := session.NewSession(&aws.Config{
 		Region:      aws.String(awsRegion),
@@ -149,7 +157,7 @@ func CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion string) {
 
 	if err != nil {
 		fmt.Println(color.Red("X ") + "Availability Zones error")
-		return
+		return false
 	}
 
 	zoneSvc := ec2.New(zoneSess)
@@ -157,14 +165,16 @@ func CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion string) {
 	resultAvalZones, err := zoneSvc.DescribeAvailabilityZones(nil)
 	if err != nil {
 		fmt.Println(color.Red("X ") + "Availability Zones error")
-		return
+		return false
 	}
 
 	//checks if the user less than 2 availability zones
 	if len(resultAvalZones.AvailabilityZones) < 2 {
 		fmt.Println(color.Red("X ")+"Availability Zones error, Minimum 2 availabiliy zones required but found %d", len(resultAvalZones.AvailabilityZones))
+		return false
 	} else {
 		fmt.Println(color.Green("✓ ") + "Availability Zones success")
+		return true
 	}
 
 }

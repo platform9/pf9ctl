@@ -12,15 +12,16 @@ import (
 	"github.com/platform9/pf9ctl/pkg/util"
 )
 
-func CheckGoogleProvider(path, projectName, serviceAccountEmail string) {
+func CheckGoogleProvider(path, projectName, serviceAccountEmail string) bool {
 
+	success := true
 	//for the Google Cloud prerequisites the service app only has to have four roles given to it
 	ctx := context.Background()
 
 	iamService, err := iam.NewService(ctx, option.WithCredentialsFile(path))
 	if err != nil {
 		fmt.Println(err)
-		return
+		return false
 	}
 
 	//the four roles needed
@@ -32,18 +33,21 @@ func CheckGoogleProvider(path, projectName, serviceAccountEmail string) {
 
 	if err != nil || resp == nil {
 		fmt.Printf(color.Red("X ")+"%#v Failed\n", err)
-		return
+		return false
 	}
 
 	for _, name := range names {
 
 		if !CheckIfRoleExists(resp.Bindings, name) {
 			fmt.Println(color.Red("X ") + " Failed " + name)
+			success = false
 		} else {
 			fmt.Println(color.Green("✓ ") + " Success " + name)
 		}
 
 	}
+
+	return success
 
 }
 
