@@ -29,6 +29,11 @@ const (
 	OptionalFail CheckNodeResult = "optionalFail"
 )
 
+/* This flag is set true, to have warning "!" message,
+when user passes --skipChecks and optional checks fails.
+*/
+var WarningOptionalChecks bool
+
 // CheckNode checks the prerequisites for k8s stack
 func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	// Building our new spinner
@@ -108,7 +113,12 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 			if err := allClients.Segment.SendEvent(segment_str, auth, checkFail, check.UserErr); err != nil {
 				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf(color.Red("x ")+"%s - %s\n", check.Name, check.UserErr)
+			// To print warning "!", if --skipchecks flag passed and optional checks failed.
+			if WarningOptionalChecks && !check.Mandatory {
+				fmt.Printf(color.Yellow("! ")+"%s - %s\n", check.Name, check.UserErr)
+			} else {
+				fmt.Printf(color.Red("x ")+"%s - %s\n", check.Name, check.UserErr)
+			}
 
 			if check.Mandatory {
 				mandatoryCheck = false

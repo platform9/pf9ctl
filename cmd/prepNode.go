@@ -107,6 +107,10 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 			credentialFlag = false
 		}
 	}
+	// To have warning "!" message when user passes --skipChecks and optional checks fails
+	if skipChecks {
+		pmk.WarningOptionalChecks = true
+	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(ctx, c)
