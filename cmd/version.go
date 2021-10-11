@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -37,58 +39,83 @@ var upgrade = &cobra.Command{
 func checkVersion(cmd *cobra.Command, args []string) {
 
 	if skipCheck {
+		_, changelog := getNewestVersion()
 		upgradeVersion()
+		fmt.Println("Changelog: \n" + color.Green(changelog))
 		return
 	}
 
 	// Code to compare the current version with the newest version
-	newVersion := getNewestVersion()
+	newVersion, changelog := getNewestVersion()
 
 	if newVersion != util.Version {
+
+		fmt.Print("New version found, your version is ", color.Red(util.Version)+" but newest version is "+color.Green(newVersion)+"\nDo you want to upgrade?")
+		answer, err := util.AskBool("")
+
+		if err != nil {
+			zap.S().Fatalf("Stopping upgrade ")
+		}
+
+		if !answer {
+			fmt.Println("Stopping upgrade ")
+		}
+
 		upgradeVersion()
+		fmt.Println("Changelog: \n" + color.Green(changelog))
 	} else {
-		fmt.Print("You already have the newest version\n")
+		fmt.Println("You already have the newest version")
 	}
 
 }
 
-func getNewestVersion() string {
-	return "pf9ctl version: v1.8"
+func getNewestVersion() (string, string) {
+
+	curlCmd, err := exec.Command("curl", "-sL", util.VersionPath).Output()
+
+	if err != nil {
+		zap.S().Fatalf("Error downloading the setup ", err)
+	}
+
+	version := strings.Split(string(curlCmd), "\n")[0]
+
+	return version, string(curlCmd)
 }
 
 func upgradeVersion() {
+
+	fmt.Println("\nDownloading the CLI")
 
 	curlCmd, err := exec.Command("curl", "-sL", "https://pmkft-assets.s3-us-west-1.amazonaws.com/pf9ctl_setup").Output()
 	if err != nil {
 		zap.S().Fatalf("Error downloading the setup ", err)
 	}
 
-	copyCmd := exec.Command("/bin/sh", "-c", "sudo mv /usr/bin/pf9ctl /usr/bin/pf9ctl_backup")
-	err = copyCmd.Run()
-
+	err = os.Rename("/usr/bin/pf9ctl", "/usr/bin/pf9ctl_backup")
 	if err != nil {
-		fmt.Println("Error creating backup", err)
+		fmt.Println("Error creating backup\n", err)
 	} else {
-		fmt.Println("Backup successfully created")
+		fmt.Println("\nBackup successfully created")
 	}
 
 	bashCmd := exec.Command("bash", "-c", string(curlCmd))
-	bashCmd.Stdout = os.Stdout
 	err = bashCmd.Start()
+
+	fmt.Println("\nInstalling the CLI")
 
 	bashCmd.Wait()
 	if err != nil {
-		fmt.Println("Upgrade failed, reverting to backup")
-		copyCmd := exec.Command("/bin/sh", "-c", "sudo mv /usr/bin/pf9ctl_backup /usr/bin/pf9ctl")
-		err = copyCmd.Run()
+		fmt.Println("\nUpgrade failed, reverting to backup")
+		err = os.Rename("/usr/bin/pf9ctl_backup", "/usr/bin/pf9ctl")
 		if err != nil {
-			fmt.Println("Error restoring backup ", err)
+			fmt.Println("\nError restoring backup ", err)
+		} else {
+			fmt.Println("\nBackup successfully restored")
 		}
 		zap.S().Fatalf("Error updating pf9ctl. ", err)
 	}
 
-	removeCmd := exec.Command("/bin/sh", "-c", "sudo rm /usr/bin/pf9ctl_backup")
-	err = removeCmd.Run()
+	err = os.Remove("/usr/bin/pf9ctl_backup")
 	if err != nil {
 		fmt.Println("Error removing backup ", err)
 	}

@@ -84,5 +84,6 @@ func init() {
 
 //This is the current version of cli.
 const (
-	Version string = "pf9ctl version: v1.8"
+	Version     string = "v1.8"
+	VersionPath string = "https://jasmind.s3-us-west-2.amazonaws.com/version"
 )
