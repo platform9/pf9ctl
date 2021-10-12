@@ -39,14 +39,24 @@ var upgrade = &cobra.Command{
 func checkVersion(cmd *cobra.Command, args []string) {
 
 	if skipCheck {
-		_, changelog := getNewestVersion()
-		upgradeVersion()
+		_, changelog, err := getNewestVersion()
+		if err != nil {
+			zap.S().Fatalf("Error getting the newest verison")
+		}
+		err = upgradeVersion()
+		if err != nil {
+			zap.S().Fatalf(err.Error())
+		}
 		fmt.Println("Changelog: \n" + color.Green(changelog))
 		return
 	}
 
 	// Code to compare the current version with the newest version
-	newVersion, changelog := getNewestVersion()
+	newVersion, changelog, err := getNewestVersion()
+
+	if err != nil {
+		zap.S().Fatalf("Error getting the newest verison")
+	}
 
 	if newVersion != util.Version {
 
@@ -61,7 +71,11 @@ func checkVersion(cmd *cobra.Command, args []string) {
 			fmt.Println("Stopping upgrade ")
 		}
 
-		upgradeVersion()
+		err = upgradeVersion()
+		if err != nil {
+			zap.S().Fatalf(err.Error())
+		}
+
 		fmt.Println("Changelog: \n" + color.Green(changelog))
 	} else {
 		fmt.Println("You already have the newest version")
@@ -69,26 +83,26 @@ func checkVersion(cmd *cobra.Command, args []string) {
 
 }
 
-func getNewestVersion() (string, string) {
+func getNewestVersion() (string, string, error) {
 
 	curlCmd, err := exec.Command("curl", "-sL", util.VersionPath).Output()
 
 	if err != nil {
-		zap.S().Fatalf("Error downloading the setup ", err)
+		return "", "", err
 	}
 
 	version := strings.Split(string(curlCmd), "\n")[0]
 
-	return version, string(curlCmd)
+	return version, string(curlCmd), nil
 }
 
-func upgradeVersion() {
+func upgradeVersion() error {
 
 	fmt.Println("\nDownloading the CLI")
 
 	curlCmd, err := exec.Command("curl", "-sL", "https://pmkft-assets.s3-us-west-1.amazonaws.com/pf9ctl_setup").Output()
 	if err != nil {
-		zap.S().Fatalf("Error downloading the setup ", err)
+		return fmt.Errorf("Error downloading the setup " + err.Error())
 	}
 
 	err = os.Rename("/usr/bin/pf9ctl", "/usr/bin/pf9ctl_backup")
@@ -112,17 +126,32 @@ func upgradeVersion() {
 		} else {
 			fmt.Println("\nBackup successfully restored")
 		}
-		zap.S().Fatalf("Error updating pf9ctl. ", err)
+		return fmt.Errorf("Error updating pf9ctl. " + err.Error())
 	}
 
 	err = os.Remove("/usr/bin/pf9ctl_backup")
 	if err != nil {
 		fmt.Println("Error removing backup ", err)
 	}
+	return nil
 
 }
 
+func checkVersionInit() {
+	newVersion, _, err := getNewestVersion()
+
+	if err != nil {
+		zap.S().Fatalf("Error getting the newest verison")
+	}
+
+	if newVersion != util.Version {
+		fmt.Print("\nNew version found, your version is ", color.Red(util.Version)+" but newest version is "+color.Green(newVersion)+"\nPlease run 'sudo pf9ctl upgrade' to have the newest version\n")
+	}
+}
+
 func init() {
+
+	cobra.OnInitialize(checkVersionInit)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(upgrade)
 
