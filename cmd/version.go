@@ -4,7 +4,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"strings"
 
@@ -24,7 +23,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Debug("Version called")
 		//Prints the current version of pf9ctl being used.
-		fmt.Println(util.Version)
+		fmt.Println("Pf9ctl version: " + util.Version)
 	},
 }
 
@@ -60,7 +59,7 @@ func checkVersion(cmd *cobra.Command, args []string) {
 
 	if newVersion != util.Version {
 
-		fmt.Print("New version found, your version is ", color.Red(util.Version)+" but newest version is "+color.Green(newVersion)+"\nDo you want to upgrade?")
+		fmt.Print("\nDo you want to upgrade?")
 		answer, err := util.AskBool("")
 
 		if err != nil {
@@ -69,6 +68,7 @@ func checkVersion(cmd *cobra.Command, args []string) {
 
 		if !answer {
 			fmt.Println("Stopping upgrade ")
+			return
 		}
 
 		err = upgradeVersion()
@@ -105,13 +105,6 @@ func upgradeVersion() error {
 		return fmt.Errorf("Error downloading the setup " + err.Error())
 	}
 
-	err = os.Rename("/usr/bin/pf9ctl", "/usr/bin/pf9ctl_backup")
-	if err != nil {
-		fmt.Println("Error creating backup\n", err)
-	} else {
-		fmt.Println("\nBackup successfully created")
-	}
-
 	bashCmd := exec.Command("bash", "-c", string(curlCmd))
 	err = bashCmd.Start()
 
@@ -119,20 +112,9 @@ func upgradeVersion() error {
 
 	bashCmd.Wait()
 	if err != nil {
-		fmt.Println("\nUpgrade failed, reverting to backup")
-		err = os.Rename("/usr/bin/pf9ctl_backup", "/usr/bin/pf9ctl")
-		if err != nil {
-			fmt.Println("\nError restoring backup ", err)
-		} else {
-			fmt.Println("\nBackup successfully restored")
-		}
-		return fmt.Errorf("Error updating pf9ctl. " + err.Error())
+		return fmt.Errorf("Error installing the setup" + err.Error())
 	}
 
-	err = os.Remove("/usr/bin/pf9ctl_backup")
-	if err != nil {
-		fmt.Println("Error removing backup ", err)
-	}
 	return nil
 
 }
@@ -145,7 +127,7 @@ func checkVersionInit() {
 	}
 
 	if newVersion != util.Version {
-		fmt.Print("\nNew version found, your version is ", color.Red(util.Version)+" but newest version is "+color.Green(newVersion)+"\nPlease run 'sudo pf9ctl upgrade' to have the newest version\n")
+		fmt.Print("\nNew version found, your version is ", color.Red(util.Version)+" but newest version is "+color.Green(newVersion)+"\nPlease upgrade to the newest version\n")
 	}
 }
 
