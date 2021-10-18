@@ -50,7 +50,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.S().Fatalf("Unable to load config: %s", err.Error())
 	}
-
+	//Only for local
 	c, err := pmk.NewClient(ctx.Fqdn, cmdexec.LocalExecutor{}, ctx.AllowInsecure, false)
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients: %s", err.Error())
@@ -95,5 +95,5 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allowWorkloadsOnMaster", true, "Taint master nodes ( to enable workloads )")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "networkPlugin", "flannel", "Specify network plugin ( Possible values: flannel or calico )")
 	// This is the bootstrap command to initialize its run and add to root which is not in use for now.
-	//rootCmd.AddCommand(bootstrapCmd)
+	rootCmd.AddCommand(bootstrapCmd)
 }

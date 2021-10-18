@@ -19,7 +19,7 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 
 	resp, err := util.AskBool("Prep local node for kubernetes cluster")
 	if err != nil || !resp {
-		zap.S().Errorf("Couldn't fetch user content")
+		zap.S().Fatalf("Couldn't fetch user content")
 	}
 
 	if err := PrepNode(ctx, c); err != nil {
@@ -46,7 +46,7 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 		return fmt.Errorf("Unable to create cluster: %w", err)
 	}
 
-	cmd := `\"cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2\"`
+	cmd := `cat /etc/pf9/host_id.conf | grep ^host_id | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := c.Executor.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return fmt.Errorf("Unable to execute command: %w", err)
@@ -59,7 +59,7 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 	zap.S().Info("Attaching node to the cluster...")
 	err = c.Qbert.AttachNode(
 		clusterID,
-		keystoneAuth.ProjectID, keystoneAuth.Token, nodeIDs, "worker")
+		keystoneAuth.ProjectID, keystoneAuth.Token, nodeIDs, "master")
 
 	if err != nil {
 		return fmt.Errorf("Unable to attach node: %w", err)
