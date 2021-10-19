@@ -25,7 +25,7 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 		zap.S().Fatalf("keystone authentication failed %s", err.Error())
 	}
 
-	token := keystoneAuth.Token
+	//token := keystoneAuth.Token
 
 	zap.S().Info("Creating the cluster ", req.Name)
 	clusterID, err := c.Qbert.CreateCluster(
@@ -44,7 +44,7 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 	}
 	nodeID := strings.TrimSuffix(string(output), "\n")
 
-	i := 1
+	/*i := 1
 	for i <= 3 {
 		hostStatus := Host_Status(c.Executor, ctx.Fqdn, token, nodeID)
 		if hostStatus == "false" {
@@ -57,9 +57,9 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 
 	if i == 4 {
 		zap.S().Fatalf("Host is Down.....Exiting from Bootstrap command")
-	}
+	}*/
 
-	time.Sleep(ctx.WaitPeriod * time.Second)
+	time.Sleep(120 * time.Second)
 	var nodeIDs []string
 	nodeIDs = append(nodeIDs, nodeID)
 

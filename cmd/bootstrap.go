@@ -120,6 +120,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Cannot run this command as node is already attached to a cluster")
 	} else if !val && val1 { //Only node is present but not attached to a cluster
 		util.SkipPrepNode = true
+		zap.S().Infof("Node is already Onboarded....Skipping Prep-Node")
 	} else { //Both node and cluster are not present
 		util.SkipPrepNode = false
 	}
