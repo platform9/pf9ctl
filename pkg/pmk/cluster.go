@@ -9,24 +9,12 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/qbert"
-	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
 // Bootstrap simply preps the local node and attach it as master to a newly
 // created cluster.
 func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
-	zap.S().Debug("Received a call to boostrap the local node")
-
-	resp, err := util.AskBool("Prep local node as master node for kubernetes cluster")
-	if err != nil || !resp {
-		zap.S().Fatalf("Declined to proceed with creating a Kubernetes cluster with the current node as the Kubernetes master")
-	}
-
-	if err := PrepNode(ctx, c); err != nil {
-		return fmt.Errorf("Unable to perform prep-node: %w", err)
-	}
-
 	keystoneAuth, err := c.Keystone.GetAuth(
 		ctx.Username,
 		ctx.Password,
@@ -71,7 +59,7 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 		zap.S().Fatalf("Host is Down.....Exiting from Bootstrap command")
 	}
 
-	time.Sleep(60 * time.Second)
+	time.Sleep(ctx.WaitPeriod * time.Second)
 	var nodeIDs []string
 	nodeIDs = append(nodeIDs, nodeID)
 

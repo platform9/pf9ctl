@@ -38,7 +38,7 @@ func (d *Debian) Check() []platform.Check {
 	result, err := d.removePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
-	result, err = d.checkExistingInstallation()
+	result, err = d.CheckExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", true, result, err, util.ExisitngInstallationErr})
 
 	result, err = d.checkOSPackages()
@@ -59,7 +59,7 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkPort()
 	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = d.checkKubernetesCluster()
+	result, err = d.CheckKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkNoexecPermission()
@@ -87,7 +87,7 @@ func (d *Debian) Check() []platform.Check {
 	return checks
 }
 
-func (d *Debian) checkKubernetesCluster() (bool, error) {
+func (d *Debian) CheckKubernetesCluster() (bool, error) {
 	for _, proc := range util.ProcessesList {
 		//Checking if kubernetes process is running on the host or not
 		_, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -A | grep -i %s", proc))
@@ -115,7 +115,7 @@ func (d *Debian) checkDocker() error {
 	return err
 }
 
-func (d *Debian) checkExistingInstallation() (bool, error) {
+func (d *Debian) CheckExistingInstallation() (bool, error) {
 
 	var (
 		out string
