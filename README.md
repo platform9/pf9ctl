@@ -388,6 +388,40 @@ Global Flags:
 ```
 
 ```sh
+## Running bootstrap command when the node is not onboarded on the VM 
+#pf9ctl bootstrap singletestcluster1
+2021-10-19T13:01:59.6884Z	INFO	Running Checks for Bootstrap Command
+✓ Loaded Config Successfully
+- Running pre-requisite checks and installing any missing OS packages ✓ Removal of existing CLI
+✓ Existing Platform9 Packages Check
+✓ Required OS Packages Check
+✓ SudoCheck
+✓ CPUCheck
+✓ DiskCheck
+✓ MemoryCheck
+✓ PortCheck
+✓ Existing Kubernetes Cluster Check
+✓ Check exec permission on /tmp
+✓ Check lock on dpkg
+✓ Check lock on apt
+✓ Check if system is booted with systemd
+✓ Check time synchronization
+✓ Check if firewalld service is running
+✓ Disabling swap and removing swap in fstab
+
+✓ Completed Pre-Requisite Checks successfully
+
+Prep local node as master node for kubernetes cluster (y/n): y
+| Downloading the Hostagent (this might take a few minutes...) ✓ Platform9 packages installed successfully
+✓ Initialised host successfully
+| Authorising host ✓ Host successfully attached to the Platform9 control-plane
+2021-10-19T13:02:43.5407Z	INFO	Creating the cluster singlenodecluster
+2021-10-19T13:04:51.9366Z	INFO	Attaching node to the cluster singlenodecluster
+2021-10-19T13:05:01.6355Z	INFO	=======Bootstrap successfully finished========
+```
+
+```sh
+## Running bootstrap command when the node is already onboarded on the VM 
 #pf9ctl bootstrap singletestcluster2
 2021-10-19T12:24:48.7484Z	INFO	Running Checks for Bootstrap Command
 ✓ Loaded Config Successfully
