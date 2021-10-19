@@ -329,3 +329,41 @@ Global Flags:
 2021-05-26T11:58:01.9579Z	INFO	Worker node(s) [bf5364cf-e2fd-4500-97fb-0b01be26084f] attached to cluster
 2021-05-26T11:58:03.6328Z	INFO	Master node(s) [615c1042-48a3-42e8-8003-ac135d12e6f4] attached to cluster
 ```
+  
+  **bootstrap**
+
+```sh
+#pf9ctl bootstrap --help
+
+Bootstrap a single node Kubernetes cluster with your current
+	host as the Kubernetes node. Read more at
+	http://pf9.io/cli_clbootstrap.
+
+Usage:
+  pf9ctl bootstrap [flags]
+
+Flags:
+      --allowWorkloadsOnMaster   Taint master nodes ( to enable workloads ) (default true)
+      --appCatalogEnabled        Enable Helm application catalog
+      --containersCidr string    CIDR for container overlay (default "10.20.0.0/16")
+      --externalDnsName string   External DNS for master VIP
+  -h, --help                     help for bootstrap
+      --masterVip string         IP Address for VIP for master nodes
+      --masterVipIf string       Interface name for master / worker nodes
+      --metallbIpRange string    Ip range for MetalLB
+      --networkPlugin string     Specify network plugin ( Possible values: flannel or calico ) (default "flannel")
+      --privileged               Enable privileged mode for K8s API. Default: true (default true)
+      --servicesCidr string      CIDR for services overlay (default "10.21.0.0/16")
+
+Global Flags:
+      --verbose   print verbose logs
+```
+
+```sh
+#pf9ctl bootstrap singletestcluster2
+2021-10-19T12:24:48.7484Z	INFO	Running Checks for Bootstrap Command
+✓ Loaded Config Successfully
+2021-10-19T12:24:50.3744Z	INFO	Creating the cluster singletestcluster2
+2021-10-19T12:25:55.5814Z	INFO	Attaching node to the cluster singletestcluster2
+2021-10-19T12:25:56.3007Z	INFO	=======Bootstrap successfully finished========
+```
