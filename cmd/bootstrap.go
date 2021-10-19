@@ -5,8 +5,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
@@ -47,14 +49,14 @@ var (
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("Received a call to bootstrap the node")
-
-	zap.S().Debug("========== Running check-node as a part of bootup ==========")
+	zap.S().Info("Running Checks for Bootstrap Command")
 
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag = true
 	// To bail out if loop runs recursively more than thrice
 	pmk.LoopCounter = 0
 
+	var executor cmdexec.Executor
 	for credentialFlag {
 
 		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
@@ -62,7 +64,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 		}
 
-		executor, err := getExecutor(ctx.ProxyURL)
+		executor, err = getExecutor(ctx.ProxyURL)
 		if err != nil {
 			//debug first since Fatalf calls os.Exit
 			zap.S().Debug("Error connecting to host %s", err.Error())
@@ -100,24 +102,60 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	defer c.Segment.Close()
 
-	result, err := pmk.CheckNode(ctx, c)
+	d := debian.NewDebian(executor)
+
+	val, err := d.CheckExistingInstallation()
 	if err != nil {
-		// Uploads pf9cli log bundle if checknode fails
-		errbundle := supportBundle.SupportBundleUpload(ctx, c)
-		if errbundle != nil {
-			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
+		//zap.S().Fatalf("Could not run command Installation")
+		zap.S().Infof("Error %s", err)
+	}
+
+	val1, err1 := d.CheckKubernetesCluster()
+	if err1 != nil {
+		//zap.S().Fatalf("Could not run command Cluster")
+		zap.S().Infof("Error %s", err1)
+	}
+
+	if !val && !val1 { //Both node and cluster are already present
+		zap.S().Fatalf("Cannot run this command as node is already attached to a cluster")
+	} else if !val && val1 { //Only node is present but not attached to a cluster
+		util.SkipPrepNode = true
+	} else { //Both node and cluster are not present
+		util.SkipPrepNode = false
+	}
+
+	if !util.SkipPrepNode {
+		zap.S().Debug("========== Running check-node as a part of bootup ==========")
+
+		result, err := pmk.CheckNode(ctx, c)
+		if err != nil {
+			// Uploads pf9cli log bundle if checknode fails
+			errbundle := supportBundle.SupportBundleUpload(ctx, c)
+			if errbundle != nil {
+				zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
+			}
+			zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
 		}
-		zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
-	}
 
-	if result == pmk.RequiredFail {
-		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
-		//this is so the exit flag is set to 1
-	} else if result == pmk.OptionalFail {
-		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
-	}
-	zap.S().Debug("==========Finished running check-node==========")
+		if result == pmk.RequiredFail {
+			zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+			//this is so the exit flag is set to 1
+		} else if result == pmk.OptionalFail {
+			fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		}
+		zap.S().Debug("==========Finished running check-node==========")
 
+		zap.S().Debug("Received a call to boostrap the local node")
+
+		resp, err := util.AskBool("Prep local node as master node for kubernetes cluster")
+		if err != nil || !resp {
+			zap.S().Fatalf("Declined to proceed with creating a Kubernetes cluster with the current node as the Kubernetes master")
+		}
+
+		if err := pmk.PrepNode(ctx, c); err != nil {
+			zap.S().Fatalf("Unable to perform prep-node: %w", err)
+		}
+	}
 	name := args[0]
 
 	payload := qbert.ClusterCreateRequest{
