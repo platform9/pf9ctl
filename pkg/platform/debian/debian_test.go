@@ -811,56 +811,6 @@ func TestPIDofSystemdCheck(t *testing.T) {
 	}
 }
 
-func TestIfSystemdTimesyncdServiceRunning(t *testing.T) {
-	type want struct {
-		result bool
-		err    error
-	}
-
-	cases := map[string]struct {
-		args
-		want
-	}{
-		//Success case. If systemd-timesyncd service is running.
-		"CheckPass": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "0", nil
-					},
-				},
-			},
-			want: want{
-				result: true,
-				err:    nil,
-			},
-		},
-		//Failure case. If systemd-timesyncd service is not running.
-		"CheckFail": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1", fmt.Errorf("ERROR")
-					},
-				},
-			},
-			want: want{
-				result: false,
-				err:    errors.New("Failed to start systemd-timesyncd"),
-			},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			d := &Debian{exec: tc.exec}
-			result, err := d.checkIfSystemdTimesyncdServiceRunning()
-			assert.Equal(t, tc.result, result)
-			assert.Equal(t, tc.err, err)
-		})
-	}
-}
-
 func TestCheckFirewalldService(t *testing.T) {
 	type want struct {
 		result bool

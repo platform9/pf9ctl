@@ -107,6 +107,10 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 			credentialFlag = false
 		}
 	}
+	// To have warning "!" message when user passes --skipChecks and optional checks fails
+	if skipChecks {
+		pmk.WarningOptionalChecks = true
+	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(ctx, c)
@@ -120,21 +124,19 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		fmt.Println(color.Red("x ") + "Required pre-requisite check(s) failed.")
-		return
+		zap.S().Fatalf(color.Red("x ") + "Required pre-requisite check(s) failed.")
 	} else if !skipChecks {
 		if result == pmk.OptionalFail {
 			fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
 			reader := bufio.NewReader(os.Stdin)
 			char, _, _ := reader.ReadRune()
 			if char != 'y' {
-				return
+				os.Exit(0)
 			}
 		}
 	}
 
 	if err := pmk.PrepNode(ctx, c); err != nil {
-		fmt.Printf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
 
 		// Uploads pf9cli log bundle if prepnode failed to get prepared
 		errbundle := supportBundle.SupportBundleUpload(ctx, c)
@@ -143,6 +145,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		}
 
 		zap.S().Debugf("Unable to prep node: %s\n", err.Error())
+		zap.S().Fatalf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
 	}
 
 	zap.S().Debug("==========Finished running prep-node==========")

@@ -48,8 +48,9 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 		executor, err := getExecutor(ctx.ProxyURL)
 		if err != nil {
-			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
+			//debug first since Fatalf calls os.Exit
 			zap.S().Debug("Error connecting to host %s", err.Error())
+			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
 		}
 
 		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
@@ -94,10 +95,11 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		fmt.Printf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		//this is so the exit flag is set to 1
 	} else if result == pmk.OptionalFail {
 		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	}
-
 	zap.S().Debug("==========Finished running check-node==========")
+
 }
