@@ -12,9 +12,9 @@ import (
 )
 
 var removeNodeCmd = &cobra.Command{
-	Use:   "remove-node",
-	Short: "decomissions and removes this node",
-	Long:  "Removes the host agent package and decomissions this node from the platform9",
+	Use:   "deauthorise-node",
+	Short: "Deauthorises this node from the Platform9 control plane",
+	Long:  "Removes the host agent package and decomissions this node from the Platform9 control plane",
 	Args: func(attachNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
 			return errors.New("No parameters are needed")
@@ -54,6 +54,6 @@ func removeNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("An error has occured ", err)
 	}
 
-	fmt.Println("Removing successfull")
+	fmt.Println("Node removed successfully")
 
 }
