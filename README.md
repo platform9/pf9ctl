@@ -57,13 +57,38 @@ Use "pf9ctl [command] --help" for more information about a command.
 ```sh
 #pf9ctl version
 
-pf9ctl version: v1.3
+pf9ctl version: v1.8
+Changelog:
+Latest version changelog goes here
 ```   
 - **Configuration**
 
   This is used to setup or get the control-plane configuration. It includes the DU FQDN , username, region and the tenant(service).
 
 ```sh
+
+```
+- **Upgrading**
+
+  **This command is used upgrade the CLI to its newest version if there is one**
+```sh
+#pf9ctl upgrade
+You already have the newest version
+```   
+```sh
+#pf9ctl upgrade
+New version found. Please upgrade to the newest version
+Do you want to upgrade? (y/n): y
+
+Downloading the CLI
+
+Installing the CLI
+Successfully updated, type pf9ctl version to check the changelog
+```
+
+```sh
+
+
 #pf9ctl config
 
 Create or get PF9 controller config used by this CLI

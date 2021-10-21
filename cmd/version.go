@@ -3,10 +3,17 @@
 package cmd
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -23,7 +30,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Debug("Version called")
 		//Prints the current version of pf9ctl being used.
-		fmt.Println("Pf9ctl version: " + util.Version)
+		fmt.Println("Pf9ctl version: " + util.Version + "\nChangelog:\n" + color.Green(util.Changelog))
 	},
 }
 
@@ -31,113 +38,113 @@ var versionCmd = &cobra.Command{
 var upgrade = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Checks for a new version of the CLI",
-	Long:  "Checks and downloads the new version of the CLI. Use -skipCheck to just download the newest version.",
+	Long:  "Checks and downloads the new version of the CLI. Use -c to skip the check and install the neweset version.",
 	Run:   checkVersion,
 }
 
 func checkVersion(cmd *cobra.Command, args []string) {
-
 	if skipCheck {
-		_, changelog, err := getNewestVersion()
-		if err != nil {
-			zap.S().Fatalf("Error getting the newest verison")
-		}
 		err = upgradeVersion()
 		if err != nil {
 			zap.S().Fatalf(err.Error())
 		}
-		fmt.Println("Changelog: \n" + color.Green(changelog))
+		fmt.Println("Successfully updated, type pf9ctl version to check the changelog")
 		return
 	}
-
 	// Code to compare the current version with the newest version
-	newVersion, changelog, err := getNewestVersion()
-
+	newVersion, err := getNewestVersion()
 	if err != nil {
-		zap.S().Fatalf("Error getting the newest verison")
+		zap.S().Fatalf("Error getting the newest version")
 	}
-
-	if newVersion != util.Version {
-
-		fmt.Print("\nDo you want to upgrade?")
+	if newVersion {
+		fmt.Print("Do you want to upgrade?")
 		answer, err := util.AskBool("")
-
 		if err != nil {
-			zap.S().Fatalf("Stopping upgrade ")
+			zap.S().Fatalf("Stopping upgrade")
 		}
-
 		if !answer {
-			fmt.Println("Stopping upgrade ")
+			fmt.Println("Stopping upgrade")
 			return
 		}
-
 		err = upgradeVersion()
 		if err != nil {
 			zap.S().Fatalf(err.Error())
 		}
-
-		fmt.Println("Changelog: \n" + color.Green(changelog))
+		fmt.Println("Successfully updated, type pf9ctl version to check the changelog")
 	} else {
 		fmt.Println("You already have the newest version")
 	}
+}
+
+func getNewestVersion() (bool, error) {
+	file, err := os.Open("/usr/bin/pf9ctl")
+	if err != nil {
+		zap.S().Fatalf("Error reading pr9ctl file", err.Error())
+	}
+	defer file.Close()
+	hash := md5.New()
+	_, err = io.Copy(hash, file)
+	if err != nil {
+		zap.S().Fatalf("Error hashing pf9ctl file", err.Error())
+	}
+	hashString := hex.EncodeToString(hash.Sum(nil))
+	eTag := getEtag()
+	return !strings.Contains(eTag, hashString), nil
 
 }
 
-func getNewestVersion() (string, string, error) {
-
-	curlCmd, err := exec.Command("curl", "-sL", util.VersionPath).Output()
-
-	if err != nil {
-		return "", "", err
+func getEtag() string {
+	svc := s3.New(session.New(
+		&aws.Config{
+			Region: aws.String(util.AWSBucketRegion),
+		}))
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(util.AWSBucketName),
+		Key:    aws.String(util.AWSBucketKey),
 	}
-
-	version := strings.Split(string(curlCmd), "\n")[0]
-
-	return version, string(curlCmd), nil
+	result, err := svc.GetObject(input)
+	if err != nil {
+		fmt.Errorf("Error while getting the neweset version " + err.Error())
+	}
+	return *result.ETag
 }
 
 func upgradeVersion() error {
 
 	fmt.Println("\nDownloading the CLI")
-
-	curlCmd, err := exec.Command("curl", "-sL", "https://pmkft-assets.s3-us-west-1.amazonaws.com/pf9ctl_setup").Output()
+	curlCmd, err := exec.Command("curl", "-sL", util.BucketPath).Output()
 	if err != nil {
 		return fmt.Errorf("Error downloading the setup " + err.Error())
 	}
-
 	bashCmd := exec.Command("bash", "-c", string(curlCmd))
 	err = bashCmd.Start()
-
 	fmt.Println("\nInstalling the CLI")
-
 	bashCmd.Wait()
 	if err != nil {
 		return fmt.Errorf("Error installing the setup" + err.Error())
 	}
-
 	return nil
 
 }
 
 func checkVersionInit() {
-	newVersion, _, err := getNewestVersion()
-
+	newVersion, err := getNewestVersion()
 	if err != nil {
-		zap.S().Fatalf("Error getting the newest verison")
+		zap.S().Fatalf("Error getting the newest version")
 	}
-
-	if newVersion != util.Version {
-		fmt.Print("\nNew version found, your version is ", color.Red(util.Version)+" but newest version is "+color.Green(newVersion)+"\nPlease upgrade to the newest version\n")
+	if newVersion {
+		fmt.Println(color.Red("New version found. Please upgrade to the newest version"))
 	}
 }
 
 func init() {
 
 	cobra.OnInitialize(checkVersionInit)
+
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(upgrade)
 
-	upgrade.Flags().BoolVarP(&skipCheck, "skipCheck", "c", false, "Will skip the verison checks if true")
+	upgrade.Flags().BoolVarP(&skipCheck, "skipCheck", "c", false, "Will skip the version checks if true")
 
 	// Here you will define your flags and configuration settings.
 
