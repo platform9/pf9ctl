@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/platform9/pf9ctl/pkg/color"
@@ -96,7 +97,8 @@ func getNewestVersion() (bool, error) {
 func getEtag() string {
 	svc := s3.New(session.New(
 		&aws.Config{
-			Region: aws.String(util.AWSBucketRegion),
+			Region:      aws.String(util.AWSBucketRegion),
+			Credentials: credentials.AnonymousCredentials,
 		}))
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(util.AWSBucketName),
