@@ -84,10 +84,9 @@ func init() {
 
 //These are the constants needed for everything version related
 const (
-	Version         string = "v1.8"
+	Version         string = "pf9ctl version: v1.8"
 	AWSBucketName   string = "pmkft-assets"
 	AWSBucketKey    string = "pf9ctl"
 	AWSBucketRegion string = "us-west-1"
-	Changelog       string = "Added the upgrade command\nAdded changelog to the version command"
 	BucketPath      string = "https://" + AWSBucketName + ".s3." + AWSBucketRegion + ".amazonaws.com/" + AWSBucketKey + "_setup"
 )

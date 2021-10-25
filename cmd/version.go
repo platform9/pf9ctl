@@ -31,7 +31,7 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Debug("Version called")
 		//Prints the current version of pf9ctl being used.
-		fmt.Println("Pf9ctl version: " + util.Version + "\nChangelog:\n" + color.Green(util.Changelog))
+		fmt.Println(util.Version)
 	},
 }
 
@@ -39,7 +39,7 @@ var versionCmd = &cobra.Command{
 var upgrade = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Checks for a new version of the CLI",
-	Long:  "Checks and downloads the new version of the CLI. Use -c to skip the check and install the neweset version.",
+	Long:  "Checks and downloads the new version of the CLI. Use -c to skip the check and install the latest version.",
 	Run:   checkVersion,
 }
 
@@ -49,13 +49,13 @@ func checkVersion(cmd *cobra.Command, args []string) {
 		if err != nil {
 			zap.S().Fatalf(err.Error())
 		}
-		fmt.Println("Successfully updated, type pf9ctl version to check the changelog")
+		fmt.Println("Successfully updated.")
 		return
 	}
-	// Code to compare the current version with the newest version
-	newVersion, err := getNewestVersion()
+	// Code to compare the current version with the latest version
+	newVersion, err := getLatestVersion()
 	if err != nil {
-		zap.S().Fatalf("Error getting the newest version")
+		zap.S().Fatalf("Error getting the latest version")
 	}
 	if newVersion {
 		fmt.Print("Do you want to upgrade?")
@@ -71,14 +71,14 @@ func checkVersion(cmd *cobra.Command, args []string) {
 		if err != nil {
 			zap.S().Fatalf(err.Error())
 		}
-		fmt.Println("Successfully updated, type pf9ctl version to check the changelog")
+		fmt.Println("Successfully updated.")
 	} else {
-		fmt.Println("You already have the newest version")
+		fmt.Println("You already have the latest version")
 	}
 }
 
-func getNewestVersion() (bool, error) {
-	file, err := os.Open("/usr/bin/pf9ctl")
+func getLatestVersion() (bool, error) {
+	file, err := os.Open(util.PyCliLink)
 	if err != nil {
 		zap.S().Fatalf("Error reading pr9ctl file", err.Error())
 	}
@@ -106,7 +106,7 @@ func getEtag() string {
 	}
 	result, err := svc.GetObject(input)
 	if err != nil {
-		fmt.Errorf("Error while getting the neweset version " + err.Error())
+		fmt.Errorf("Error while getting the latest version " + err.Error())
 	}
 	return *result.ETag
 }
@@ -130,12 +130,12 @@ func upgradeVersion() error {
 }
 
 func checkVersionInit() {
-	newVersion, err := getNewestVersion()
+	newVersion, err := getLatestVersion()
 	if err != nil {
-		zap.S().Fatalf("Error getting the newest version")
+		zap.S().Fatalf("Error getting the latest version")
 	}
 	if newVersion {
-		fmt.Println(color.Red("New version found. Please upgrade to the newest version"))
+		fmt.Println(color.Red("New version found. Please upgrade to the latest version"))
 	}
 }
 

@@ -58,8 +58,6 @@ Use "pf9ctl [command] --help" for more information about a command.
 #pf9ctl version
 
 pf9ctl version: v1.8
-Changelog:
-Latest version changelog goes here
 
 ```
 - **Upgrading**
@@ -77,7 +75,17 @@ Do you want to upgrade? (y/n): y
 Downloading the CLI
 
 Installing the CLI
-Successfully updated, type pf9ctl version to check the changelog
+Successfully updated.
+```
+
+```sh
+#pf9ctl upgrade --skipCheck
+New version found. Please upgrade to the newest version
+
+Downloading the CLI
+
+Installing the CLI
+Successfully updated.
 ```
 
 - **Configuration**
