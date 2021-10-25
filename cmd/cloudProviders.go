@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/platform9/pf9ctl/pkg/config"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -101,13 +103,18 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	ctx, err := pmk.LoadConfig("google.json")
-
+	cfg := &objects.Config{}
+	var err error
+	if cmd.Flags().Changed("dt") {
+		err = config.LoadConfig("google.json", cfg, objects.NodeConfig{})
+	} else {
+		err = config.LoadConfigInteractive("google.json", cfg, objects.NodeConfig{})
+	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
-	if !pmk.CheckGoogleProvider(ctx.GooglePath, ctx.GoogleProjectName, ctx.GoogleServiceEmail) {
+	if !pmk.CheckGoogleProvider(cfg.GooglePath, cfg.GoogleProjectName, cfg.GoogleServiceEmail) {
 		os.Exit(1)
 	}
 
@@ -122,13 +129,18 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	ctx, err := pmk.LoadConfig("amazon.json")
-
+	cfg := &objects.Config{}
+	var err error
+	if cmd.Flags().Changed("dt") {
+		err = config.LoadConfig("amazon.json", cfg, objects.NodeConfig{})
+	} else {
+		err = config.LoadConfigInteractive("amazon.json", cfg, objects.NodeConfig{})
+	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
-	if !pmk.CheckAmazonPovider(ctx.AwsIamUsername, ctx.AwsAccessKey, ctx.AwsSecretKey, ctx.AwsRegion) {
+	if !pmk.CheckAmazonPovider(cfg.AwsIamUsername, cfg.AwsAccessKey, cfg.AwsSecretKey, cfg.AwsRegion) {
 		os.Exit(1)
 	}
 }
@@ -142,13 +154,18 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 		os.Exit(0)
 	}
 
-	ctx, err := pmk.LoadConfig("azure.json")
-
+	cfg := &objects.Config{}
+	var err error
+	if cmd.Flags().Changed("dt") {
+		err = config.LoadConfig("azure.json", cfg, objects.NodeConfig{})
+	} else {
+		err = config.LoadConfigInteractive("azure.json", cfg, objects.NodeConfig{})
+	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n")
 	}
 
-	if !pmk.CheckAzureProvider(ctx.AzureTetant, ctx.AzureClient, ctx.AzureSubscription, ctx.AzureSecret) {
+	if !pmk.CheckAzureProvider(cfg.AzureTetant, cfg.AzureClient, cfg.AzureSubscription, cfg.AzureSecret) {
 		os.Exit(1)
 	}
 

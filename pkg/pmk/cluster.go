@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/platform9/pf9ctl/pkg/client"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
@@ -14,7 +16,7 @@ import (
 
 // Bootstrap simply preps the local node and attach it as master to a newly
 // created cluster.
-func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
+func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateRequest) error {
 	zap.S().Debug("Received a call to boostrap the local node")
 
 	resp, err := util.AskBool("Prep local node for kubernetes cluster")

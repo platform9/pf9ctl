@@ -4,9 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
-	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/color"
+	"github.com/platform9/pf9ctl/pkg/config"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -19,69 +23,64 @@ var (
 	Errhostid   error
 )
 
-var attachNodeCmd = &cobra.Command{
-	Use:   "attach-node [flags] cluster-name",
-	Short: "attaches node to kubernetes cluster",
-	Long:  "Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached",
-	Args: func(attachNodeCmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("Only cluster name is accepted as a parameter")
-		} else if len(args) < 1 {
-			return errors.New("Cluster name is required for attach-node")
-		}
-		clusterName = args[0]
-		return nil
-	},
-	Run: attachNodeRun,
-}
+var (
+	attachNodeCmd = &cobra.Command{
+		Use:   "attach-node [flags] cluster-name",
+		Short: "attaches node to kubernetes cluster",
+		Long:  "Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached",
+		Args: func(attachNodeCmd *cobra.Command, args []string) error {
+			if len(args) > 1 {
+				return errors.New("Only cluster name is accepted as a parameter")
+			} else if len(args) < 1 {
+				return errors.New("Cluster name is required for attach-node")
+			}
+			clusterName = args[0]
+			return nil
+		},
+		Run: attachNodeRun,
+	}
+
+	attachconfig objects.NodeConfig
+)
 
 func init() {
 	attachNodeCmd.Flags().StringSliceVarP(&masterIPs, "master-ip", "m", []string{}, "master node ip address")
 	attachNodeCmd.Flags().StringSliceVarP(&workerIPs, "worker-ip", "w", []string{}, "worker node ip address")
+	attachNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(attachNodeCmd)
 }
 
 func attachNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running Attach Node==========")
-	// This flag is used to loop back if user enters invalid credentials during config set.
-	credentialFlag = true
-	// To bail out if loop runs recursively more than thrice
-	pmk.LoopCounter = 0
 
-	for credentialFlag {
+	detachedMode := cmd.Flags().Changed("dt")
 
-		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
-		if err != nil {
-			zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	if cmdexec.CheckRemote(nc) {
+		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
+	}
 
-		executor, err := getExecutor(ctx.ProxyURL)
-		if err != nil {
-			zap.S().Debug("Error connecting to host %s", err.Error())
-			zap.S().Fatalf(" Invalid (Username/Password/IP)")
-		}
+	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: attachconfig.MFA}
+	var err error
+	if detachedMode {
+		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
+	} else {
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
+	}
+	if err != nil {
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	}
+	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 
-		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-		if err != nil {
-			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-		}
+	var executor cmdexec.Executor
+	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
+		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
+	}
 
-		// Validate the user credentials entered during config set and will loop back again if invalid
-		if err := validateUserCredentials(ctx, c); err != nil {
-			clearContext(&pmk.Context)
-			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-			err = configValidation(RegionInvalid, pmk.LoopCounter)
-		} else {
-			// We will store the set config if its set for first time using check-node
-			if pmk.IsNewConfig {
-				if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
-					zap.S().Errorf("Failed to store config: %s", err.Error())
-				} else {
-					pmk.IsNewConfig = false
-				}
-			}
-			credentialFlag = false
-		}
+	var c client.Client
+	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
 	defer c.Segment.Close()
@@ -90,7 +89,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("No nodes were specified to be attached to the cluster")
 	}
 
-	auth, err := c.Keystone.GetAuth(ctx.Username, ctx.Password, ctx.Tenant, ctx.MfaToken)
+	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
 	if err != nil {
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
@@ -101,7 +100,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	var master_hostIds []string
 	if len(masterIPs) > 0 {
 		var err error
-		master_hostIds, err = hostId(c.Executor, ctx.Fqdn, token, masterIPs)
+		master_hostIds, err = hostId(c.Executor, cfg.Fqdn, token, masterIPs)
 		if err != nil {
 			zap.S().Fatalf("%v", err)
 		}
@@ -111,14 +110,14 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	var worker_hostIds []string
 	if len(workerIPs) > 0 {
 		var err error
-		worker_hostIds, err = hostId(c.Executor, ctx.Fqdn, token, workerIPs)
+		worker_hostIds, err = hostId(c.Executor, cfg.Fqdn, token, workerIPs)
 		if err != nil {
 			zap.S().Fatalf("%v", err)
 		}
 	}
 
 	_, cluster_uuid, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
-	clusterStatus := cluster_Status(c.Executor, ctx.Fqdn, token, projectId, cluster_uuid)
+	clusterStatus := cluster_Status(c.Executor, cfg.Fqdn, token, projectId, cluster_uuid)
 	if clusterStatus == "ok" {
 		//Attaching worker node(s) to cluster
 		if err := c.Segment.SendEvent("Starting Attach-node", auth, "", ""); err != nil {

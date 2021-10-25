@@ -14,6 +14,7 @@ require (
 	github.com/fatih/color v1.10.0
 	github.com/google/go-cmp v0.5.6
 	github.com/hashicorp/go-retryablehttp v0.6.7
+	github.com/jinzhu/copier v0.3.2
 	github.com/pkg/sftp v1.12.0
 	github.com/segmentio/backo-go v0.0.0-20200129164019-23eae7c10bd3 // indirect
 	github.com/spf13/cobra v1.0.0
