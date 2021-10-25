@@ -263,7 +263,7 @@ func removeTempDirAndInstaller(exec cmdexec.Executor) {
 func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Received a call to validate platform")
 
-	strData, err := openOSReleaseFile(exec)
+	strData, err := OpenOSReleaseFile(exec)
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
@@ -290,7 +290,7 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 	return "", nil
 }
 
-func openOSReleaseFile(exec cmdexec.Executor) (string, error) {
+func OpenOSReleaseFile(exec cmdexec.Executor) (string, error) {
 	data, err := exec.RunWithStdout("cat", "/etc/os-release")
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
