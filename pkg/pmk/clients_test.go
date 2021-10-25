@@ -1,13 +1,15 @@
 package pmk
 
 import (
+	"testing"
+	"time"
+
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/resmgr"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 var executor cmdexec.Executor
@@ -18,7 +20,7 @@ func TestNewClient(t *testing.T) {
 		Keystone keystone.Keystone
 		Qbert    qbert.Qbert
 		Executor cmdexec.Executor
-		Segment  Segment
+		Segment  client.Segment
 	}
 
 	testcases := map[string]struct {
@@ -31,13 +33,13 @@ func TestNewClient(t *testing.T) {
 				Keystone: keystone.NewKeystone("fqdn"),                                       //(fqdn)
 				Qbert:    qbert.NewQbert("fqdn"),                                             //(fqdn)
 				Executor: executor,
-				Segment:  NewSegment("fqdn", true), //(fqdn, noTracking)
+				Segment:  client.NewSegment("fqdn", true), //(fqdn, noTracking)
 			},
 		},
 	}
 	for testname, tc := range testcases {
 		t.Run(testname, func(t *testing.T) {
-			client, err := NewClient("fqdn", executor, true, true) //(fqdn, executor, allowInsecure, noTracking)
+			client, err := client.NewClient("fqdn", executor, true, true) //(fqdn, executor, allowInsecure, noTracking)
 
 			if err != nil {
 				t.Errorf("Error occured : %s", err)

@@ -37,7 +37,7 @@ func (k KeystoneImpl) GetAuth(
 	tenant string,
 	mfa string) (auth KeystoneAuth, err error) {
 
-		zap.S().Debugf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s, mfa_token: %s\n", k.fqdn, username, tenant, mfa)
+	zap.S().Debugf("Received a call to fetch keystone authentication for fqdn: %s and user: %s and tenant: %s, mfa_token: %s\n", k.fqdn, username, tenant, mfa)
 
 	url := fmt.Sprintf("%s/keystone/v3/auth/tokens?nocatalog", k.fqdn)
 
@@ -128,4 +128,22 @@ func (k KeystoneImpl) GetAuth(
 		ProjectID: project["id"].(string),
 		Email:     user["name"].(string),
 	}, nil
+}
+
+func FetchRegionFQDN(fqdn string, region string, auth KeystoneAuth) (string, error) {
+
+	// "regionInfo" service will have endpoint information. So fetch it's service ID.
+	regionInfoServiceID, err := GetServiceID(fqdn, auth, "regionInfo")
+	if err != nil {
+		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
+	}
+	zap.S().Debug("Service ID fetched : ", regionInfoServiceID)
+
+	// Fetch the endpoint based on region name.
+	endpointURL, err := GetEndpointForRegion(fqdn, auth, region, regionInfoServiceID)
+	if err != nil {
+		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
+	}
+	zap.S().Debug("endpointURL fetched : ", endpointURL)
+	return endpointURL, nil
 }

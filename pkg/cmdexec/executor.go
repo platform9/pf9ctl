@@ -3,10 +3,14 @@ package cmdexec
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 
+	// "github.com/platform9/pf9ctl/pkg/supportBundle"
+
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/util"
 
 	"github.com/platform9/pf9ctl/pkg/ssh"
@@ -66,7 +70,7 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 		command = fmt.Sprintf("%s \"%s\"", command, arg)
 	}
 
-        // Avoid confidential info in the command from getting logged
+	// Avoid confidential info in the command from getting logged
 	command = ConfidentialInfoRemover(command)
 	zap.S().Debug("Ran command sudo", command)
 
@@ -137,4 +141,30 @@ func ConfidentialInfoRemover(cmd string) string {
 		}
 	}
 	return cmd
+}
+
+func GetExecutor(proxyURL string, nc objects.NodeConfig) (Executor, error) {
+	if CheckRemote(nc) {
+		var pKey []byte
+		var err error
+		if nc.SshKey != "" {
+			pKey, err = ioutil.ReadFile(nc.SshKey)
+			if err != nil {
+				zap.S().Fatalf("Unable to read the sshKey %s, %s", nc.SshKey, err.Error())
+			}
+		}
+		return NewRemoteExecutor(nc.IPs[0], 22, nc.User, pKey, nc.Password, proxyURL)
+	}
+	zap.S().Debug("Using local executor")
+	return LocalExecutor{ProxyUrl: proxyURL}, nil
+}
+
+func CheckRemote(nc objects.NodeConfig) bool {
+	for _, ip := range nc.IPs {
+		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
+			// supportBundle.RemoteBundle = true
+			return true
+		}
+	}
+	return false
 }

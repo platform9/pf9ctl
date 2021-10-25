@@ -1,6 +1,6 @@
 // Copyright © 2020 The Platform9 Systems Inc.
 
-package pmk
+package client
 
 import (
 	"fmt"
