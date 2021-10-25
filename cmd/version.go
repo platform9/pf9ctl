@@ -45,7 +45,7 @@ var upgrade = &cobra.Command{
 
 func checkVersion(cmd *cobra.Command, args []string) {
 	if skipCheck {
-		err = upgradeVersion()
+		err := upgradeVersion()
 		if err != nil {
 			zap.S().Fatalf(err.Error())
 		}

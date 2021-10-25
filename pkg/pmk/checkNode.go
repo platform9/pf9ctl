@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
@@ -34,7 +36,7 @@ when user passes --skipChecks and optional checks fails.
 var WarningOptionalChecks bool
 
 // CheckNode checks the prerequisites for k8s stack
-func CheckNode(ctx Config, allClients Client, auth keystone.KeystoneAuth) (CheckNodeResult, error) {
+func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth) (CheckNodeResult, error) {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
