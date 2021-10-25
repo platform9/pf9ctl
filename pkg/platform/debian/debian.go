@@ -295,18 +295,22 @@ func (d *Debian) Version() (string, error) {
 	//using grep command os name and version are searched (pretty_name)
 	//using cut command required field is selected
 	//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
-	out, err := d.exec.RunWithStdout(
-		"bash",
-		"-c",
-		"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
-	mjrVersion := out[0:2]
+	majorVersion, minorVersion, _, err := d.getVersion()
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if strings.Contains(string(mjrVersion), "16") || strings.Contains(string(mjrVersion), "18") || strings.Contains(string(mjrVersion), "20") {
+	var isVersionMatch bool
+	if strings.Contains(string(majorVersion), "16") && strings.Contains(string(minorVersion), "04") {
+		isVersionMatch = true
+	} else if strings.Contains(string(majorVersion), "18") && strings.Contains(string(minorVersion), "04") {
+		isVersionMatch = true
+	} else if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
+		isVersionMatch = true
+	}
+	if isVersionMatch {
 		return "debian", nil
 	}
-	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
+	return "", fmt.Errorf("Unable to determine OS type")
 }
 
 func (d *Debian) installOSPackages(p string) error {
@@ -382,10 +386,12 @@ func (d *Debian) checkIfTimesyncServiceRunning() (bool, error) {
 			return false, err
 		} else {
 			zap.S().Debug("installed timesync package")
-			version := d.getVersion()
-			mjrVersion := version[0:2]
+			majorVersion, minorVersion, _, err1 := d.getVersion()
+			if err1 != nil {
+				zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
+			}
 			var err error
-			if strings.Contains(string(mjrVersion), "20") {
+			if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
 				err = d.start("systemd-timesyncd")
 			} else {
 				err = d.start("ntp")
@@ -427,20 +433,34 @@ func (d *Debian) checkIfAnyTimeSyncServiceIsRunning() error {
 	return err
 }
 
-func (d *Debian) getVersion() string {
-	out, err := d.exec.RunWithStdout("bash", "-c", "cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
+func (d *Debian) getVersion() (string, string, string, error) {
+	version, err := d.exec.RunWithStdout("bash", "-c", "cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
 	if err != nil {
-		zap.S().Debug("Could not find os version")
+		return "", "", "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	return out
+	major, minor, patch := split(version, ".")
+	return major, minor, patch, nil
+}
+
+func split(version, delimiter string) (string, string, string) {
+	versionArray := strings.Split(version, delimiter)
+	if len(versionArray) < 2 {
+		return versionArray[0], "", ""
+	}
+	if len(versionArray) < 3 {
+		return versionArray[0], versionArray[1], ""
+	}
+	return versionArray[0], versionArray[1], versionArray[2]
 }
 
 func (d *Debian) IsPresent(service string) error {
 	zap.S().Debugf("checking if %s is present", service)
 	var cmd string
-	version := d.getVersion()
-	mjrVersion := version[0:2]
-	if strings.Contains(string(mjrVersion), "16") {
+	majorVersion, minorVersion, _, err1 := d.getVersion()
+	if err1 != nil {
+		zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
+	}
+	if strings.Contains(string(majorVersion), "16") && strings.Contains(string(minorVersion), "04") {
 		cmd = fmt.Sprintf(`systemctl status %s | grep 'not-found'`, service)
 		_, err := d.exec.RunWithStdout("bash", "-c", cmd)
 		if err != nil {
@@ -492,10 +512,12 @@ func (d *Debian) start(service string) error {
 
 func (d *Debian) DownloadAndInstallTimesyncPkg() error {
 	zap.S().Debug("timesync package not found installing timesync package")
-	version := d.getVersion()
-	mjrVersion := version[0:2]
+	majorVersion, minorVersion, _, err1 := d.getVersion()
+	if err1 != nil {
+		zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
+	}
 	var err error
-	if strings.Contains(string(mjrVersion), "20") {
+	if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
 		err = d.installOSPackages("systemd-timesyncd")
 	} else {
 		err = d.installOSPackages("ntp")
