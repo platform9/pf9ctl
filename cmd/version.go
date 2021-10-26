@@ -80,13 +80,13 @@ func checkVersion(cmd *cobra.Command, args []string) {
 func getLatestVersion() (bool, error) {
 	file, err := os.Open(util.PyCliLink)
 	if err != nil {
-		zap.S().Fatalf("Error reading pr9ctl file", err.Error())
+		return false, err
 	}
 	defer file.Close()
 	hash := md5.New()
 	_, err = io.Copy(hash, file)
 	if err != nil {
-		zap.S().Fatalf("Error hashing pf9ctl file", err.Error())
+		return false, err
 	}
 	hashString := hex.EncodeToString(hash.Sum(nil))
 	eTag := getEtag()
@@ -132,7 +132,7 @@ func upgradeVersion() error {
 func checkVersionInit() {
 	newVersion, err := getLatestVersion()
 	if err != nil {
-		zap.S().Fatalf("Error getting the latest version")
+		fmt.Println("Error checking versions ", err)
 	}
 	if newVersion {
 		fmt.Println(color.Red("New version found. Please upgrade to the latest version"))
