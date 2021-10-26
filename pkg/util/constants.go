@@ -13,7 +13,6 @@ var ProcessesList []string //Kubernetes clusters processes list
 var SwapOffDisabled bool   //If this is true the swapOff functionality will be disabled.
 var SkipPrepNode bool
 var HostDown bool
-
 var EBSPermissions []string
 var Route53Permissions []string
 var EC2Permission []string

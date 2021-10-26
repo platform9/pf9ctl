@@ -428,6 +428,7 @@ Prep local node as master node for kubernetes cluster (y/n): y
 2021-10-19T12:24:50.3744Z	INFO	Creating the cluster singletestcluster2
 2021-10-19T12:25:55.5814Z	INFO	Attaching node to the cluster singletestcluster2
 2021-10-19T12:25:56.3007Z	INFO	=======Bootstrap successfully finished========
+
 ```
   **check-amazon-provider**
 ```sh
