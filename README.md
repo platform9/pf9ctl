@@ -57,8 +57,37 @@ Use "pf9ctl [command] --help" for more information about a command.
 ```sh
 #pf9ctl version
 
-pf9ctl version: v1.3
+pf9ctl version: v1.8
+
+```
+- **Upgrading**
+
+  **This command is used upgrade the CLI to its newest version if there is one**
+```sh
+#pf9ctl upgrade
+You already have the newest version
 ```   
+```sh
+#pf9ctl upgrade
+New version found. Please upgrade to the newest version
+Do you want to upgrade? (y/n): y
+
+Downloading the CLI
+
+Installing the CLI
+Successfully updated.
+```
+
+```sh
+#pf9ctl upgrade --skipCheck
+New version found. Please upgrade to the newest version
+
+Downloading the CLI
+
+Installing the CLI
+Successfully updated.
+```
+
 - **Configuration**
 
   This is used to setup or get the control-plane configuration. It includes the DU FQDN , username, region and the tenant(service).
@@ -98,7 +127,6 @@ Usage:
 Flags:
   -u, --account_url string   sets account_url
   -h, --help                 help for set
-  -o, --overrideProxy        override proxy for current execution
   -p, --password string      sets password (use 'single quotes' to pass password)
   -l, --proxy_url string     sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>
   -r, --region string        sets region
@@ -328,4 +356,34 @@ Global Flags:
 ✓ Loaded Config Successfully
 2021-05-26T11:58:01.9579Z	INFO	Worker node(s) [bf5364cf-e2fd-4500-97fb-0b01be26084f] attached to cluster
 2021-05-26T11:58:03.6328Z	INFO	Master node(s) [615c1042-48a3-42e8-8003-ac135d12e6f4] attached to cluster
+```
+
+  **check-amazon-provider**
+```sh
+#pf9ctl check-amazon-provider -i iamUser -a access-key -s secret-key -r us-east-1
+
+✓ ELB Access
+✓ Route53 Access
+✓ Availability Zones success
+✓ EC2 Access
+✓ VPC Access
+✓ IAM Access
+✓ Autoscaling Access
+✓ EKS Access
+```
+  **check-google-provider**
+```sh
+#pf9ctl check-google-provider -p /home/duser/Downloads/service-account.json -n testProject -e user@email.com
+
+✓  Success roles/iam.serviceAccountUser
+✓  Failed roles/container.admin
+✓  Failed roles/compute.viewer
+✓  Success roles/viewer
+```
+
+  **check-azure-provider**
+```sh
+#pf9ctl check-google-provider -t tenantID -c clientID -s subscriptionID -k secretKey
+
+✓ Has access
 ```

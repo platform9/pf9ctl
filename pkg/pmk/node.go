@@ -21,6 +21,7 @@ import (
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
 var IsRemoteExecutor bool
+var homeDir = util.HomeDir
 
 const (
 	// Response Status Codes
@@ -209,7 +210,8 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	if ctx.AllowInsecure {
 		insecureDownload = "-k"
 	}
-	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  /tmp/installer.sh`, insecureDownload, url)
+
+	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  %s/pf9/installer.sh`, insecureDownload, url, homeDir)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
@@ -219,21 +221,22 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	var installOptions string
 
 	//Pass keystone token if MFA token is provided
-	if (ctx.MfaToken != "") {
+	if ctx.MfaToken != "" {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s  --user-token='%s'`, regionURL, auth.Token)
 	} else {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
 	}
 
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
+	changePermission := fmt.Sprintf("chmod +x %s/pf9/installer.sh", homeDir)
+	_, err = exec.RunWithStdout("bash", "-c", changePermission)
 	if err != nil {
 		return err
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy %s --skip-os-check --no-ntp`, ctx.ProxyURL)
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, homeDir, ctx.ProxyURL)
 	} else {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --no-ntp`)
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --no-proxy --skip-os-check --no-ntp`, homeDir)
 	}
 
 	if IsRemoteExecutor {
@@ -243,6 +246,9 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 		cmd = fmt.Sprintf(`%s %s`, cmd, installOptions)
 		_, err = exec.RunWithStdout("bash", "-c", cmd)
 	}
+
+	removeTempDirAndInstaller(exec)
+
 	if err != nil {
 		return fmt.Errorf("Unable to run installer script")
 	}
@@ -250,6 +256,29 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
 	zap.S().Debug("Platform9 packages installed successfully")
 	return nil
+}
+
+func removeTempDirAndInstaller(exec cmdexec.Executor) {
+	zap.S().Debug("Removing temporary directory created to extract installer")
+	removeTmpDirCmd := fmt.Sprintf("rm -rf %s/pf9/pf9-install-*", homeDir)
+	_, err1 := exec.RunWithStdout("bash", "-c", removeTmpDirCmd)
+	if err1 != nil {
+		zap.S().Debug("error removing temporary directory")
+	}
+
+	zap.S().Debug("Removing installer script")
+	removeInstallerCmd := fmt.Sprintf("rm -rf %s/pf9/installer.sh", homeDir)
+	_, err1 = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
+	if err1 != nil {
+		zap.S().Debug("error removing installer script")
+	}
+
+	zap.S().Debug("Removing legacy installer script")
+	removeInstallerCmd = fmt.Sprintf("rm -rf %s/pf9/agent_install", homeDir)
+	_, err1 = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
+	if err1 != nil {
+		zap.S().Debug("error removing installer script")
+	}
 }
 
 func ValidatePlatform(exec cmdexec.Executor) (string, error) {
@@ -266,7 +295,7 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 		osVersion, err := platform.Version()
 		if err == nil {
 			return osVersion, nil
-		}else {
+		} else {
 			zap.S().Debugf("Error : %s", err)
 		}
 	case strings.Contains(strData, util.Ubuntu):
@@ -274,7 +303,7 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 		osVersion, err := platform.Version()
 		if err == nil {
 			return osVersion, nil
-		}else {
+		} else {
 			zap.S().Debugf("Error : %s", err)
 		}
 	}
@@ -319,27 +348,37 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 	zap.S().Debug("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("https://%s/private/platform9-install-%s.sh", regionURL, hostOS)
-	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a /tmp/agent_install", auth.ProjectID)
+	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a %s/pf9/agent_install", auth.ProjectID, homeDir)
 	//use insecure by default
-	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o /tmp/installer.sh`, auth.Token, url)
+	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o %s/pf9/installer.sh`, auth.Token, url, homeDir)
 	_, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}
 
 	zap.S().Debug("Hostagent download completed successfully")
-	_, err = exec.RunWithStdout("bash", "-c", "chmod +x /tmp/installer.sh")
+	changePermission := fmt.Sprintf("chmod +x %s/pf9/installer.sh", homeDir)
+	_, err = exec.RunWithStdout("bash", "-c", changePermission)
 	if err != nil {
 		return err
 	}
 
 	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --proxy %s --skip-os-check --ntpd %s`, ctx.ProxyURL, installOptions)
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, homeDir, ctx.ProxyURL)
 	} else {
-		cmd = fmt.Sprintf(`/tmp/installer.sh --no-proxy --skip-os-check --ntpd %s`, installOptions)
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --no-proxy --skip-os-check --no-ntp`, homeDir)
 	}
 
-	_, err = exec.RunWithStdout("bash", "-c", cmd)
+	if IsRemoteExecutor {
+		cmd = fmt.Sprintf(`bash %s %s`, cmd, installOptions)
+		_, err = exec.RunWithStdout(cmd)
+	} else {
+		cmd = fmt.Sprintf(`%s %s`, cmd, installOptions)
+		_, err = exec.RunWithStdout("bash", "-c", cmd)
+	}
+
+	removeTempDirAndInstaller(exec)
+
 	if err != nil {
 		return err
 	}

@@ -25,15 +25,26 @@ var (
 
 // Config stores information to contact with the pf9 controller.
 type Config struct {
-	Fqdn          string        `json:"fqdn"`
-	Username      string        `json:"username"`
-	Password      string        `json:"password"`
-	Tenant        string        `json:"tenant"`
-	Region        string        `json:"region"`
-	WaitPeriod    time.Duration `json:"wait_period"`
-	AllowInsecure bool          `json:"allow_insecure"`
-	ProxyURL      string        `json:"proxy_url"`
-	MfaToken      string        `json:"mfa_token"`
+	Fqdn               string        `json:"fqdn"`
+	Username           string        `json:"username"`
+	Password           string        `json:"password"`
+	Tenant             string        `json:"tenant"`
+	Region             string        `json:"region"`
+	WaitPeriod         time.Duration `json:"wait_period"`
+	AllowInsecure      bool          `json:"allow_insecure"`
+	ProxyURL           string        `json:"proxy_url"`
+	MfaToken           string        `json:"mfa_token"`
+	AwsIamUsername     string        `json:"aws_iam_username"`
+	AwsAccessKey       string        `json:"aws_access_key"`
+	AwsSecretKey       string        `json:"aws_secret_key"`
+	AwsRegion          string        `json:"aws_region"`
+	AzureTetant        string        `json:"azure_tenant"`
+	AzureClient        string        `json:"azure_application"`
+	AzureSubscription  string        `json:"azure_subscription"`
+	AzureSecret        string        `json:"azure_secret"`
+	GooglePath         string        `json:"google_path"`
+	GoogleProjectName  string        `json:"google_project_name"`
+	GoogleServiceEmail string        `json:"google_service_email"`
 }
 
 // StoreConfig simply updates the in-memory object
@@ -81,11 +92,20 @@ func LoadConfig(loc string) (Config, error) {
 				zap.S().Debug("Existing config is invalid, prompting for new config.")
 			}
 
-			ctx, err := ConfigCmdCreateRun()
+			IsNewConfig = true
+
+			if loc == "amazon.json" {
+				return ConfigCmdCreateAmazonRun()
+			} else if loc == "azure.json" {
+				return ConfigCmdCreateAzureRun()
+			} else if loc == "google.json" {
+				return ConfigCmdCreateGoogleRun()
+			} else {
+				return ConfigCmdCreateRun()
+			}
 
 			// It is set true when we are setting config for the first time using check-node/prep-node
-			IsNewConfig = true
-			return ctx, err
+
 		}
 		return Config{}, err
 	}
@@ -116,6 +136,106 @@ func LoadConfig(loc string) (Config, error) {
 }
 
 var Context Config
+
+func ConfigCmdCreateAmazonRun() (Config, error) {
+
+	zap.S().Debug("==========Running set config==========")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	if Context.AwsIamUsername == "" {
+		fmt.Printf("Amazon IAM User: ")
+		awsIamUsername, _ := reader.ReadString('\n')
+		Context.AwsIamUsername = strings.TrimSuffix(awsIamUsername, "\n")
+	}
+
+	if Context.AwsAccessKey == "" {
+		fmt.Printf("Amazon Access Key: ")
+		accessKey, _ := terminal.ReadPassword(0)
+		Context.AwsAccessKey = string(accessKey)
+	}
+
+	if Context.AwsSecretKey == "" {
+		fmt.Printf("\nAmazon Secret Key: ")
+		secretKey, _ := terminal.ReadPassword(0)
+		Context.AwsSecretKey = string(secretKey)
+	}
+	var region string
+	if Context.AwsRegion == "" {
+		fmt.Printf("\nRegion [us-east-1]: ")
+		region, _ = reader.ReadString('\n')
+		Context.AwsRegion = strings.TrimSuffix(region, "\n")
+	}
+
+	if Context.AwsRegion == "" {
+		Context.AwsRegion = "us-east-1"
+	}
+
+	return Context, nil
+
+}
+
+func ConfigCmdCreateAzureRun() (Config, error) {
+
+	zap.S().Debug("==========Running set config==========")
+
+	if Context.AzureTetant == "" {
+		fmt.Printf("Azure TenantID: ")
+		azureTenant, _ := terminal.ReadPassword(0)
+		Context.AzureTetant = string(azureTenant)
+	}
+
+	if Context.AzureClient == "" {
+		fmt.Printf("\nAzure ApplicationID: ")
+		azureClient, _ := terminal.ReadPassword(0)
+		Context.AzureClient = string(azureClient)
+	}
+
+	if Context.AzureSubscription == "" {
+		fmt.Printf("\nAzure SubscriptionID: ")
+		azureSub, _ := terminal.ReadPassword(0)
+		Context.AzureSubscription = string(azureSub)
+	}
+
+	if Context.AzureSecret == "" {
+		fmt.Printf("\nAzure Secret Key: ")
+		azureSecret, _ := terminal.ReadPassword(0)
+		Context.AzureSecret = string(azureSecret)
+	}
+
+	fmt.Printf("\n")
+
+	return Context, nil
+
+}
+
+func ConfigCmdCreateGoogleRun() (Config, error) {
+
+	zap.S().Debug("==========Running set config==========")
+
+	reader := bufio.NewReader(os.Stdin)
+
+	if Context.GooglePath == "" {
+		fmt.Printf("Service JSON path: ")
+		googleProjectName, _ := reader.ReadString('\n')
+		Context.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
+	}
+
+	if Context.GoogleProjectName == "" {
+		fmt.Printf("Project Name: ")
+		googleProjectName, _ := reader.ReadString('\n')
+		Context.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
+	}
+
+	if Context.GoogleServiceEmail == "" {
+		fmt.Printf("Service Account Email: ")
+		googleServiceEmail, _ := reader.ReadString('\n')
+		Context.GoogleServiceEmail = strings.TrimSuffix(googleServiceEmail, "\n")
+	}
+
+	return Context, nil
+
+}
 
 // ConfigCmdCreatRun will initiate the config set and return a config given by user
 func ConfigCmdCreateRun() (Config, error) {

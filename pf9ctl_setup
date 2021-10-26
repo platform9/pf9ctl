@@ -68,8 +68,11 @@ refresh_symlink() {
 }
 
 check_installation() {
-    if ! (${cli_exec} --help >> ${log_file} 2>&1); then
+    # Checking if the new "pf9ctl_new" installation is completed since the "pf9ctl" isn't removed untill the end of the installation process
+    if ! (${cli_exec}_new --help >> ${log_file} 2>&1); then
 	assert "Installation of Platform9 CLI Failed"; fi
+    # As this is the final check and everything is alright that means we can now rename the "pf9ctl_new" to "pf9ctl"
+    sudo mv ${cli_exec}_new ${cli_exec}
 }
 
 download_cli_binary() {
@@ -77,9 +80,9 @@ download_cli_binary() {
     echo "      You might be prompted for your SUDO password."
 	echo ""
 	echo "Downloading Platform9 CLI binary..."
-	sudo rm ${cli_exec} 2> /dev/null
-	cd ${pf9_bin} > /dev/null && sudo curl -s -O ${cli_path} -o ${log_file} 2>&1 && cd - > /dev/null
-	sudo chmod 555 ${cli_exec}
+    # Downloading the binary under the name pf9ctl_new so that the current installed version doesnt get deleted
+	cd ${pf9_bin} > /dev/null && sudo curl -s -o pf9ctl_new "${cli_path}" -o ${log_file} 2>&1 && cd - > /dev/null
+	sudo chmod 555 ${cli_exec}_new
 	echo ""
 	echo "Platform9 CLI binary downloaded."
 	echo ""
