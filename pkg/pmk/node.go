@@ -221,7 +221,7 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	var installOptions string
 
 	//Pass keystone token if MFA token is provided
-	if (ctx.MfaToken != "") {
+	if ctx.MfaToken != "" {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s  --user-token='%s'`, regionURL, auth.Token)
 	} else {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
@@ -268,6 +268,13 @@ func removeTempDirAndInstaller(exec cmdexec.Executor) {
 
 	zap.S().Debug("Removing installer script")
 	removeInstallerCmd := fmt.Sprintf("rm -rf %s/pf9/installer.sh", homeDir)
+	_, err1 = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
+	if err1 != nil {
+		zap.S().Debug("error removing installer script")
+	}
+
+	zap.S().Debug("Removing legacy installer script")
+	removeInstallerCmd = fmt.Sprintf("rm -rf %s/pf9/agent_install", homeDir)
 	_, err1 = exec.RunWithStdout("bash", "-c", removeInstallerCmd)
 	if err1 != nil {
 		zap.S().Debug("error removing installer script")
