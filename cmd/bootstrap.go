@@ -4,11 +4,12 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
@@ -49,7 +50,6 @@ var (
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("Received a call to bootstrap the node")
-	zap.S().Info("Running Checks for Bootstrap Command")
 
 	// This flag is used to loop back if user enters invalid credentials during config set.
 	credentialFlag = true
@@ -102,29 +102,32 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	defer c.Segment.Close()
 
-	d := debian.NewDebian(executor)
+	// Building our new spinner
+	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	s.Color("red")
+	s.Start() // Start the spinner
+	defer s.Stop()
+	s.Suffix = " Running pre-requisite checks for Bootstrap command"
 
-	val, err := d.CheckExistingInstallation()
+	val, val1, err := pmk.PreReqBootstrap(executor)
 	if err != nil {
-		//zap.S().Fatalf("Could not run command Installation")
-		zap.S().Infof("Error %s", err)
+		zap.S().Fatalf("Error running Prerequisite Checks for Bootstrap Command")
 	}
-
-	val1, err1 := d.CheckKubernetesCluster()
-	if err1 != nil {
-		//zap.S().Fatalf("Could not run command Cluster")
-		zap.S().Infof("Error %s", err1)
-	}
+	s.Stop()
 
 	if !val && !val1 { //Both node and cluster are already present
-		zap.S().Fatalf("Cannot run this command as node is already attached to a cluster")
+		zap.S().Fatalf(color.Red("x ") + " Cannot run this command as node is already attached to a cluster")
+
 	} else if !val && val1 { //Only node is present but not attached to a cluster
 		util.SkipPrepNode = true
-		zap.S().Infof("Node is already Onboarded....Skipping Prep-Node")
+		fmt.Printf(color.Green("✓") + " Node is already Onboarded....Skipping Prep-Node")
 	} else { //Both node and cluster are not present
+		fmt.Printf(color.Green("✓") + " Node is not onboarded and not attached to any cluster")
 		util.SkipPrepNode = false
 	}
 
+	fmt.Println("")
+	fmt.Printf(color.Green("✓") + "Ready to run bootstrap command")
 	if !util.SkipPrepNode {
 		zap.S().Debug("========== Running check-node as a part of bootup ==========")
 
@@ -193,7 +196,11 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&privileged, "privileged", true, "Enable privileged mode for K8's API. Default: true")
 	bootstrapCmd.Flags().BoolVar(&appCatalogEnabled, "appCatalogEnabled", false, "Enable Helm application catalog")
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allowWorkloadsOnMaster", true, "Taint master nodes ( to enable workloads )")
-	bootstrapCmd.Flags().StringVar(&networkPlugin, "networkPlugin", "flannel", "Specify network plugin ( Possible values: flannel or calico )")
+	bootstrapCmd.Flags().StringVar(&networkPlugin, "networkPlugin", "calico", "Specify network plugin (flannel or calico )")
+	bootstrapCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
+	bootstrapCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
+	bootstrapCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
+	bootstrapCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
 	// This is the bootstrap command to initialize its run and add to root which is not in use for now.
 	rootCmd.AddCommand(bootstrapCmd)
 }
