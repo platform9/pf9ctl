@@ -103,7 +103,7 @@ checkOS_version() {
     cat /etc/*release &>/dev/null
     if [ $? != 0 ];
     then
-        echo "This OS is not supported. Supported operating systems are: Ubuntu (16.04, 18.04, 20.04), CentOS 7.x & RHEL 7.x"
+        echo "This OS is not supported. Check documentation for supported versions at https://platform9.com/docs/kubernetes/kubernetes-cluster-pre-requisites"
         exit
     fi
 }
