@@ -614,56 +614,6 @@ func TestDisableSwap(t *testing.T) {
 	}
 }
 
-func TestNoexecPermissionCheck(t *testing.T) {
-	type want struct {
-		result bool
-		err    error
-	}
-
-	cases := map[string]struct {
-		args
-		want
-	}{
-		//Success case. successful execution of grep command returns error.
-		"CheckPass": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "0", nil
-					},
-				},
-			},
-			want: want{
-				result: false,
-				err:    errors.New("/tmp is not having exec permission"),
-			},
-		},
-		//Failure case. if output of grep command is empty then it returns nil error.
-		"CheckFail": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1", errors.New("ERROR")
-					},
-				},
-			},
-			want: want{
-				result: true,
-				err:    nil,
-			},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
-			result, err := c.checkNoexecPermission()
-			assert.Equal(t, tc.result, result)
-			assert.Equal(t, tc.err, err)
-		})
-	}
-}
-
 func TestPIDofSystemdCheck(t *testing.T) {
 	type want struct {
 		result bool
