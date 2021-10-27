@@ -21,7 +21,7 @@ import (
 // This variable is assigned with StatusCode during hostagent installation
 var HostAgent int
 var IsRemoteExecutor bool
-var homeDir = util.HomeDir
+var homeDir string
 
 const (
 	// Response Status Codes
@@ -210,9 +210,21 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	if ctx.AllowInsecure {
 		insecureDownload = "-k"
 	}
+	var err error
+	homeDir, err = exec.RunWithStdout("bash", "-c", "echo $HOME")
+	homeDir = strings.TrimSpace(strings.Trim(homeDir, "\n\""))
+	if err != nil {
+		return err
+	}
+	//creating this dir because in remote case this dir will not present for fresh vm
+	//for local case it will not cause any problem
+	_, err = exec.RunWithStdout("mkdir", "pf9")
+	if err != nil {
+		zap.S().Debugf("Warning : ", err)
+	}
 
 	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  %s/pf9/installer.sh`, insecureDownload, url, homeDir)
-	_, err := exec.RunWithStdout("bash", "-c", cmd)
+	_, err = exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}
@@ -348,10 +360,24 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 	zap.S().Debug("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("https://%s/private/platform9-install-%s.sh", regionURL, hostOS)
+
+	var err error
+	homeDir, err = exec.RunWithStdout("bash", "-c", "echo $HOME")
+	homeDir = strings.TrimSpace(strings.Trim(homeDir, "\n\""))
+	if err != nil {
+		return err
+	}
+	//creating this dir because in remote case this dir will not present for fresh vm
+	//for local case it will not cause any problem
+	_, err = exec.RunWithStdout("mkdir", "pf9")
+	if err != nil {
+		zap.S().Debugf("Warning : ", err)
+	}
+
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a %s/pf9/agent_install", auth.ProjectID, homeDir)
 	//use insecure by default
 	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o %s/pf9/installer.sh`, auth.Token, url, homeDir)
-	_, err := exec.RunWithStdout("bash", "-c", cmd)
+	_, err = exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
 	}
