@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -61,6 +62,7 @@ func init() {
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disableSwapOff", "d", false, "Will skip swapoff")
 	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
 	prepNodeCmd.Flags().MarkHidden("disableSwapOff")
+	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 
 	rootCmd.AddCommand(prepNodeCmd)
 }
@@ -73,8 +75,9 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	detachedMode := cmd.Flags().Changed("dt")
+	isRemote := cmdexec.CheckRemote(nodeConfig)
 
-	if cmdexec.CheckRemote(nodeConfig) {
+	if isRemote {
 		if !config.ValidateNodeConfig(&nodeConfig, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
@@ -104,6 +107,12 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
+	if isRemote {
+		if err := SudoPasswordCheck(executor, detachedMode, nodeConfig.SudoPassword); err != nil {
+			zap.S().Fatal(err.Error())
+		}
+	}
+
 	// If all pre-requisite checks passed in Check-Node then prep-node
 	result, err := pmk.CheckNode(*cfg, c)
 	if err != nil {
@@ -116,21 +125,24 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		zap.S().Fatalf(color.Red("x ") + "Required pre-requisite check(s) failed.")
+		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	}
 
-	// non-interactive mode and not skipping optional checks
-	if !skipChecks && !cmd.Flags().Changed("dt") {
-		os.Exit(1)
-	}
-
-	// interactive mode and prompt if checks to be skipped
-	if !skipChecks && result == pmk.OptionalFail {
-		fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
-		reader := bufio.NewReader(os.Stdin)
-		char, _, _ := reader.ReadRune()
-		if char != 'y' {
-			os.Exit(0)
+	if result == pmk.OptionalFail {
+		if !skipChecks {
+			if detachedMode {
+				fmt.Print(color.Red("x ") + "Optional pre-requisite check(s) failed. Use --skip-checks to skip these checks.\n")
+				os.Exit(1)
+			} else {
+				fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
+				reader := bufio.NewReader(os.Stdin)
+				char, _, _ := reader.ReadRune()
+				if char != 'y' {
+					os.Exit(0)
+				}
+			}
+		} else {
+			fmt.Print("\nProceeding for prep-node with failed optional check(s)\n")
 		}
 	}
 
@@ -209,10 +221,20 @@ func getExecutor(proxyURL string) (cmdexec.Executor, error) {
 }
 
 // To check if Remote Host needs Password to access Sudo and prompt for Sudo Password if exists.
-func SudoPasswordCheck(exec cmdexec.Executor) error {
+func SudoPasswordCheck(exec cmdexec.Executor, detached bool, sudoPass string) error {
 
 	_, err := exec.RunWithStdout("-l | grep '(ALL) PASSWD: ALL'")
 	if err == nil {
+		if detached {
+			if sudoPass == "" {
+				return errors.New("sudo password is required for the user on remote host, use -e to pass")
+			} else if validateSudoPassword(exec) == util.Invalid {
+				return errors.New("Invalid password for user on remote host")
+			} else {
+				ssh.SudoPassword = sudoPass
+				return nil
+			}
+		}
 		// To bail out if Sudo Password entered is invalid multiple times.
 		loopcounter := 1
 		for true {

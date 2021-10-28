@@ -38,6 +38,8 @@ func init() {
 	checkNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	checkNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	checkNodeCmd.Flags().StringVar(&nc.MFA, "mfa", "", "MFA token")
+	checkNodeCmd.Flags().StringVarP(&nc.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
 	rootCmd.AddCommand(checkNodeCmd)
@@ -47,6 +49,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
 
 	detachedMode := cmd.Flags().Changed("dt")
+	isRemote := cmdexec.CheckRemote(nc)
 
 	if cmdexec.CheckRemote(nc) {
 		if !config.ValidateNodeConfig(&nc, !detachedMode) {
@@ -78,6 +81,12 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	defer c.Segment.Close()
+
+	if isRemote {
+		if err := SudoPasswordCheck(executor, detachedMode, nc.SudoPassword); err != nil {
+			zap.S().Fatal(err.Error())
+		}
+	}
 
 	result, err := pmk.CheckNode(*cfg, c)
 	if err != nil {
