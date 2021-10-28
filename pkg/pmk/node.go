@@ -218,12 +218,13 @@ func installHostAgentCertless(ctx Config, regionURL string, auth keystone.Keysto
 	}
 	//creating this dir because in remote case this dir will not present for fresh vm
 	//for local case it will not cause any problem
-	_, err = exec.RunWithStdout("mkdir", "pf9")
+	cmd := fmt.Sprintf(`%s/pf9`, homeDir)
+	_, err = exec.RunWithStdout("mkdir", "-p", cmd)
 	if err != nil {
-		zap.S().Debugf("Warning : ", err)
+		zap.S().Debugf("Directory exist")
 	}
 
-	cmd := fmt.Sprintf(`curl %s --silent --show-error  %s -o  %s/pf9/installer.sh`, insecureDownload, url, homeDir)
+	cmd = fmt.Sprintf(`curl %s --silent --show-error  %s -o  %s/pf9/installer.sh`, insecureDownload, url, homeDir)
 	_, err = exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
@@ -369,14 +370,15 @@ func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.Keystone
 	}
 	//creating this dir because in remote case this dir will not present for fresh vm
 	//for local case it will not cause any problem
-	_, err = exec.RunWithStdout("mkdir", "pf9")
+	cmd := fmt.Sprintf(`%s/pf9`, homeDir)
+	_, err = exec.RunWithStdout("mkdir", "-p", cmd)
 	if err != nil {
-		zap.S().Debugf("Warning : ", err)
+		zap.S().Debugf("Directory exist")
 	}
 
 	installOptions := fmt.Sprintf("--insecure --project-name=%s 2>&1 | tee -a %s/pf9/agent_install", auth.ProjectID, homeDir)
 	//use insecure by default
-	cmd := fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o %s/pf9/installer.sh`, auth.Token, url, homeDir)
+	cmd = fmt.Sprintf(`curl --insecure --silent --show-error -H 'X-Auth-Token:%s' %s -o %s/pf9/installer.sh`, auth.Token, url, homeDir)
 	_, err = exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return err
