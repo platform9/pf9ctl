@@ -405,7 +405,8 @@ func CheckSudo(exec cmdexec.Executor) bool {
 }
 
 func createDirToDownloadInstaller(exec cmdexec.Executor) (string, error) {
-	homeDir, err := exec.RunWithStdout("bash", "-c", "echo $HOME")
+	var err error
+	homeDir, err = exec.RunWithStdout("bash", "-c", "echo $HOME")
 	homeDir = strings.TrimSpace(strings.Trim(homeDir, "\n\""))
 	if err != nil {
 		return "", err
