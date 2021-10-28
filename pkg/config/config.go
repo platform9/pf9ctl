@@ -26,7 +26,8 @@ import (
 var (
 	REGION_INVALID     error = errors.New("Invalid Region")
 	INVALID_CREDS      error = errors.New("Invalid Credentials")
-	NO_CONFIG                = errors.New("No config found, please create with `pf9ctl config create`")
+	NO_CONFIG                = errors.New("No config found, please create with `pf9ctl config set`")
+	MISSSING_FIELDS          = errors.New("Missing mandatory field(s) (Platform9 Account URL/Username/Password/Region/Tenant)")
 	MAX_ATTEMPTS_ERROR       = errors.New("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
 )
 
@@ -34,11 +35,15 @@ var (
 func StoreConfig(cfg *objects.Config, loc string) error {
 	zap.S().Debug("Storing configuration details")
 
+	var cfgCopy objects.Config
+
+	copier.CopyWithOption(&cfgCopy, cfg, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+
 	// obscure the password
-	cfg.Password = base64.StdEncoding.EncodeToString([]byte(cfg.Password))
+	cfgCopy.Password = base64.StdEncoding.EncodeToString([]byte(cfg.Password))
 
 	// Clear the MFA token as it will be required afresh every time
-	cfg.MfaToken = ""
+	cfgCopy.MfaToken = ""
 
 	f, err := os.Create(loc)
 	if err != nil {
@@ -49,7 +54,7 @@ func StoreConfig(cfg *objects.Config, loc string) error {
 
 	encoder := json.NewEncoder(f)
 	fmt.Println(color.Green("✓ ") + "Stored configuration details Succesfully")
-	return encoder.Encode(cfg)
+	return encoder.Encode(cfgCopy)
 }
 
 // LoadConfig returns the information for communication with PF9 controller.
@@ -60,7 +65,7 @@ func LoadConfig(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
 	f, err := os.Open(loc)
 	if err != nil {
 		if os.IsNotExist(err) {
-			zap.S().Debug("No existing config not found, please create using `pf9ctl config set`")
+			zap.S().Debug(NO_CONFIG.Error())
 			return NO_CONFIG
 		} else {
 			zap.S().Debug(err.Error())
@@ -158,6 +163,11 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) 
 }
 
 func ValidateUserCredentials(cfg *objects.Config, nc objects.NodeConfig) error {
+
+	if err := validateConfigFields(cfg); err != nil {
+		return err
+	}
+
 	c, err := createClient(cfg, nc)
 	defer c.Segment.Close()
 	if err != nil {
@@ -404,6 +414,13 @@ func SetProxy(proxyURL string) error {
 		if err := os.Setenv("https_proxy", proxyURL); err != nil {
 			return errors.New("Error setting proxy as environment variable")
 		}
+	}
+	return nil
+}
+
+func validateConfigFields(cfg *objects.Config) error {
+	if cfg.Fqdn == "" || cfg.Username == "" || cfg.Password == "" || cfg.Region == "" || cfg.Tenant == "" {
+		return MISSSING_FIELDS
 	}
 	return nil
 }
