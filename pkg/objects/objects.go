@@ -27,9 +27,10 @@ type Config struct {
 }
 
 type NodeConfig struct {
-	User     string
-	Password string
-	SshKey   string
-	IPs      []string
-	MFA      string
+	User         string
+	Password     string
+	SshKey       string
+	IPs          []string
+	MFA          string
+	SudoPassword string
 }
