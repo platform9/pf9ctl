@@ -67,7 +67,7 @@ func (c *CentOS) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.checkFirewalldIsRunning()
-	checks = append(checks, platform.Check{"Check if firewalld service is running", false, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
 		result, err = c.disableSwap()
@@ -327,10 +327,10 @@ func (c *CentOS) checkPIDofSystemd() (bool, error) {
 }
 
 func (c *CentOS) checkFirewalldIsRunning() (bool, error) {
-	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld | grep 'inactive'")
+	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld")
 	if err != nil {
-		return false, errors.New("firewalld service is running")
-	} else {
 		return true, nil
+	} else {
+		return false, errors.New("firewalld service is running")
 	}
 }
