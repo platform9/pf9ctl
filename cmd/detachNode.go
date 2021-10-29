@@ -1,32 +1,34 @@
 package cmd
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
 
+type Node struct {
+	Uuid        string `json:"uuid"`
+	ClusterUuid string `json:"clusterUuid"`
+	PrimaryIp   string `json:"primaryIp"`
+}
+
 var (
-	nodeIPs []string
+	nodeIPs       []string
+	deleteCluster bool
 )
 
 var detachNodeCmd = &cobra.Command{
-	Use:   "detach-node [flags] cluster-name",
+	Use:   "detach-node [flags]",
 	Short: "detaches a node from a kubernetes cluster",
-	Long:  "Detach a node from an existing cluster.",
+	Long:  "Detach a node from an existing cluster. Pass aditional parametar to also delete the cluster.",
 	Args: func(detachNodeCmd *cobra.Command, args []string) error {
-		if len(args) > 1 {
-			return errors.New("Only cluster name is accepted as a parameter")
-		} else if len(args) < 1 {
-			return errors.New("Cluster name is required for attach-node")
-		}
-		clusterName = args[0]
 		return nil
 	},
 	Run: detachNodeRun,
@@ -34,6 +36,7 @@ var detachNodeCmd = &cobra.Command{
 
 func init() {
 	detachNodeCmd.Flags().StringSliceVarP(&nodeIPs, "node-ip", "n", []string{}, "node ip address")
+	detachNodeCmd.Flags().BoolVarP(&deleteCluster, "delete-cluster", "d", false, "if true will also delete nodes cluster")
 	rootCmd.AddCommand(detachNodeCmd)
 }
 
@@ -104,30 +107,142 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 	projectId := auth.ProjectID
 	token := auth.Token
 
-	node_hostIds, err := hostId(c.Executor, ctx.Fqdn, token, nodeIPs)
+	//node_hostIds, err := hostId(c.Executor, ctx.Fqdn, token, nodeIPs)
 
-	_, cluster_uuid, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
-	clusterStatus := cluster_Status(c.Executor, ctx.Fqdn, token, projectId, cluster_uuid)
-	if clusterStatus == "ok" {
-		fmt.Println("Starting detaching process")
-		if err := c.Segment.SendEvent("Starting Dettach-node", auth, "", ""); err != nil {
-			zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
-		}
-		err1 := c.Qbert.DetachNode(cluster_uuid, projectId, token, node_hostIds)
-		if err1 != nil {
-			if err := c.Segment.SendEvent("Detaching-node", auth, "Failed to detach node", ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
-			}
-			zap.S().Info("Encountered an error while detaching node from a Kubernetes cluster : ", err1)
-		} else {
-			if err := c.Segment.SendEvent("Detaching-node", auth, "Node detached", ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
-			}
-			zap.S().Infof("Node(s) %v detached  from cluster", nodeIPs)
-		}
+	projectNodes := getAllProjectNodes(c.Executor, ctx.Fqdn, token, projectId)
+	//fmt.Println("PRoject nodes ", projectNodes)
 
-	} else {
-		zap.S().Fatalf("Cluster is not ready. cluster status is %v", clusterStatus)
+	nodeUuids, _ := hostId(c.Executor, ctx.Fqdn, token, nodeIPs)
+
+	detachNodes := getNodesFromUuids(nodeUuids, projectNodes)
+	//fmt.Println("PRoject nodes ", nodesFromIP)
+
+	clusters := getClusters(detachNodes)
+	//fmt.Println("Clusters ", clusters)
+
+	if deleteCluster {
+		detachNodes = getAllClusterNodes(projectNodes, clusters)
 	}
+
+	fmt.Println("Starting detaching process")
+	if err := c.Segment.SendEvent("Starting detach-node", auth, "", ""); err != nil {
+		zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
+	}
+
+	if deleteCluster {
+		for i := range clusters {
+			err1 := c.Qbert.DeleteCluster(clusters[i], projectId, token)
+
+			if err1 != nil {
+				if err := c.Segment.SendEvent("Deleting cluster", auth, "Failed to delete cluster", ""); err != nil {
+					zap.S().Errorf("Unable to send Segment event for delete cluster. Error: %s", err.Error())
+				}
+				zap.S().Info("Encountered an error while deleting the ", clusters[i], " cluster: ", err1)
+			} else {
+				if err := c.Segment.SendEvent("Deleting cluster", clusters[i], "Cluster deleted", ""); err != nil {
+					zap.S().Errorf("Unable to send Segment event for deleting cluster. Error: %s", err.Error())
+				}
+				zap.S().Infof("Cluster %v deleted", clusters[i])
+			}
+		}
+	} else {
+
+		for i := range detachNodes {
+			err1 := c.Qbert.DetachNode(detachNodes[i].ClusterUuid, projectId, token, detachNodes[i].Uuid)
+
+			if err1 != nil {
+				if err := c.Segment.SendEvent("Detaching-node", auth, "Failed to detach node", ""); err != nil {
+					zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
+				}
+				zap.S().Info("Encountered an error while detaching the", detachNodes[i].PrimaryIp, " node from a Kubernetes cluster : ", err1)
+			} else {
+				if err := c.Segment.SendEvent("Detaching-node", detachNodes[i].PrimaryIp, "Node detached", ""); err != nil {
+					zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
+				}
+				zap.S().Infof("Node %v detached from cluster", detachNodes[i].PrimaryIp)
+			}
+		}
+	}
+
+}
+
+func getAllProjectNodes(exec cmdexec.Executor, fqdn string, token string, projectID string) []Node {
+	zap.S().Debug("Getting cluster status")
+	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
+	cmd := fmt.Sprintf("curl -sH %v -X GET %v/qbert/v4/%v/nodes", tkn, fqdn, projectID)
+	status, err := exec.RunWithStdout("bash", "-c", cmd)
+	if err != nil {
+		zap.S().Fatalf("Unable to get project nodes: ", err)
+	}
+	var nodes []Node
+	json.Unmarshal([]byte(status), &nodes)
+
+	return nodes
+}
+
+//returns the nodes whos ip's were passed in the flag (or the node installed on the machine if no ip was passed)
+func getNodesFromUuids(nodeUuids []string, allNodes []Node) []Node {
+
+	var nodesUuid []Node
+	for i := range allNodes {
+		for j := range nodeUuids {
+			if nodeUuids[j] == allNodes[i].Uuid && allNodes[i].ClusterUuid != "" {
+				nodesUuid = append(nodesUuid, allNodes[i])
+				break
+			}
+		}
+	}
+	return nodesUuid
+}
+
+//returns a list of all clusters the nodes are attached to
+func getClusters(allNodes []Node) []string {
+
+	var clusters []string
+
+	for i := range allNodes {
+		clusterExists := false
+		for j := range clusters {
+			if clusters[j] == allNodes[i].ClusterUuid {
+				clusterExists = true
+				break
+			}
+		}
+		if !clusterExists {
+			clusters = append(clusters, allNodes[i].ClusterUuid)
+		}
+
+	}
+
+	return clusters
+
+}
+
+//returns all nodes attached to a specific clusters, used to detach all nodes from clusters
+func getAllClusterNodes(allNodes []Node, clusters []string) []Node {
+
+	var clusterNodes []Node
+
+	for i := range allNodes {
+
+		for j := range clusters {
+			if allNodes[i].ClusterUuid == clusters[j] {
+				clusterNodes = append(clusterNodes, allNodes[i])
+				break
+			}
+		}
+
+	}
+	return clusterNodes
+}
+
+//transforms an array of the Node object into an array of its Uuid attribute
+func getNodesUuids(nodes []Node) []string {
+
+	var nodeUuids []string
+	for i := range nodes {
+		nodeUuids = append(nodeUuids, nodes[i].Uuid)
+	}
+	return nodeUuids
 
 }

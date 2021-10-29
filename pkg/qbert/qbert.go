@@ -21,7 +21,8 @@ type CNIBackend string
 type Qbert interface {
 	CreateCluster(r ClusterCreateRequest, projectID, token string) (string, error)
 	AttachNode(clusterID, projectID, token string, nodeIDs []string, nodetype string) error
-	DetachNode(clusterID, projectID, token string, nodeIDs []string) error
+	DetachNode(clusterID, projectID, token string, nodeID string) error
+	DeleteCluster(clusterID, projectID, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
 	CheckClusterExists(Name, projectID, token string) (bool, string, error)
 }
@@ -161,30 +162,27 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 	return nil
 }
 
-func (c QbertImpl) DetachNode(clusterID, projectID, token string, nodeIDs []string) error {
-	zap.S().Debugf("Detaching the node: %s from cluster: %s", nodeIDs, clusterID)
+func (c QbertImpl) DetachNode(clusterID, projectID, token string, nodeID string) error {
+	zap.S().Debugf("Detaching the node: %s from cluster: %s", nodeID, clusterID)
 
 	var p []map[string]interface{}
 
-	for _, nodeid := range nodeIDs {
-		p = append(p, map[string]interface{}{
-			"uuid": nodeid,
-		})
-
-	}
+	p = append(p, map[string]interface{}{
+		"uuid": nodeID,
+	})
 
 	byt, err := json.Marshal(p)
 	if err != nil {
 		return fmt.Errorf("Unable to marshal payload: %s", err.Error())
 	}
 
-	attachEndpoint := fmt.Sprintf(
+	detachEndpoint := fmt.Sprintf(
 		"%s/qbert/v3/%s/clusters/%s/detach",
 		c.fqdn, projectID, clusterID)
 
 	client := http.Client{}
 
-	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	req, err := http.NewRequest("POST", detachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {
 		return fmt.Errorf("Unable to create a request: %w", err)
 	}
@@ -203,6 +201,41 @@ func (c QbertImpl) DetachNode(clusterID, projectID, token string, nodeIDs []stri
 		if err != nil {
 			zap.S().Info("Error occured while converting response body to string")
 		}
+		zap.S().Debug(string(respString))
+		return fmt.Errorf("%v", string(respString))
+	}
+	return nil
+}
+
+func (c QbertImpl) DeleteCluster(clusterID, projectID, token string) error {
+	zap.S().Debugf("Deleting the %s cluster: ", clusterID)
+
+	deleteEndpoint := fmt.Sprintf(
+		"%s/qbert/v3/%s/clusters/%s",
+		c.fqdn, projectID, clusterID)
+
+	client := http.Client{}
+
+	req, err := http.NewRequest("DELETE", deleteEndpoint, strings.NewReader(""))
+	if err != nil {
+		return fmt.Errorf("Unable to create a request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	//req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to DELETE request through client: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respString, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Info("Error occured while converting response body to string")
+		}
+		fmt.Println("Getting error ", string(respString))
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
 	}
