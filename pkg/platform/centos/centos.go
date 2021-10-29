@@ -67,7 +67,7 @@ func (c *CentOS) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.checkFirewalldIsRunning()
-	checks = append(checks, platform.Check{"Check if firewalld service is running", false, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
 		result, err = c.disableSwap()

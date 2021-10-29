@@ -75,7 +75,7 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Check time synchronization", false, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkFirewalldIsRunning()
-	checks = append(checks, platform.Check{"Check if firewalld service is running", false, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
@@ -519,10 +519,10 @@ func (d *Debian) DownloadAndInstallTimesyncPkg() error {
 }
 
 func (d *Debian) checkFirewalldIsRunning() (bool, error) {
-	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld | grep 'inactive'")
+	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld")
 	if err != nil {
-		return false, errors.New("firewalld service is running")
-	} else {
 		return true, nil
+	} else {
+		return false, errors.New("firewalld service is running")
 	}
 }
