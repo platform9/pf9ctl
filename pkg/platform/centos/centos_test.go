@@ -684,8 +684,8 @@ func TestCheckFirewalldService(t *testing.T) {
 				},
 			},
 			want: want{
-				result: true,
-				err:    nil,
+				result: false,
+				err:    errors.New("firewalld service is running"),
 			},
 		},
 		//Failure case. if firewalld service is running then print message service is running.
@@ -698,8 +698,8 @@ func TestCheckFirewalldService(t *testing.T) {
 				},
 			},
 			want: want{
-				result: false,
-				err:    errors.New("firewalld service is running"),
+				result: true,
+				err:    nil,
 			},
 		},
 	}

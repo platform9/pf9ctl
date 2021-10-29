@@ -327,10 +327,10 @@ func (c *CentOS) checkPIDofSystemd() (bool, error) {
 }
 
 func (c *CentOS) checkFirewalldIsRunning() (bool, error) {
-	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld | grep 'inactive'")
+	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld")
 	if err != nil {
-		return false, errors.New("firewalld service is running")
-	} else {
 		return true, nil
+	} else {
+		return false, errors.New("firewalld service is running")
 	}
 }
