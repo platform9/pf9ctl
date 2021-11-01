@@ -121,6 +121,14 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) 
 	count := 0
 	var err error
 
+	if loc == "amazon.json" {
+		return ConfigCmdCreateAmazonRun(cfg)
+	} else if loc == "azure.json" {
+		return ConfigCmdCreateAzureRun(cfg)
+	} else if loc == "google.json" {
+		return ConfigCmdCreateGoogleRun(cfg)
+	}
+
 	for count < MaxLoopNoConfig {
 
 		if InvalidExistingConfig {
@@ -128,15 +136,7 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) 
 			zap.S().Debug("Invalid config entered, prompting for new config.")
 		}
 
-		if loc == "amazon.json" {
-			err = ConfigCmdCreateAmazonRun(cfg)
-		} else if loc == "azure.json" {
-			err = ConfigCmdCreateAzureRun(cfg)
-		} else if loc == "google.json" {
-			err = ConfigCmdCreateGoogleRun(cfg)
-		} else {
-			err = ConfigCmdCreateRun(cfg)
-		}
+		err = ConfigCmdCreateRun(cfg)
 
 		if err != nil {
 			fmt.Println("\n" + color.Red("x ") + err.Error())
