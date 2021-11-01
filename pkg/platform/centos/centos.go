@@ -39,7 +39,7 @@ func (c *CentOS) Check() []platform.Check {
 	result, err := c.removePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
-	result, err = c.checkExistingInstallation()
+	result, err = c.CheckExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", true, result, err, util.ExisitngInstallationErr})
 
 	result, err = c.checkOSPackages()
@@ -60,7 +60,7 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.checkPort()
 	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = c.checkKubernetesCluster()
+	result, err = c.CheckKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.checkPIDofSystemd()
@@ -77,7 +77,7 @@ func (c *CentOS) Check() []platform.Check {
 	return checks
 }
 
-func (c *CentOS) checkKubernetesCluster() (bool, error) {
+func (c *CentOS) CheckKubernetesCluster() (bool, error) {
 	for _, proc := range util.ProcessesList {
 		//Checking if kubernetes process is running on the host or not
 		_, err := c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -A | grep -i %s", proc))
@@ -105,7 +105,7 @@ func (c *CentOS) checkDocker() error {
 	return err
 }
 
-func (c *CentOS) checkExistingInstallation() (bool, error) {
+func (c *CentOS) CheckExistingInstallation() (bool, error) {
 
 	var (
 		out string

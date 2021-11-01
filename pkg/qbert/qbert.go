@@ -8,9 +8,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 )
+
+const MaxLoopHostStatus = 3
 
 // CloudProviderType specifies the infrastructure where the cluster runs
 type CloudProviderType string
@@ -133,9 +136,12 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 		"%s/qbert/v3/%s/clusters/%s/attach",
 		c.fqdn, projectID, clusterID)
 
-	client := http.Client{}
+	resp, err := Attach_Status(attachEndpoint, token, byt)
+	if err != nil {
+		return err
+	}
 
-	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	/*req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {
 		return fmt.Errorf("Unable to create a request: %w", err)
 	}
@@ -147,8 +153,20 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 		return fmt.Errorf("Unable to POST request through client: %w", err)
 	}
 
-	defer resp.Body.Close()
-
+	defer resp.Body.Close()*/
+	LoopVariable := 1
+	for LoopVariable <= MaxLoopHostStatus {
+		if resp.StatusCode != 200 {
+			time.Sleep(30 * time.Second)
+			resp, err = Attach_Status(attachEndpoint, token, byt)
+			if err != nil {
+				return err
+			}
+			LoopVariable = LoopVariable + 1
+		} else {
+			break
+		}
+	}
 	if resp.StatusCode != 200 {
 		respString, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -231,4 +249,23 @@ func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, stri
 	}
 
 	return false, "", nil
+}
+
+//Function to Check status of attach-node API
+func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Response, error) {
+	client := http.Client{}
+	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	if err != nil {
+		return nil, fmt.Errorf("Unable to create a request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return resp, fmt.Errorf("Unable to POST request through client: %w", err)
+	}
+
+	defer resp.Body.Close()
+	return resp, nil
 }
