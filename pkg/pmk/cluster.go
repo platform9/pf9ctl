@@ -109,7 +109,6 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 }
 
 //To check the host status before attaching the node to a cluster
-//Error: Currently not working in remote case
 func Host_Status(exec cmdexec.Executor, fqdn string, token string, hostID string) string {
 	zap.S().Debug("Getting host status")
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
