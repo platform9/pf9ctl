@@ -106,7 +106,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
-<<<<<<< HEAD
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
 		cfg.Username,
@@ -126,8 +125,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		}
 		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
 	}
-=======
->>>>>>> fix skipChecks option
 	if isRemote {
 		if err := SudoPasswordCheck(executor, detachedMode, nodeConfig.SudoPassword); err != nil {
 			zap.S().Fatal(err.Error())

@@ -4,10 +4,7 @@ package cmd
 
 import (
 	"fmt"
-<<<<<<< HEAD
 	"strings"
-=======
->>>>>>> making cli automtion ready
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/client"

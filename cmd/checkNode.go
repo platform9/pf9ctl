@@ -49,11 +49,7 @@ func init() {
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
 
-<<<<<<< HEAD
 	detachedMode := cmd.Flags().Changed("no-prompt")
-=======
-	detachedMode := cmd.Flags().Changed("dt")
->>>>>>> fix skipChecks option
 	isRemote := cmdexec.CheckRemote(nc)
 
 	if cmdexec.CheckRemote(nc) {
