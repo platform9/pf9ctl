@@ -1,12 +1,16 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
+	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
 
@@ -29,49 +33,21 @@ var checkGoogleProviderCmd = &cobra.Command{
 	Use:   "check-google-provider",
 	Short: "checks if user has google cloud permissions",
 	Long:  "Checks if service account has the correct roles to use the google cloud provider",
-	Args: func(checkGoogleProviderCmd *cobra.Command, args []string) error {
-
-		if checkGoogleProviderCmd.Flags().Changed("service_account_path") || checkGoogleProviderCmd.Flags().Changed("project_name") || checkGoogleProviderCmd.Flags().Changed("service_account_email") {
-			loadConfig = false
-		} else {
-			loadConfig = true
-		}
-
-		return nil
-	},
-	Run: checkGoogleProviderRun,
+	Run:   checkGoogleProviderRun,
 }
 
 var checkAmazonProviderCmd = &cobra.Command{
 	Use:   "check-amazon-provider",
 	Short: "checks if user has amazon cloud permissions",
 	Long:  "Checks if user has the correct permissions to use the amazon cloud provider",
-	Args: func(checkAmazonProviderCmd *cobra.Command, args []string) error {
-		if checkAmazonProviderCmd.Flags().Changed("iam_user") || checkAmazonProviderCmd.Flags().Changed("access_key") || checkAmazonProviderCmd.Flags().Changed("secret_key") {
-			loadConfig = false
-		} else {
-			loadConfig = true
-		}
-
-		return nil
-	},
-	Run: checkAmazonProviderRun,
+	Run:   checkAmazonProviderRun,
 }
 
 var checkAzureProviderCmd = &cobra.Command{
 	Use:   "check-azure-provider",
 	Short: "checks if user has azure cloud permissions",
 	Long:  "Checks if service principal has the correct permissions to use the azure cloud provider",
-	Args: func(checkAzureProviderCmd *cobra.Command, args []string) error {
-		if checkAzureProviderCmd.Flags().Changed("tenant_id") || checkAzureProviderCmd.Flags().Changed("client_id") || checkAzureProviderCmd.Flags().Changed("subscription_id") || checkAzureProviderCmd.Flags().Changed("secret_key") {
-			loadConfig = false
-		} else {
-			loadConfig = true
-		}
-
-		return nil
-	},
-	Run: checkAzureProviderRun,
+	Run:   checkAzureProviderRun,
 }
 
 func init() {
@@ -96,16 +72,14 @@ func init() {
 
 func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 
-	if !loadConfig {
-		if !pmk.CheckGoogleProvider(googlePath, googleProjectName, googleServiceEmail) {
-			os.Exit(1)
-		}
-		os.Exit(0)
-	}
-
 	cfg := &objects.Config{}
 	var err error
 	if cmd.Flags().Changed("dt") {
+		flagsNotSet := checkFlags(cmd)
+		if len(flagsNotSet) > 0 {
+			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))
+			os.Exit(1)
+		}
 		err = config.LoadConfig("google.json", cfg, objects.NodeConfig{})
 	} else {
 		err = config.LoadConfigInteractive("google.json", cfg, objects.NodeConfig{})
@@ -121,17 +95,14 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 }
 
 func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
-
-	if !loadConfig {
-		if !pmk.CheckAmazonPovider(awsIamUser, awsAccessKey, awsSecretKey, awsRegion) {
-			os.Exit(1)
-		}
-		os.Exit(0)
-	}
-
 	cfg := &objects.Config{}
 	var err error
 	if cmd.Flags().Changed("dt") {
+		flagsNotSet := checkFlags(cmd)
+		if len(flagsNotSet) > 0 {
+			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))
+			os.Exit(1)
+		}
 		err = config.LoadConfig("amazon.json", cfg, objects.NodeConfig{})
 	} else {
 		err = config.LoadConfigInteractive("amazon.json", cfg, objects.NodeConfig{})
@@ -147,16 +118,14 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 
 func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 
-	if !loadConfig {
-		if !pmk.CheckAzureProvider(azureTenantID, azureAppID, azureSubID, azureSecretKey) {
-			os.Exit(1)
-		}
-		os.Exit(0)
-	}
-
 	cfg := &objects.Config{}
 	var err error
 	if cmd.Flags().Changed("dt") {
+		flagsNotSet := checkFlags(cmd)
+		if len(flagsNotSet) > 0 {
+			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))
+			os.Exit(1)
+		}
 		err = config.LoadConfig("azure.json", cfg, objects.NodeConfig{})
 	} else {
 		err = config.LoadConfigInteractive("azure.json", cfg, objects.NodeConfig{})
@@ -169,4 +138,15 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
+}
+
+func checkFlags(cmd *cobra.Command) []string {
+	flagsNotSet := []string{}
+	fss := cmd.LocalFlags()
+	fss.VisitAll(func(f *pflag.Flag) {
+		if f.Name != "help" && !f.Changed {
+			flagsNotSet = append(flagsNotSet, f.Name)
+		}
+	})
+	return flagsNotSet
 }
