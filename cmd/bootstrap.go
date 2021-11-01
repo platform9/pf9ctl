@@ -38,6 +38,8 @@ var bootstrapCmd = &cobra.Command{
 	Run: bootstrapCmdRun,
 }
 
+var bootConfig objects.NodeConfig
+
 func init() {
 	bootstrapCmd.Flags().StringVar(&masterVIP, "masterVip", "", "IP Address for VIP for master nodes")
 	bootstrapCmd.Flags().StringVar(&masterVIPIf, "masterVipIf", "", "Interface name for master / worker nodes")
@@ -49,10 +51,10 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&appCatalogEnabled, "appCatalogEnabled", false, "Enable Helm application catalog")
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allowWorkloadsOnMaster", true, "Taint master nodes ( to enable workloads )")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "networkPlugin", "calico", "Specify network plugin ( Possible values: flannel or calico )")
-	bootstrapCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
-	bootstrapCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
-	bootstrapCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	bootstrapCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.User, "user", "u", "", "ssh username for the nodes")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
+	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	// This is the bootstrap command to initialize its run and add to root which is not in use for now.
 	rootCmd.AddCommand(bootstrapCmd)
 }
@@ -74,20 +76,20 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("Received a call to bootstrap the node")
 
 	detachedMode := cmd.Flags().Changed("dt")
-	isRemote := cmdexec.CheckRemote(nc)
+	isRemote := cmdexec.CheckRemote(bootConfig)
 
-	if cmdexec.CheckRemote(nc) {
-		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+	if isRemote {
+		if !config.ValidateNodeConfig(&bootConfig, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}
 
-	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nc.MFA}
+	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: bootConfig.MFA}
 	var err error
 	if detachedMode {
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfig(util.Pf9DBLoc, cfg, bootConfig)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, bootConfig)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -96,7 +98,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, bootConfig); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
@@ -108,7 +110,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	defer c.Segment.Close()
 
 	if isRemote {
-		if err := SudoPasswordCheck(executor, detachedMode, nc.SudoPassword); err != nil {
+		if err := SudoPasswordCheck(executor, detachedMode, bootConfig.SudoPassword); err != nil {
 			zap.S().Fatal(err.Error())
 		}
 	}
