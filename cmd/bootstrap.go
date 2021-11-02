@@ -55,7 +55,6 @@ func init() {
 	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
-	// This is the bootstrap command to initialize its run and add to root which is not in use for now.
 	rootCmd.AddCommand(bootstrapCmd)
 }
 
@@ -204,13 +203,16 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		Privileged:            privileged,
 	}
 
-	err = pmk.Bootstrap(*cfg, c, payload)
-	if err != nil {
-		c.Segment.SendEvent("Bootstrap : Cluster creation failed", err, "FAIL", "")
-		zap.S().Fatalf("Unable to bootstrap the cluster. Error: %s", err.Error())
-	}
+	if err := pmk.Bootstrap(*cfg, c, payload, bootConfig); err != nil {
 
-	if err := c.Segment.SendEvent("Bootstrap : Cluster creation succeeded", payload, "PASS", ""); err != nil {
-		zap.S().Errorf("Unable to send Segment event for Bootstrap. Error: %s", err.Error())
+		// Uploads pf9cli log bundle if bootstrap command fails
+		errbundle := supportBundle.SupportBundleUpload(*cfg, c)
+		if errbundle != nil {
+			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
+		}
+
+		zap.S().Debugf("Unable to bootstrap node: %s\n", err.Error())
+		zap.S().Fatalf("\nFailed to bootstrap node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
 	}
+	zap.S().Debug("==========Finished running bootstrap==========")
 }

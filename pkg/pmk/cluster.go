@@ -18,6 +18,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/qbert"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -27,7 +28,8 @@ var ex cmdexec.Executor
 
 // Bootstrap simply preps the local node and attach it as master to a newly
 // created cluster.
-func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateRequest) error {
+func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateRequest, bootConfig objects.NodeConfig) error {
+
 	keystoneAuth, err := c.Keystone.GetAuth(
 		ctx.Username,
 		ctx.Password,
@@ -36,6 +38,10 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	)
 	if err != nil {
 		zap.S().Fatalf("keystone authentication failed: %s", err.Error())
+	}
+
+	if err = c.Segment.SendEvent("Starting Cluster creation(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
+		zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 	}
 
 	token := keystoneAuth.Token
@@ -53,7 +59,14 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		keystoneAuth.Token)
 
 	if err != nil {
+		if err = c.Segment.SendEvent("Cluster creation(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
+			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+		}
 		return fmt.Errorf("Unable to create cluster"+req.Name+": %w", err)
+	}
+
+	if err = c.Segment.SendEvent("Cluster creation(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
+		zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 	}
 
 	cmd := `grep ^host_id /etc/pf9/host_id.conf | cut -d = -f2 | cut -d ' ' -f2`
@@ -63,26 +76,43 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	}
 	nodeID := strings.TrimSuffix(string(output), "\n")
 
-	/*LoopVariable := 1
+	LoopVariable := 1
 	for LoopVariable <= MaxLoopHostStatus {
-		hostStatus := Host_Status(c.Executor, ctx.Fqdn, token, nodeID)
-		if hostStatus == "false" {
+		hostStatus := Host_Status(c.Executor, ctx.Fqdn, token, nodeID, bootConfig)
+		if hostStatus != "true" {
 			zap.S().Debugf("Host is Down...Trying again")
 		} else {
 			util.HostDown = false
 			break
 		}
-		time.Sleep(20 * time.Second)
 		LoopVariable = LoopVariable + 1
 	}
 
 	if !util.HostDown {
 		zap.S().Debugf("Host is Connected...Proceeding to connect node to cluster " + req.Name)
+		if err = c.Segment.SendEvent("Host Connected(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
+			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+		}
 	} else {
+		if err = c.Segment.SendEvent("Host Connected(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
+			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+		}
+		_, err1 := Delete_Cluster(ex, ctx.Fqdn, token, keystoneAuth.ProjectID, clusterID)
+		if err1 != nil {
+			if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
+				zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+			}
+			zap.S().Debugf("Deleted the cluster successfully")
+		} else {
+			if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
+				zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+			}
+			zap.S().Debugf("Unable to delete the cluster")
+		}
 		zap.S().Fatalf("Host is disconnected....Unable to attach this node to the cluster " + req.Name)
-	}*/
+	}
 
-	time.Sleep(60 * time.Second)
+	time.Sleep(30 * time.Second)
 	var nodeIDs []string
 	nodeIDs = append(nodeIDs, nodeID)
 
@@ -95,27 +125,55 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		keystoneAuth.ProjectID, keystoneAuth.Token, nodeIDs, "master")
 
 	if err != nil {
+		if err = c.Segment.SendEvent("Attach-Node(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
+			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+		}
+
 		_, err1 := Delete_Cluster(ex, ctx.Fqdn, token, keystoneAuth.ProjectID, clusterID)
 		if err1 != nil {
-			zap.S().Debug("Deleted the cluster successfully")
+			if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
+				zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+			}
+			zap.S().Debugf("Deleted the cluster successfully")
 		} else {
-			zap.S().Debug("Unable to delete the cluster")
+			if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
+				zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+			}
+			zap.S().Debugf("Unable to delete the cluster")
 		}
 		return fmt.Errorf("Unable to attach node to the cluster"+req.Name+": %w", err)
 	}
 
+	if err = c.Segment.SendEvent("Attach-Node(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
+		zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+	}
+
+	if err = c.Segment.SendEvent("Bootstrap Completed Successfully", keystoneAuth, checkPass, ""); err != nil {
+		zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+	}
 	zap.S().Info("=======Bootstrap successfully finished========")
 	return nil
 }
 
 //To check the host status before attaching the node to a cluster
-func Host_Status(exec cmdexec.Executor, fqdn string, token string, hostID string) string {
+func Host_Status(exec cmdexec.Executor, fqdn string, token string, hostID string, bootConfig objects.NodeConfig) string {
 	zap.S().Debug("Getting host status")
+	isRemote := cmdexec.CheckRemote(bootConfig)
+
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
-	cmd := fmt.Sprintf("curl -sH %v -X GET %v/resmgr/v1/hosts/%v | jq .info.responding ", tkn, fqdn, hostID)
-	status, err := exec.RunWithStdout("bash", "-c", cmd)
-	if err != nil {
-		zap.S().Fatalf("Unable to get host status : ", err)
+	cmd := fmt.Sprintf(`curl -sH %v -X GET %v/resmgr/v1/hosts/%v | jq .info.responding `, tkn, fqdn, hostID)
+	var status string
+	var err1 error
+
+	if isRemote {
+		cmnd := fmt.Sprintf(`bash %s`, cmd)
+		status, err1 = exec.RunWithStdout(cmnd)
+	} else {
+		cmnd := fmt.Sprintf(`%s`, cmd)
+		status, err1 = exec.RunWithStdout("bash", "-c", cmnd)
+	}
+	if err1 != nil {
+		zap.S().Fatalf("Unable to get host status : ", err1)
 	}
 	status = strings.TrimSpace(strings.Trim(status, "\n\""))
 	zap.S().Debug("Host status is : ", status)
@@ -163,15 +221,10 @@ func Delete_Cluster(exec cmdexec.Executor, fqdn string, token string, projectID 
 	return "", errors.New("Unable to locate local Node Pool")
 }
 
-func CheckClusterNameExists(exec cmdexec.Executor, fqdn string, token string, projectID string, name string) {
-
-}
-
 //Checks Prerequisites for Bootstrap Command
 func PreReqBootstrap(executor cmdexec.Executor) (bool, bool, error) {
 
 	os, err := ValidatePlatform(executor)
-	fmt.Println(os)
 	if err != nil {
 		zap.S().Fatalf("OS version is not supported")
 	}
