@@ -4,9 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
-	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/color"
+	"github.com/platform9/pf9ctl/pkg/config"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -31,21 +35,37 @@ func init() {
 
 func deauthNodeRun(cmd *cobra.Command, args []string) {
 
-	ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
+	detachedMode := cmd.Flags().Changed("dt")
 
-	if err != nil {
-		zap.S().Fatalf("Error loading config", err)
+	if cmdexec.CheckRemote(nc) {
+		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
+		}
 	}
 
-	executor, err := getExecutor(ctx.ProxyURL)
-
-	c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-
+	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: attachconfig.MFA}
+	var err error
+	if detachedMode {
+		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
+	} else {
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
+	}
 	if err != nil {
-		zap.S().Fatalf("Error getting OS version")
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	}
+	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
+
+	var executor cmdexec.Executor
+	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
+		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
-	auth, err := c.Keystone.GetAuth(ctx.Username, ctx.Password, ctx.Tenant, ctx.MfaToken)
+	var c client.Client
+	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
+	}
+
+	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
 	if err != nil {
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
@@ -54,15 +74,15 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 	nodeIPs = append(nodeIPs, getIp().String())
 	projectId := auth.ProjectID
 	token := auth.Token
-	nodeUuids, _ := hostId(c.Executor, ctx.Fqdn, token, nodeIPs)
+	nodeUuids, _ := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
 
 	if len(nodeUuids) == 0 {
 		zap.S().Fatalf("Could not find the node. Check if the node associated with this account")
 	}
 
-	isMaster := getNode(c.Executor, ctx.Fqdn, token, projectId, nodeUuids[0])
+	isMaster := getNode(c.Executor, cfg.Fqdn, token, projectId, nodeUuids[0])
 
-	projectNodes := getAllProjectNodes(c.Executor, ctx.Fqdn, token, projectId)
+	projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
 
 	clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
 
