@@ -23,6 +23,8 @@ type Qbert interface {
 	AttachNode(clusterID, projectID, token string, nodeIDs []string, nodetype string) error
 	DetachNode(clusterID, projectID, token string, nodeID string) error
 	DeleteCluster(clusterID, projectID, token string) error
+	DeauthoriseNode(nodeUuid, token string) error
+	AuthoriseNode(nodeUuid, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
 	CheckClusterExists(Name, projectID, token string) (bool, string, error)
 }
@@ -226,6 +228,74 @@ func (c QbertImpl) DeleteCluster(clusterID, projectID, token string) error {
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Unable to DELETE request through client: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respString, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Info("Error occured while converting response body to string")
+		}
+		fmt.Println("Getting error ", string(respString))
+		zap.S().Debug(string(respString))
+		return fmt.Errorf("%v", string(respString))
+	}
+	return nil
+}
+
+func (c QbertImpl) DeauthoriseNode(nodeUuid, token string) error {
+	zap.S().Debugf("Deauthorising the %s node: ", nodeUuid)
+
+	deleteEndpoint := fmt.Sprintf(
+		"%s/resmgr/v1/hosts/%s",
+		c.fqdn, nodeUuid)
+
+	client := http.Client{}
+
+	req, err := http.NewRequest("DELETE", deleteEndpoint, strings.NewReader(""))
+	if err != nil {
+		return fmt.Errorf("Unable to create a request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to DELETE request through client: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respString, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Info("Error occured while converting response body to string")
+		}
+		fmt.Println("Getting error ", string(respString))
+		zap.S().Debug(string(respString))
+		return fmt.Errorf("%v", string(respString))
+	}
+	return nil
+}
+
+func (c QbertImpl) AuthoriseNode(nodeUuid, token string) error {
+	zap.S().Debugf("Authorising the %s node: ", nodeUuid)
+
+	deleteEndpoint := fmt.Sprintf(
+		"%s/resmgr/v1/hosts/%s/roles/pf9-kube",
+		c.fqdn, nodeUuid)
+
+	client := http.Client{}
+
+	req, err := http.NewRequest("PUT", deleteEndpoint, strings.NewReader(""))
+	if err != nil {
+		return fmt.Errorf("Unable to create a request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to PUT request through client: %w", err)
 	}
 
 	defer resp.Body.Close()

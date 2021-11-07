@@ -17,6 +17,7 @@ type Node struct {
 	Uuid        string `json:"uuid"`
 	ClusterUuid string `json:"clusterUuid"`
 	PrimaryIp   string `json:"primaryIp"`
+	IsMaster    string `json:"isMaster"`
 }
 
 var (
@@ -48,7 +49,6 @@ func getIp() net.IP {
 	defer conn.Close()
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
-
 	return localAddr.IP
 }
 
@@ -107,19 +107,13 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 	projectId := auth.ProjectID
 	token := auth.Token
 
-	//node_hostIds, err := hostId(c.Executor, ctx.Fqdn, token, nodeIPs)
-
 	projectNodes := getAllProjectNodes(c.Executor, ctx.Fqdn, token, projectId)
-	//fmt.Println("PRoject nodes ", projectNodes)
 
 	nodeUuids, _ := hostId(c.Executor, ctx.Fqdn, token, nodeIPs)
 
 	detachNodes := getNodesFromUuids(nodeUuids, projectNodes)
-	//fmt.Println("PRoject nodes ", nodesFromIP)
 
 	clusters := getClusters(detachNodes)
-	//fmt.Println("Clusters ", clusters)
-
 	if deleteCluster {
 		detachNodes = getAllClusterNodes(projectNodes, clusters)
 	}
@@ -169,7 +163,7 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 func getAllProjectNodes(exec cmdexec.Executor, fqdn string, token string, projectID string) []Node {
 	zap.S().Debug("Getting cluster status")
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
-	cmd := fmt.Sprintf("curl -sH %v -X GET %v/qbert/v4/%v/nodes", tkn, fqdn, projectID)
+	cmd := fmt.Sprintf("curl -sH %v -X GET %v/qbert/v3/%v/nodes", tkn, fqdn, projectID)
 	status, err := exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		zap.S().Fatalf("Unable to get project nodes: ", err)
@@ -234,15 +228,4 @@ func getAllClusterNodes(allNodes []Node, clusters []string) []Node {
 
 	}
 	return clusterNodes
-}
-
-//transforms an array of the Node object into an array of its Uuid attribute
-func getNodesUuids(nodes []Node) []string {
-
-	var nodeUuids []string
-	for i := range nodes {
-		nodeUuids = append(nodeUuids, nodes[i].Uuid)
-	}
-	return nodeUuids
-
 }

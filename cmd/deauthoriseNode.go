@@ -1,12 +1,11 @@
 package cmd
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
-	"strings"
 
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -14,9 +13,9 @@ import (
 )
 
 var deauthNodeCmd = &cobra.Command{
-	Use:   "deauthorise-node",
-	Short: "Deauthorises this node from the Platform9 control plane",
-	Long:  "Removes the host agent package and decommissions this node from the Platform9 control plane. If the node is a part of a single node cluster the cluster will also get deleted.",
+	Use:   "deauthorize-node",
+	Short: "Deauthorizes this node from the Platform9 control plane",
+	Long:  "Deauthorizes a node. You can aurhotize it again by using the authorize-node command.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
 			return errors.New("No parameters are needed")
@@ -30,52 +29,78 @@ func init() {
 	rootCmd.AddCommand(deauthNodeCmd)
 }
 
-func runCommandWait(command string) {
-	output := exec.Command("/bin/sh", "-c", command)
-	output.Stdout = os.Stdout
-	output.Stdin = os.Stdin
-	err = output.Start()
-	output.Wait()
-	if err != nil {
-		zap.S().Fatalf("An error has occured ", err)
-	}
-}
-
 func deauthNodeRun(cmd *cobra.Command, args []string) {
+
+	ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
+
+	if err != nil {
+		zap.S().Fatalf("Error loading config", err)
+	}
 
 	executor, err := getExecutor(ctx.ProxyURL)
 
-	version, _ := pmk.OpenOSReleaseFile(executor)
+	c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
 
 	if err != nil {
 		zap.S().Fatalf("Error getting OS version")
 	}
 
-	var command string
-
-	if strings.Contains(string(version), util.Ubuntu) {
-		fmt.Println("Removing packages")
-		runCommandWait("sudo dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
-		fmt.Println("Purging packages")
-		runCommandWait("sudo dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
-		fmt.Println("Removing /etc/pf9 logs")
-		runCommandWait("sudo rm -rf /etc/pf9")
-		fmt.Println("Removing /opt/pf9 logs")
-		runCommandWait("sudo rm -rf /opt/pf9")
-
-	} else {
-		command = "sudo yum erase -y pf9-hostagent -y"
-		output := exec.Command("/bin/sh", "-c", command)
-		output.Stdout = os.Stdout
-		output.Stdin = os.Stdin
-		err = output.Start()
-		output.Wait()
-		if err != nil {
-			zap.S().Fatalf("An error has occured ", err)
-		}
-
+	auth, err := c.Keystone.GetAuth(ctx.Username, ctx.Password, ctx.Tenant, ctx.MfaToken)
+	if err != nil {
+		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
 
-	fmt.Println("Node removed successfully")
+	var nodeIPs []string
+	nodeIPs = append(nodeIPs, getIp().String())
+	projectId := auth.ProjectID
+	token := auth.Token
+	nodeUuids, _ := hostId(c.Executor, ctx.Fqdn, token, nodeIPs)
 
+	if len(nodeUuids) == 0 {
+		zap.S().Fatalf("Could not find the node. Check if the node associated with this account")
+	}
+
+	isMaster := getNode(c.Executor, ctx.Fqdn, token, projectId, nodeUuids[0])
+
+	projectNodes := getAllProjectNodes(c.Executor, ctx.Fqdn, token, projectId)
+
+	clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
+
+	removeCluster := false
+
+	if len(clusterNodes) == 1 || isMaster.IsMaster == "1" {
+		removeCluster = true
+	}
+
+	err = c.Qbert.DeauthoriseNode(isMaster.Uuid, token)
+
+	if err != nil {
+		zap.S().Fatalf("Error deauthorising node ", err.Error())
+	}
+
+	fmt.Println("Node deauthorized")
+
+	if removeCluster {
+		err = c.Qbert.DeleteCluster(isMaster.ClusterUuid, projectId, token)
+		if err != nil {
+			zap.S().Fatalf("Error deleting cluster ", err.Error())
+		}
+		fmt.Println("The cluster was deleted")
+	}
+
+}
+
+func getNode(exec cmdexec.Executor, fqdn string, token string, projectID string, nodeUuid string) Node {
+	zap.S().Debug("Checking if node is master")
+	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
+	cmd := fmt.Sprintf(`curl -sH %v -X GET %v/qbert/v3/%v/nodes | jq -r '.[] | select(.uuid=="`+nodeUuid+`")' `, tkn, fqdn, projectID)
+	isMaster, err := exec.RunWithStdout("bash", "-c", cmd)
+	if err != nil {
+		zap.S().Fatalf("Unable to get node status: ", err)
+	}
+
+	var nodes Node
+	json.Unmarshal([]byte(isMaster), &nodes)
+
+	return nodes
 }
