@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -16,24 +15,34 @@ import (
 	"go.uber.org/zap"
 )
 
-var deauthNodeCmd = &cobra.Command{
-	Use:   "deauthorize-node",
-	Short: "Deauthorizes this node from the Platform9 control plane",
-	Long:  "Deauthorizes this node. It will warn the user if the node was a master node or a part of a single node cluster.",
+var (
+	clusterUuid string
+)
+
+var deleteClusterCmd = &cobra.Command{
+	Use:   "delete-cluster",
+	Short: "Deletes the cluster.",
+	Long:  "Deletes the cluster with the specified name. Additionally the user can pass the cluster UID instead of the name.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
 			return errors.New("No parameters are needed")
 		}
 		return nil
 	},
-	Run: deauthNodeRun,
+	Run: deleteClusterRun,
 }
 
 func init() {
-	rootCmd.AddCommand(deauthNodeCmd)
+	deleteClusterCmd.Flags().StringVarP(&clusterName, "name", "n", "", "clusters name")
+	deleteClusterCmd.Flags().StringVarP(&clusterUuid, "uuid", "i", "", "clusters uuid")
+	rootCmd.AddCommand(deleteClusterCmd)
 }
 
-func deauthNodeRun(cmd *cobra.Command, args []string) {
+func deleteClusterRun(cmd *cobra.Command, args []string) {
+
+	if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("uuid") {
+		zap.S().Fatalf("You must pass a cluster name or the cluster uuid")
+	}
 
 	detachedMode := cmd.Flags().Changed("dt")
 
@@ -70,47 +79,22 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
 
-	var nodeIPs []string
-	nodeIPs = append(nodeIPs, getIp().String())
 	projectId := auth.ProjectID
 	token := auth.Token
-	nodeUuids, _ := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
 
-	if len(nodeUuids) == 0 {
-		zap.S().Fatalf("Could not find the node. Check if the node associated with this account")
+	if !cmd.Flags().Changed("uuid") {
+		_, clusterUuid, err = c.Qbert.CheckClusterExists(clusterName, projectId, token)
+
+		if err != nil {
+			zap.S().Fatalf("Could not delete the cluster")
+		}
+
 	}
 
-	isMaster := getNode(c.Executor, cfg.Fqdn, token, projectId, nodeUuids[0])
-
-	projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
-
-	clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
-
-	if len(clusterNodes) == 1 || isMaster.IsMaster == "1" {
-		fmt.Println("Warning! The node was either the master node of the last node in the cluster.")
-	}
-
-	err = c.Qbert.DeauthoriseNode(isMaster.Uuid, token)
-
+	err = c.Qbert.DeleteCluster(clusterUuid, projectId, token)
 	if err != nil {
-		zap.S().Fatalf("Error deauthorising node ", err.Error())
+		zap.S().Fatalf("Error deleting cluster ", err.Error())
 	}
+	fmt.Println("The cluster was deleted")
 
-	fmt.Println("Node deauthorized")
-
-}
-
-func getNode(exec cmdexec.Executor, fqdn string, token string, projectID string, nodeUuid string) Node {
-	zap.S().Debug("Checking if node is master")
-	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
-	cmd := fmt.Sprintf(`curl -sH %v -X GET %v/qbert/v3/%v/nodes | jq -r '.[] | select(.uuid=="`+nodeUuid+`")' `, tkn, fqdn, projectID)
-	isMaster, err := exec.RunWithStdout("bash", "-c", cmd)
-	if err != nil {
-		zap.S().Fatalf("Unable to get node status: ", err)
-	}
-
-	var nodes Node
-	json.Unmarshal([]byte(isMaster), &nodes)
-
-	return nodes
 }

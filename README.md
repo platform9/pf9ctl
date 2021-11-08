@@ -426,7 +426,7 @@ Node deauthorized
 ```
 
 
-  **deauthorize-node**
+  **authorize-node**
 
 ```sh
 #pf9ctl authorize-node --help
@@ -447,6 +447,45 @@ Global Flags:
 #pf9ctl authorize-node
 ✓ Loaded Config Successfully
 Node authorized
+```
+
+  **delete-cluster**
+
+```sh
+#pf9ctl delete-cluster --help
+Authorizes this node
+
+Deletes the cluster with the specified name. Additionally the user can pass the cluster UID instead of the name.
+
+Usage:
+  pf9ctl delete-cluster [flags]
+
+Flags:
+  -h, --help          help for delete-cluster
+  -n, --name string   clusters name
+  -i, --uuid string   clusters uuid
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+
+```
+
+```sh
+#pf9ctl delete-cluster
+2021-11-08T10:25:22.544Z	FATAL	You must pass a cluster name or the cluster uuid
+```
+
+```sh
+#pf9ctl delete-cluster -n ClusterName
+✓ Loaded Config Successfully
+The cluster was deleted
+```
+
+```sh
+#pf9ctl delete-cluster -i 023be0b0-1348-4d8a-a9b7-25bd4293cbbd
+✓ Loaded Config Successfully
+The cluster was deleted
 ```
 
 
