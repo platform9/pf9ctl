@@ -25,14 +25,13 @@ type Node struct {
 }
 
 var (
-	nodeIPs       []string
-	deleteCluster bool
+	nodeIPs []string
 )
 
 var detachNodeCmd = &cobra.Command{
 	Use:   "detach-node [flags]",
 	Short: "detaches a node from a kubernetes cluster",
-	Long:  "Detach a node from an existing cluster. Pass aditional parametar to also delete the cluster.",
+	Long:  "Detach nodes from their clusters. If no nodes are passed it will detach the node on which the command was run.",
 	Args: func(detachNodeCmd *cobra.Command, args []string) error {
 		return nil
 	},
@@ -41,7 +40,6 @@ var detachNodeCmd = &cobra.Command{
 
 func init() {
 	detachNodeCmd.Flags().StringSliceVarP(&nodeIPs, "node-ip", "n", []string{}, "node ip address")
-	detachNodeCmd.Flags().BoolVarP(&deleteCluster, "delete-cluster", "d", false, "if true will also delete nodes cluster")
 	rootCmd.AddCommand(detachNodeCmd)
 }
 
@@ -107,48 +105,24 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 	detachNodes := getNodesFromUuids(nodeUuids, projectNodes)
 
-	clusters := getClusters(detachNodes)
-	if deleteCluster {
-		detachNodes = getAllClusterNodes(projectNodes, clusters)
-	}
-
 	fmt.Println("Starting detaching process")
 	if err := c.Segment.SendEvent("Starting detach-node", auth, "", ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
 	}
 
-	if deleteCluster {
-		for i := range clusters {
-			err1 := c.Qbert.DeleteCluster(clusters[i], projectId, token)
+	for i := range detachNodes {
+		err1 := c.Qbert.DetachNode(detachNodes[i].ClusterUuid, projectId, token, detachNodes[i].Uuid)
 
-			if err1 != nil {
-				if err := c.Segment.SendEvent("Deleting cluster", auth, "Failed to delete cluster", ""); err != nil {
-					zap.S().Errorf("Unable to send Segment event for delete cluster. Error: %s", err.Error())
-				}
-				zap.S().Info("Encountered an error while deleting the ", clusters[i], " cluster: ", err1)
-			} else {
-				if err := c.Segment.SendEvent("Deleting cluster", clusters[i], "Cluster deleted", ""); err != nil {
-					zap.S().Errorf("Unable to send Segment event for deleting cluster. Error: %s", err.Error())
-				}
-				zap.S().Infof("Cluster %v deleted", clusters[i])
+		if err1 != nil {
+			if err := c.Segment.SendEvent("Detaching-node", auth, "Failed to detach node", ""); err != nil {
+				zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
 			}
-		}
-	} else {
-
-		for i := range detachNodes {
-			err1 := c.Qbert.DetachNode(detachNodes[i].ClusterUuid, projectId, token, detachNodes[i].Uuid)
-
-			if err1 != nil {
-				if err := c.Segment.SendEvent("Detaching-node", auth, "Failed to detach node", ""); err != nil {
-					zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
-				}
-				zap.S().Info("Encountered an error while detaching the", detachNodes[i].PrimaryIp, " node from a Kubernetes cluster : ", err1)
-			} else {
-				if err := c.Segment.SendEvent("Detaching-node", detachNodes[i].PrimaryIp, "Node detached", ""); err != nil {
-					zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
-				}
-				zap.S().Infof("Node %v detached from cluster", detachNodes[i].PrimaryIp)
+			zap.S().Info("Encountered an error while detaching the", detachNodes[i].PrimaryIp, " node from a Kubernetes cluster : ", err1)
+		} else {
+			if err := c.Segment.SendEvent("Detaching-node", detachNodes[i].PrimaryIp, "Node detached", ""); err != nil {
+				zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
 			}
+			zap.S().Infof("Node [%v] detached from cluster", detachNodes[i].Uuid)
 		}
 	}
 

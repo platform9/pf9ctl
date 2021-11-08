@@ -19,7 +19,7 @@ import (
 var deauthNodeCmd = &cobra.Command{
 	Use:   "deauthorize-node",
 	Short: "Deauthorizes this node from the Platform9 control plane",
-	Long:  "Deauthorizes a node. You can aurhotize it again by using the authorize-node command.",
+	Long:  "Deauthorizes this node. If the node is a master node or a part of a single node cluster it will delete the cluster.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
 			return errors.New("No parameters are needed")

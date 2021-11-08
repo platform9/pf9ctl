@@ -17,8 +17,8 @@ import (
 
 var authNodeCmd = &cobra.Command{
 	Use:   "authorize-node",
-	Short: "Authorizes this node from the Platform9 control plane",
-	Long:  "Authorizes this node",
+	Short: "Authorizes this node.",
+	Long:  "Authorizes this node.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
 			return errors.New("No parameters are needed")
@@ -85,6 +85,6 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Error authorising node ", err1.Error())
 	}
 
-	fmt.Println("Finished authorizing node")
+	fmt.Println("Node authorized")
 
 }

@@ -358,6 +358,98 @@ Global Flags:
 2021-05-26T11:58:03.6328Z	INFO	Master node(s) [615c1042-48a3-42e8-8003-ac135d12e6f4] attached to cluster
 ```
 
+  **detach-node**
+
+```sh
+#pf9ctl detach-node --help
+Detach nodes from their clusters. If no ips are sent it will detach the node on which the command was run.
+
+Usage:
+  pf9ctl detach-node [flags]
+
+Flags:
+  -h, --help              help for detach-node
+  -n, --node-ip strings   node ip address
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+```
+
+
+```sh
+#pf9ctl detach-node
+✓ Loaded Config Successfully
+Starting detaching process
+2021-11-08T08:35:14.1182Z	INFO	Node [9cfe32a2-6518-4b63-a55b-f9a9c1148e6a] detached from cluster
+
+```
+
+```sh
+#pf9ctl detach-node -n ip
+✓ Loaded Config Successfully
+Starting detaching process
+2021-11-08T08:35:14.1182Z	INFO	Node [9cfe32a2-6518-4b63-a55b-f9a9c1148e6a] detached from cluster
+
+```
+
+```sh
+#pf9ctl detach-node -n ip1,ip2
+✓ Loaded Config Successfully
+Starting detaching process
+2021-11-08T08:35:14.1182Z	INFO	Node [9cfe32a2-6518-4b63-a55b-f9a9c1148e6a] detached from cluster
+2021-11-08T08:35:14.1182Z	INFO	Node [691a9feb-6b62-4235-bf27-208a14744843	 detached from cluster
+
+```
+
+  **deauthorize-node**
+
+```sh
+#pf9ctl deauthorize-node --help
+Deauthorizes this node. If the node is a master node or a part of a single node cluster it will delete the cluster.
+
+Usage:
+  pf9ctl deauthorize-node [flags]
+
+Flags:
+  -h, --help   help for deauthorize-node
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+```
+
+```sh
+#pf9ctl deauthorize-node
+✓ Loaded Config Successfully
+Node deauthorized
+```
+
+
+  **deauthorize-node**
+
+```sh
+#pf9ctl authorize-node --help
+Authorizes this node
+
+Usage:
+  pf9ctl authorize-node [flags]
+
+Flags:
+  -h, --help   help for authorize-node
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+```
+
+```sh
+#pf9ctl authorize-node
+✓ Loaded Config Successfully
+Node authorized
+```
+
+
   **check-amazon-provider**
 ```sh
 #pf9ctl check-amazon-provider -i iamUser -a access-key -s secret-key -r us-east-1
