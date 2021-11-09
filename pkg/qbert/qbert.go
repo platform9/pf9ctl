@@ -237,7 +237,6 @@ func (c QbertImpl) DeleteCluster(clusterID, projectID, token string) error {
 		if err != nil {
 			zap.S().Info("Error occured while converting response body to string")
 		}
-		fmt.Println("Getting error ", string(respString))
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
 	}
@@ -271,7 +270,6 @@ func (c QbertImpl) DeauthoriseNode(nodeUuid, token string) error {
 		if err != nil {
 			zap.S().Info("Error occured while converting response body to string")
 		}
-		fmt.Println("Getting error ", string(respString))
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
 	}
@@ -305,7 +303,6 @@ func (c QbertImpl) AuthoriseNode(nodeUuid, token string) error {
 		if err != nil {
 			zap.S().Info("Error occured while converting response body to string")
 		}
-		fmt.Println("Getting error ", string(respString))
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
 	}

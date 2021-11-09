@@ -30,6 +30,7 @@ var deauthNodeCmd = &cobra.Command{
 }
 
 func init() {
+	deauthNodeCmd.Flags().BoolVarP(&skipCheck, "skipCheck", "s", false, "skips node check")
 	rootCmd.AddCommand(deauthNodeCmd)
 }
 
@@ -82,12 +83,26 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 
 	isMaster := getNode(c.Executor, cfg.Fqdn, token, projectId, nodeUuids[0])
 
-	projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
+	if !skipCheck {
 
-	clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
+		projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
 
-	if len(clusterNodes) == 1 || isMaster.IsMaster == "1" {
-		fmt.Println("Warning! The node was either the master node of the last node in the cluster.")
+		clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
+
+		if len(clusterNodes) == 1 || isMaster.IsMaster == "1" {
+			fmt.Println("Warning: The node is either the master node of the last node in the cluster.")
+			fmt.Print("Do you still want to deauthorize it?")
+			answer, err := util.AskBool("")
+			if err != nil {
+				zap.S().Fatalf("Stopping deauthorization")
+			}
+			if !answer {
+				fmt.Println("Stopping deauthorization")
+				return
+			}
+
+		}
+
 	}
 
 	err = c.Qbert.DeauthoriseNode(isMaster.Uuid, token)

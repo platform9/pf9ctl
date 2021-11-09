@@ -453,8 +453,6 @@ Node authorized
 
 ```sh
 #pf9ctl delete-cluster --help
-Authorizes this node
-
 Deletes the cluster with the specified name. Additionally the user can pass the cluster UID instead of the name.
 
 Usage:
@@ -486,6 +484,36 @@ The cluster was deleted
 #pf9ctl delete-cluster -i 023be0b0-1348-4d8a-a9b7-25bd4293cbbd
 ✓ Loaded Config Successfully
 The cluster was deleted
+```
+
+
+  **decommission-node**
+
+```sh
+#pf9ctl decommission-node --help
+Removes the host agent package and decommissions this node from the Platform9 control plane.
+
+Usage:
+  pf9ctl decommission-node [flags]
+
+Flags:
+  -h, --help   help for decommission-node
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+```
+
+```sh
+#pf9ctl decommission-node
+✓ Loaded Config Successfully
+Removing packages
+...
+Removing /etc/pf9 logs
+Removing /opt/pf9 logs
+Removed the node form the UI
+Node decommissioned successfully
+
 ```
 
 
