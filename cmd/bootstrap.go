@@ -142,7 +142,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	fmt.Println("")
 	fmt.Printf(color.Green("✓") + "Ready to run bootstrap command")
 	if !util.SkipPrepNode {
-		zap.S().Debug("========== Running check-node as a part of bootup ==========")
+		zap.S().Debug("========== Running check-node as a part of bootstrap ==========")
 
 		result, err := pmk.CheckNode(*cfg, c)
 		if err != nil {
@@ -174,6 +174,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			zap.S().Infof("Proceeding to create a Kubernetes cluster with current node as master node")
 		}
 
+		zap.S().Debug("========== Running prep-node as a part of bootstrap ==========")
 		if err := pmk.PrepNode(*cfg, c); err != nil {
 
 			// Uploads pf9cli log bundle if prepnode failed to get prepared
