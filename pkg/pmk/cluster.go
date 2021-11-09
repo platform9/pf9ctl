@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
@@ -14,7 +15,7 @@ import (
 
 // Bootstrap simply preps the local node and attach it as master to a newly
 // created cluster.
-func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
+func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest, keystoneAuth keystone.KeystoneAuth) error {
 	zap.S().Debug("Received a call to boostrap the local node")
 
 	resp, err := util.AskBool("Prep local node for kubernetes cluster")
@@ -22,18 +23,8 @@ func Bootstrap(ctx Config, c Client, req qbert.ClusterCreateRequest) error {
 		zap.S().Errorf("Couldn't fetch user content")
 	}
 
-	if err := PrepNode(ctx, c); err != nil {
+	if err := PrepNode(ctx, c, keystoneAuth); err != nil {
 		return fmt.Errorf("Unable to prepnode: %w", err)
-	}
-
-	keystoneAuth, err := c.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-		ctx.MfaToken,
-	)
-	if err != nil {
-		zap.S().Fatalf("keystone authentication failed: %s", err.Error())
 	}
 
 	zap.S().Info("Creating the cluster...")

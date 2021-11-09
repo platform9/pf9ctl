@@ -112,8 +112,28 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		pmk.WarningOptionalChecks = true
 	}
 
+	// Fetch the keystone token.
+	auth, err := c.Keystone.GetAuth(
+		ctx.Username,
+		ctx.Password,
+		ctx.Tenant,
+		ctx.MfaToken,
+	)
+
+	if err != nil {
+		// Certificate expiration is detected by the http library and
+		// only error object gets populated, which means that the http
+		// status code does not reflect the actual error code.
+		// So parsing the err to check for certificate expiration.
+		if strings.Contains(strings.ToLower(err.Error()), util.CertsExpireErr) {
+
+			zap.S().Fatalf("Possible clock skew detected. Check the system time and retry.")
+		}
+		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
+	}
+
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	result, err := pmk.CheckNode(ctx, c)
+	result, err := pmk.CheckNode(ctx, c, auth)
 	if err != nil {
 		// Uploads pf9cli log bundle if pre-requisite checks fails
 		errbundle := supportBundle.SupportBundleUpload(ctx, c)
@@ -136,7 +156,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if err := pmk.PrepNode(ctx, c); err != nil {
+	if err := pmk.PrepNode(ctx, c, auth); err != nil {
 
 		// Uploads pf9cli log bundle if prepnode failed to get prepared
 		errbundle := supportBundle.SupportBundleUpload(ctx, c)

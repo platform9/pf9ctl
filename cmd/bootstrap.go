@@ -4,6 +4,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/pmk"
@@ -72,7 +73,27 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		Privileged:            privileged,
 	}
 
-	err = pmk.Bootstrap(ctx, c, payload)
+	// Fetch the keystone token.
+	auth, err := c.Keystone.GetAuth(
+		ctx.Username,
+		ctx.Password,
+		ctx.Tenant,
+		ctx.MfaToken,
+	)
+
+	if err != nil {
+		// Certificate expiration is detected by the http library and
+		// only error object gets populated, which means that the http
+		// status code does not reflect the actual error code.
+		// So parsing the err to check for certificate expiration.
+		if strings.Contains(strings.ToLower(err.Error()), util.CertsExpireErr) {
+
+			zap.S().Fatalf("Possible clock skew detected. Check the system time and retry.")
+		}
+		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
+	}
+
+	err = pmk.Bootstrap(ctx, c, payload, auth)
 	if err != nil {
 		c.Segment.SendEvent("Bootstrap : Cluster creation failed", err, "FAIL", "")
 		zap.S().Fatalf("Unable to bootstrap the cluster. Error: %s", err.Error())

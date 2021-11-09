@@ -55,23 +55,13 @@ func sendSegmentEvent(allClients Client, eventStr string, auth keystone.Keystone
 }
 
 // PrepNode sets up prerequisites for k8s stack
-func PrepNode(ctx Config, allClients Client) error {
+func PrepNode(ctx Config, allClients Client, auth keystone.KeystoneAuth) error {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
 
 	zap.S().Debug("Received a call to start preparing node(s).")
 
-	auth, err := allClients.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-		ctx.MfaToken,
-	)
-
-	if err != nil {
-		return fmt.Errorf("Unable to locate keystone credentials: %s", err.Error())
-	}
 	s.Start() // Start the spinner
 	defer s.Stop()
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
