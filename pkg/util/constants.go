@@ -20,7 +20,7 @@ var IAMPermissions []string
 var AutoScalingPermissions []string
 var EKSPermissions []string
 var GoogleCloudPermissions []string
-
+var OvfServicePresent bool
 var AzureContributorID string
 
 const (
@@ -79,6 +79,8 @@ var (
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
 
+	//Location of ovf service file
+	OVFLoc    = "/etc/systemd/system/ovf.service"
 	VarDir    = "/var/log/pf9"
 	EtcDir    = "/etc/pf9"
 	Pf9LogLoc = "pf9/log"

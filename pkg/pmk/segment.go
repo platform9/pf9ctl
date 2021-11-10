@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 	"gopkg.in/segmentio/analytics-go.v3"
 )
@@ -53,6 +54,14 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 
 func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err string) error {
 	zap.S().Debug("Sending Segment Event: ", name)
+
+	//Checking infrastructure for node onboarding
+	var infra string
+	if util.OvfServicePresent {
+		infra = "OVA"
+	} else {
+		infra = "CLI"
+	}
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
 		return c.client.Enqueue(analytics.Track{
@@ -63,6 +72,7 @@ func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err
 				Set("dufqdn", data_struct.DUFqdn).
 				Set("email", data_struct.Email).
 				Set("status", status).
+				Set("infra", infra).
 				Set("errorMsg", err),
 			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
 				"session_id": time.Now().Unix(),
