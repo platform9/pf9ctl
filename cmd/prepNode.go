@@ -6,7 +6,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -178,65 +177,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	zap.S().Debug("==========Finished running prep-node==========")
-}
-
-// checkAndValidateRemote check if any of the command line
-func checkAndValidateRemote() bool {
-	for _, ip := range ips {
-		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
-			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
-			if user == "" {
-				fmt.Printf("Enter username for remote host: ")
-				reader := bufio.NewReader(os.Stdin)
-				user, _ = reader.ReadString('\n')
-				user = strings.TrimSpace(user)
-			}
-			if sshKey == "" && password == "" {
-				var choice int
-				fmt.Println("You can choose either password or sshKey")
-				fmt.Println("Enter 1 for password and 2 for sshKey")
-				fmt.Print("Enter Option : ")
-				fmt.Scanf("%d", &choice)
-				switch choice {
-				case 1:
-					fmt.Printf("Enter password for remote host: ")
-					passwordBytes, _ := terminal.ReadPassword(0)
-					password = string(passwordBytes)
-				case 2:
-					fmt.Printf("Enter private sshKey: ")
-					reader := bufio.NewReader(os.Stdin)
-					sshKey, _ = reader.ReadString('\n')
-					sshKey = strings.TrimSpace(sshKey)
-				default:
-					zap.S().Fatalf("Wrong choice please try again")
-				}
-				fmt.Printf("\n")
-			}
-			FoundRemote = true
-			supportBundle.RemoteBundle = true
-			pmk.IsRemoteExecutor = true
-			return FoundRemote
-		}
-	}
-	zap.S().Debug("Using local executor")
-	return FoundRemote
-}
-
-// getExecutor creates the right Executor
-func getExecutor(proxyURL string) (cmdexec.Executor, error) {
-	if checkAndValidateRemote() {
-		var pKey []byte
-		var err error
-		if sshKey != "" {
-			pKey, err = ioutil.ReadFile(sshKey)
-			if err != nil {
-				zap.S().Fatalf("Unable to read the sshKey %s, %s", sshKey, err.Error())
-			}
-		}
-		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password, proxyURL)
-	}
-	zap.S().Debug("Using local executor")
-	return cmdexec.LocalExecutor{ProxyUrl: proxyURL}, nil
 }
 
 // To check if Remote Host needs Password to access Sudo and prompt for Sudo Password if exists.

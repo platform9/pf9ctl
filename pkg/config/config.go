@@ -16,7 +16,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/objects"
 
-	// "github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/jinzhu/copier"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
@@ -116,7 +115,7 @@ func LoadConfigInteractive(loc string, cfg *objects.Config, nc objects.NodeConfi
 }
 
 func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
-	MaxLoopNoConfig := 3
+	maxLoopNoConfig := 3
 	InvalidExistingConfig := false
 	count := 0
 	var err error
@@ -129,7 +128,7 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) 
 		return ConfigCmdCreateGoogleRun(cfg)
 	}
 
-	for count < MaxLoopNoConfig {
+	for count < maxLoopNoConfig {
 
 		if InvalidExistingConfig {
 			fmt.Println(color.Red("x ") + "Invalid credentials entered (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
@@ -156,7 +155,7 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) 
 		return StoreConfig(cfg, util.Pf9DBLoc)
 	}
 
-	if InvalidExistingConfig && count == MaxLoopNoConfig {
+	if InvalidExistingConfig && count == maxLoopNoConfig {
 		return MAX_ATTEMPTS_ERROR
 	}
 	return err

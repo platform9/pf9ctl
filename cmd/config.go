@@ -64,8 +64,6 @@ var (
 	cfg objects.Config
 )
 
-const MaxLoopNoConfig = 3
-
 func init() {
 	rootCmd.AddCommand(configCmdCreate)
 	configCmdCreate.AddCommand(configCmdGet)

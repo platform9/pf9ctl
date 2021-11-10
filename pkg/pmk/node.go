@@ -144,24 +144,6 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	return nil
 }
 
-// func FetchRegionFQDN(ctx config.Config, auth keystone.KeystoneAuth) (string, error) {
-
-// 	// "regionInfo" service will have endpoint information. So fetch it's service ID.
-// 	regionInfoServiceID, err := keystone.GetServiceID(ctx.Fqdn, auth, "regionInfo")
-// 	if err != nil {
-// 		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
-// 	}
-// 	zap.S().Debug("Service ID fetched : ", regionInfoServiceID)
-
-// 	// Fetch the endpoint based on region name.
-// 	endpointURL, err := keystone.GetEndpointForRegion(ctx.Fqdn, auth, ctx.Region, regionInfoServiceID)
-// 	if err != nil {
-// 		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
-// 	}
-// 	zap.S().Debug("endpointURL fetched : ", endpointURL)
-// 	return endpointURL, nil
-// }
-
 func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent")
 
