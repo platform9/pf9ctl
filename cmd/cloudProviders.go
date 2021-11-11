@@ -74,7 +74,7 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 
 	cfg := &objects.Config{}
 	var err error
-	if cmd.Flags().Changed("dt") {
+	if cmd.Flags().Changed("no-prompt") {
 		flagsNotSet := checkFlags(cmd)
 		if len(flagsNotSet) > 0 {
 			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))
@@ -97,7 +97,7 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 	cfg := &objects.Config{}
 	var err error
-	if cmd.Flags().Changed("dt") {
+	if cmd.Flags().Changed("no-prompt") {
 		flagsNotSet := checkFlags(cmd)
 		if len(flagsNotSet) > 0 {
 			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))
@@ -120,7 +120,7 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 
 	cfg := &objects.Config{}
 	var err error
-	if cmd.Flags().Changed("dt") {
+	if cmd.Flags().Changed("no-prompt") {
 		flagsNotSet := checkFlags(cmd)
 		if len(flagsNotSet) > 0 {
 			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))

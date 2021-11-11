@@ -86,7 +86,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatal(color.Red("x "), err)
 	}
 
-	if cmd.Flags().Changed("dt") {
+	if cmd.Flags().Changed("no-prompt") {
 		if err = config.ValidateUserCredentials(&cfg, objects.NodeConfig{}); err != nil {
 			zap.S().Fatal(color.Red("x "), err)
 		}

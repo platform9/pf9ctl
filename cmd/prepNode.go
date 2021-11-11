@@ -73,7 +73,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		pmk.WarningOptionalChecks = true
 	}
 
-	detachedMode := cmd.Flags().Changed("dt")
+	detachedMode := cmd.Flags().Changed("no-prompt")
 	isRemote := cmdexec.CheckRemote(nodeConfig)
 
 	if isRemote {

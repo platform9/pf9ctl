@@ -53,7 +53,7 @@ func init() {
 func attachNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running Attach Node==========")
 
-	detachedMode := cmd.Flags().Changed("dt")
+	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(nc) {
 		if !config.ValidateNodeConfig(&nc, !detachedMode) {

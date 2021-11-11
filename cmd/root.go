@@ -63,7 +63,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().BoolVar(&verbosity, "verbose", false, "print verbose logs")
-	rootCmd.PersistentFlags().BoolVar(&detach, "dt", false, "disable all user prompts")
+	rootCmd.PersistentFlags().BoolVar(&detach, "no-prompt", false, "disable all user prompts")
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pf9ctl.yaml)")
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

@@ -43,7 +43,7 @@ func init() {
 func supportBundleUpload(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running supportBundleUpload==========")
 
-	detachedMode := cmd.Flags().Changed("dt")
+	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(bundleConfig) {
 		if !config.ValidateNodeConfig(&bundleConfig, !detachedMode) {
