@@ -11,7 +11,6 @@ var RequiredPorts []string
 var PortErr string
 var ProcessesList []string //Kubernetes clusters processes list
 var SwapOffDisabled bool   //If this is true the swapOff functionality will be disabled.
-
 var EBSPermissions []string
 var Route53Permissions []string
 var EC2Permission []string
@@ -20,7 +19,6 @@ var IAMPermissions []string
 var AutoScalingPermissions []string
 var EKSPermissions []string
 var GoogleCloudPermissions []string
-var OvfServicePresent bool
 var AzureContributorID string
 
 const (

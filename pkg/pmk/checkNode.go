@@ -4,7 +4,6 @@ package pmk
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -13,7 +12,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
-	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -37,16 +35,6 @@ var WarningOptionalChecks bool
 
 // CheckNode checks the prerequisites for k8s stack
 func CheckNode(ctx Config, allClients Client, auth keystone.KeystoneAuth) (CheckNodeResult, error) {
-
-	//Checking for OVF Service
-	_, err := os.Stat(util.OVFLoc)
-	if err != nil {
-		zap.S().Debugf("OVF Service not present")
-		util.OvfServicePresent = false
-	} else {
-		zap.S().Debugf("Node onboarded through OVA")
-		util.OvfServicePresent = true
-	}
 
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)

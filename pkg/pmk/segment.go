@@ -55,9 +55,9 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err string) error {
 	zap.S().Debug("Sending Segment Event: ", name)
 
-	//Checking infrastructure for node onboarding
 	var infra string
-	if util.OvfServicePresent {
+	ovfservicepresent := InfraCheck()
+	if ovfservicepresent {
 		infra = "OVA"
 	} else {
 		infra = "CLI"
@@ -98,6 +98,21 @@ func (c SegmentImpl) SendGroupTraits(name string, data interface{}) error {
 	} else {
 		return fmt.Errorf("Unable to fetch keystone info")
 	}
+}
+
+func InfraCheck() bool {
+	//Checking for OVF Service to determine infrastructure for node onboarding
+	var ovfservice bool
+	_, err1 := os.Stat(util.OVFLoc)
+	if err1 != nil {
+		zap.S().Debugf("OVF Service not present")
+		ovfservice = false
+
+	} else {
+		zap.S().Debugf("Node onboarded through OVA")
+		ovfservice = true
+	}
+	return ovfservice
 }
 
 func (c SegmentImpl) Close() {
