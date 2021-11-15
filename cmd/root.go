@@ -16,6 +16,7 @@ import (
 
 var cfgFile string
 var verbosity bool
+var detach bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -62,6 +63,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().BoolVar(&verbosity, "verbose", false, "print verbose logs")
+	rootCmd.PersistentFlags().BoolVar(&detach, "no-prompt", false, "disable all user prompts")
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pf9ctl.yaml)")
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

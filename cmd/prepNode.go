@@ -4,14 +4,18 @@ package cmd
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
+	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
@@ -46,78 +50,68 @@ var (
 	FoundRemote    = false
 )
 
+var nodeConfig objects.NodeConfig
+
 func init() {
-	prepNodeCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
-	prepNodeCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
-	prepNodeCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	prepNodeCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
+	prepNodeCmd.Flags().StringVarP(&nodeConfig.User, "user", "u", "", "ssh username for the nodes")
+	prepNodeCmd.Flags().StringVarP(&nodeConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
+	prepNodeCmd.Flags().StringVarP(&nodeConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
+	prepNodeCmd.Flags().StringSliceVarP(&nodeConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skipChecks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disableSwapOff", "d", false, "Will skip swapoff")
+	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
 	prepNodeCmd.Flags().MarkHidden("disableSwapOff")
+	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 
 	rootCmd.AddCommand(prepNodeCmd)
 }
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running prep-node==========")
-	// This flag is used to loop back if user enters invalid credentials during config set.
-	credentialFlag = true
-	// To bail out if loop runs recursively more than thrice
-	pmk.LoopCounter = 0
 
-	for credentialFlag {
-		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
-		if err != nil {
-			zap.S().Fatalf("Unable to load the config: %s\n", err.Error())
-		}
-
-		executor, err := getExecutor(ctx.ProxyURL)
-		if err != nil {
-			zap.S().Debug("Error connecting to host %s", err.Error())
-			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
-		}
-
-		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-		if err != nil {
-			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-		}
-
-		defer c.Segment.Close()
-
-		if FoundRemote {
-			// Check if Remote Host needs Password to access Sudo
-			SudoPasswordCheck(c.Executor)
-		}
-
-		// Validate the user credentials entered during config set and will bail out if invalid
-		if err := validateUserCredentials(ctx, c); err != nil {
-			//Clearing the invalid config entered. So that it will ask for new information again.
-			clearContext(&pmk.Context)
-			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-			err = configValidation(RegionInvalid, pmk.LoopCounter)
-		} else {
-			// We will store the set config if its set for first time using check-node
-			if pmk.IsNewConfig {
-				if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
-					zap.S().Errorf("Failed to store config: %s", err.Error())
-				} else {
-					pmk.IsNewConfig = false
-				}
-			}
-			credentialFlag = false
-		}
-	}
-	// To have warning "!" message when user passes --skipChecks and optional checks fails
 	if skipChecks {
 		pmk.WarningOptionalChecks = true
 	}
 
+	detachedMode := cmd.Flags().Changed("no-prompt")
+	isRemote := cmdexec.CheckRemote(nodeConfig)
+
+	if isRemote {
+		if !config.ValidateNodeConfig(&nodeConfig, !detachedMode) {
+			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
+		}
+	}
+
+	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nodeConfig.MFA}
+	var err error
+	if detachedMode {
+		err = config.LoadConfig(util.Pf9DBLoc, cfg, nodeConfig)
+	} else {
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nodeConfig)
+	}
+
+	if err != nil {
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	}
+
+	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
+
+	var executor cmdexec.Executor
+	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nodeConfig); err != nil {
+		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
+	}
+
+	var c client.Client
+	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
+	}
+
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-		ctx.MfaToken,
+		cfg.Username,
+		cfg.Password,
+		cfg.Tenant,
+		cfg.MfaToken,
 	)
 
 	if err != nil {
@@ -131,12 +125,17 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		}
 		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
 	}
+	if isRemote {
+		if err := SudoPasswordCheck(executor, detachedMode, nodeConfig.SudoPassword); err != nil {
+			zap.S().Fatal(err.Error())
+		}
+	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	result, err := pmk.CheckNode(ctx, c, auth)
+	result, err := pmk.CheckNode(*cfg, c, auth)
 	if err != nil {
 		// Uploads pf9cli log bundle if pre-requisite checks fails
-		errbundle := supportBundle.SupportBundleUpload(ctx, c)
+		errbundle := supportBundle.SupportBundleUpload(*cfg, c)
 		if errbundle != nil {
 			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
 		}
@@ -144,22 +143,31 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		zap.S().Fatalf(color.Red("x ") + "Required pre-requisite check(s) failed.")
-	} else if !skipChecks {
-		if result == pmk.OptionalFail {
-			fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
-			reader := bufio.NewReader(os.Stdin)
-			char, _, _ := reader.ReadRune()
-			if char != 'y' {
-				os.Exit(0)
+		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+	}
+
+	if result == pmk.OptionalFail {
+		if !skipChecks {
+			if detachedMode {
+				fmt.Print(color.Red("x ") + "Optional pre-requisite check(s) failed. Use --skip-checks to skip these checks.\n")
+				os.Exit(1)
+			} else {
+				fmt.Print("\nOptional pre-requisite check(s) failed. Do you want to continue? (y/n) ")
+				reader := bufio.NewReader(os.Stdin)
+				char, _, _ := reader.ReadRune()
+				if char != 'y' {
+					os.Exit(0)
+				}
 			}
+		} else {
+			fmt.Print("\nProceeding for prep-node with failed optional check(s)\n")
 		}
 	}
 
-	if err := pmk.PrepNode(ctx, c, auth); err != nil {
+	if err := pmk.PrepNode(*cfg, c, auth); err != nil {
 
 		// Uploads pf9cli log bundle if prepnode failed to get prepared
-		errbundle := supportBundle.SupportBundleUpload(ctx, c)
+		errbundle := supportBundle.SupportBundleUpload(*cfg, c)
 		if errbundle != nil {
 			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
 		}
@@ -171,70 +179,21 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Finished running prep-node==========")
 }
 
-// checkAndValidateRemote check if any of the command line
-func checkAndValidateRemote() bool {
-	for _, ip := range ips {
-		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
-			// lets create a remote executor, but before that check if we got user and either of password or ssh-key
-			if user == "" {
-				fmt.Printf("Enter username for remote host: ")
-				reader := bufio.NewReader(os.Stdin)
-				user, _ = reader.ReadString('\n')
-				user = strings.TrimSpace(user)
-			}
-			if sshKey == "" && password == "" {
-				var choice int
-				fmt.Println("You can choose either password or sshKey")
-				fmt.Println("Enter 1 for password and 2 for sshKey")
-				fmt.Print("Enter Option : ")
-				fmt.Scanf("%d", &choice)
-				switch choice {
-				case 1:
-					fmt.Printf("Enter password for remote host: ")
-					passwordBytes, _ := terminal.ReadPassword(0)
-					password = string(passwordBytes)
-				case 2:
-					fmt.Printf("Enter private sshKey: ")
-					reader := bufio.NewReader(os.Stdin)
-					sshKey, _ = reader.ReadString('\n')
-					sshKey = strings.TrimSpace(sshKey)
-				default:
-					zap.S().Fatalf("Wrong choice please try again")
-				}
-				fmt.Printf("\n")
-			}
-			FoundRemote = true
-			supportBundle.RemoteBundle = true
-			pmk.IsRemoteExecutor = true
-			return FoundRemote
-		}
-	}
-	zap.S().Debug("Using local executor")
-	return FoundRemote
-}
-
-// getExecutor creates the right Executor
-func getExecutor(proxyURL string) (cmdexec.Executor, error) {
-	if checkAndValidateRemote() {
-		var pKey []byte
-		var err error
-		if sshKey != "" {
-			pKey, err = ioutil.ReadFile(sshKey)
-			if err != nil {
-				zap.S().Fatalf("Unable to read the sshKey %s, %s", sshKey, err.Error())
-			}
-		}
-		return cmdexec.NewRemoteExecutor(ips[0], 22, user, pKey, password, proxyURL)
-	}
-	zap.S().Debug("Using local executor")
-	return cmdexec.LocalExecutor{ProxyUrl: proxyURL}, nil
-}
-
 // To check if Remote Host needs Password to access Sudo and prompt for Sudo Password if exists.
-func SudoPasswordCheck(exec cmdexec.Executor) error {
+func SudoPasswordCheck(exec cmdexec.Executor, detached bool, sudoPass string) error {
 
 	_, err := exec.RunWithStdout("-l | grep '(ALL) PASSWD: ALL'")
 	if err == nil {
+		if detached {
+			if sudoPass == "" {
+				return errors.New("sudo password is required for the user on remote host, use -e to pass")
+			} else if validateSudoPassword(exec) == util.Invalid {
+				return errors.New("Invalid password for user on remote host")
+			} else {
+				ssh.SudoPassword = sudoPass
+				return nil
+			}
+		}
 		// To bail out if Sudo Password entered is invalid multiple times.
 		loopcounter := 1
 		for true {

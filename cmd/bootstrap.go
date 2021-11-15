@@ -5,8 +5,12 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/config"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -47,12 +51,13 @@ var (
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("Received a call to bootstrap the node")
 
-	ctx, err := pmk.LoadConfig(util.Pf9DBLoc)
+	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nc.MFA}
+	err := config.LoadConfig(util.Pf9DBLoc, cfg, objects.NodeConfig{})
 	if err != nil {
 		zap.S().Fatalf("Unable to load config: %s", err.Error())
 	}
 
-	c, err := pmk.NewClient(ctx.Fqdn, cmdexec.LocalExecutor{}, ctx.AllowInsecure, false)
+	c, err := client.NewClient(cfg.Fqdn, cmdexec.LocalExecutor{}, cfg.AllowInsecure, false)
 	if err != nil {
 		zap.S().Fatalf("Unable to load clients: %s", err.Error())
 	}
@@ -75,10 +80,10 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-		ctx.MfaToken,
+		cfg.Username,
+		cfg.Password,
+		cfg.Tenant,
+		cfg.MfaToken,
 	)
 
 	if err != nil {
@@ -93,7 +98,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 
-	err = pmk.Bootstrap(ctx, c, payload, auth)
+	err = pmk.Bootstrap(*cfg, c, payload, auth)
 	if err != nil {
 		c.Segment.SendEvent("Bootstrap : Cluster creation failed", err, "FAIL", "")
 		zap.S().Fatalf("Unable to bootstrap the cluster. Error: %s", err.Error())

@@ -6,9 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
-	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
@@ -52,7 +54,7 @@ func HostIP(exec cmdexec.Executor) (string, error) {
 }
 
 // To upload pf9ctl log bundle to S3 bucket
-func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
+func SupportBundleUpload(ctx objects.Config, allClients client.Client) error {
 
 	zap.S().Debugf("Received a call to upload pf9ctl supportBundle to %s bucket.\n", S3_BUCKET_NAME)
 
@@ -88,7 +90,7 @@ func SupportBundleUpload(ctx pmk.Config, allClients pmk.Client) error {
 	}
 
 	// To Fetch FQDN
-	FQDN, err := pmk.FetchRegionFQDN(ctx, auth)
+	FQDN, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
 	if err != nil {
 		zap.S().Debug("unable to fetch fqdn: %w")
 		return fmt.Errorf("unable to fetch fqdn: %w", err)

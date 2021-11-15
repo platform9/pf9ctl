@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
@@ -30,7 +32,7 @@ const (
 )
 
 // Sends an event to segment based on the input string and uses auth as keystone UUID property.
-func sendSegmentEvent(allClients Client, eventStr string, auth keystone.KeystoneAuth, isError bool) {
+func sendSegmentEvent(allClients client.Client, eventStr string, auth keystone.KeystoneAuth, isError bool) {
 
 	var errorStr, suffixStr, status string
 
@@ -55,7 +57,7 @@ func sendSegmentEvent(allClients Client, eventStr string, auth keystone.Keystone
 }
 
 // PrepNode sets up prerequisites for k8s stack
-func PrepNode(ctx Config, allClients Client, auth keystone.KeystoneAuth) error {
+func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth) error {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
@@ -142,28 +144,10 @@ func PrepNode(ctx Config, allClients Client, auth keystone.KeystoneAuth) error {
 	return nil
 }
 
-func FetchRegionFQDN(ctx Config, auth keystone.KeystoneAuth) (string, error) {
-
-	// "regionInfo" service will have endpoint information. So fetch it's service ID.
-	regionInfoServiceID, err := keystone.GetServiceID(ctx.Fqdn, auth, "regionInfo")
-	if err != nil {
-		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
-	}
-	zap.S().Debug("Service ID fetched : ", regionInfoServiceID)
-
-	// Fetch the endpoint based on region name.
-	endpointURL, err := keystone.GetEndpointForRegion(ctx.Fqdn, auth, ctx.Region, regionInfoServiceID)
-	if err != nil {
-		return "", fmt.Errorf("Failed to fetch installer URL, Error: %s", err)
-	}
-	zap.S().Debug("endpointURL fetched : ", endpointURL)
-	return endpointURL, nil
-}
-
-func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
+func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent")
 
-	regionURL, err := FetchRegionFQDN(ctx, auth)
+	regionURL, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
 	if err != nil {
 		return fmt.Errorf("Unable to fetch URL: %w", err)
 	}
@@ -190,7 +174,7 @@ func installHostAgent(ctx Config, auth keystone.KeystoneAuth, hostOS string, exe
 	}
 }
 
-func installHostAgentCertless(ctx Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
+func installHostAgentCertless(ctx objects.Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading the installer (this might take a few minutes...)")
 
 	url := fmt.Sprintf(
@@ -339,7 +323,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 	return !(out == "")
 }
 
-func installHostAgentLegacy(ctx Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
+func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent Installer Legacy")
 
 	url := fmt.Sprintf("https://%s/private/platform9-install-%s.sh", regionURL, hostOS)
