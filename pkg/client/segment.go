@@ -63,6 +63,7 @@ func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err
 	}
 
 	zap.S().Debug("Sending Segment Event: ", name)
+
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
 		return c.client.Enqueue(analytics.Track{
