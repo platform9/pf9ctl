@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 	"gopkg.in/segmentio/analytics-go.v3"
 )
@@ -52,6 +53,16 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 }
 
 func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err string) error {
+
+	//To differentiate between OVA and non-OVA node
+	var infra string
+	ovfservicepresent := InfraCheck()
+	if ovfservicepresent {
+		infra = "OVA"
+	} else {
+		infra = "CLI"
+	}
+
 	zap.S().Debug("Sending Segment Event: ", name)
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
@@ -63,6 +74,7 @@ func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err
 				Set("dufqdn", data_struct.DUFqdn).
 				Set("email", data_struct.Email).
 				Set("status", status).
+				Set("infra", infra).
 				Set("errorMsg", err),
 			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
 				"session_id": time.Now().Unix(),
@@ -88,6 +100,21 @@ func (c SegmentImpl) SendGroupTraits(name string, data interface{}) error {
 	} else {
 		return fmt.Errorf("Unable to fetch keystone info")
 	}
+}
+
+func InfraCheck() bool {
+	//Checking for OVF Service to determine infrastructure for node onboarding
+	var ovfservice bool
+	_, err1 := os.Stat(util.OVFLoc)
+	if err1 != nil {
+		zap.S().Debugf("OVF Service not present")
+		ovfservice = false
+
+	} else {
+		zap.S().Debugf("Node onboarded through OVA")
+		ovfservice = true
+	}
+	return ovfservice
 }
 
 func (c SegmentImpl) Close() {
