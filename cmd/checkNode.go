@@ -103,14 +103,13 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 
-	result, err := pmk.CheckNode(*cfg, c, auth)
 	if isRemote {
 		if err := SudoPasswordCheck(executor, detachedMode, nc.SudoPassword); err != nil {
 			zap.S().Fatal("Failed to check sudo password for remote machine:", err.Error())
 		}
 	}
 
-	result, err = pmk.CheckNode(*cfg, c, auth)
+	result, err := pmk.CheckNode(*cfg, c, auth)
 	if err != nil {
 		// Uploads pf9cli log bundle if checknode fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c)
