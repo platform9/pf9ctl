@@ -2,6 +2,7 @@
 package pmk
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -63,7 +64,11 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Color("red")
 
 	zap.S().Debug("Received a call to start preparing node(s).")
-
+	zap.S().Debug("Disabling anattended updates")
+	err := DisableUnattendedUpdates(allClients)
+	if err != nil {
+		zap.S().Debugf("Error : %s", err)
+	}
 	s.Start() // Start the spinner
 	defer s.Stop()
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
@@ -142,6 +147,24 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	fmt.Println(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
 
 	return nil
+}
+
+func DisableUnattendedUpdates(allClients client.Client) error {
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl stop unattended-upgrades")
+	if err != nil {
+		return errors.New("failed to disabled unattended-upgrades")
+	} else {
+		return nil
+	}
+}
+
+func EnableUnattendedUpdates(allClients client.Client) error {
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl start unattended-upgrades")
+	if err != nil {
+		return errors.New("failed to start unattended-upgrades")
+	} else {
+		return nil
+	}
 }
 
 func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
