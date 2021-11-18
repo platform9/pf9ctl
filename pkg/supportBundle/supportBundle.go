@@ -205,8 +205,6 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 	}
 
 	//Assign specific files according to the platform
-	//GenFiles(os, exec)
-
 	if hostOS == "debian" {
 		authfile = util.AuthDeb
 		msgfile = util.MsgDeb
@@ -273,10 +271,5 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 		}
 		return targetfile, nil
 	}
-
-}
-
-//To assign platform-specific auth,messages,dpkg/yum files
-func GenFiles(os string, exec cmdexec.Executor) {
 
 }
