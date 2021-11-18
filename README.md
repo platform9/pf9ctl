@@ -358,6 +358,165 @@ Global Flags:
 2021-05-26T11:58:03.6328Z	INFO	Master node(s) [615c1042-48a3-42e8-8003-ac135d12e6f4] attached to cluster
 ```
 
+  **detach-node**
+
+```sh
+#pf9ctl detach-node --help
+Detach nodes from their clusters. If no ips are sent it will detach the node on which the command was run.
+
+Usage:
+  pf9ctl detach-node [flags]
+
+Flags:
+  -h, --help              help for detach-node
+  -n, --node-ip strings   node ip address
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+```
+
+
+```sh
+#pf9ctl detach-node
+✓ Loaded Config Successfully
+Starting detaching process
+2021-11-08T08:35:14.1182Z	INFO	Node [9cfe32a2-6518-4b63-a55b-f9a9c1148e6a] detached from cluster
+
+```
+
+```sh
+#pf9ctl detach-node -n ip
+✓ Loaded Config Successfully
+Starting detaching process
+2021-11-08T08:35:14.1182Z	INFO	Node [9cfe32a2-6518-4b63-a55b-f9a9c1148e6a] detached from cluster
+
+```
+
+```sh
+#pf9ctl detach-node -n ip1,ip2
+✓ Loaded Config Successfully
+Starting detaching process
+2021-11-08T08:35:14.1182Z	INFO	Node [9cfe32a2-6518-4b63-a55b-f9a9c1148e6a] detached from cluster
+2021-11-08T08:35:14.1182Z	INFO	Node [691a9feb-6b62-4235-bf27-208a14744843	 detached from cluster
+
+```
+
+  **deauthorize-node**
+
+```sh
+#pf9ctl deauthorize-node --help
+Deauthorizes this node. If the node is a master node or a part of a single node cluster it will delete the cluster.
+
+Usage:
+  pf9ctl deauthorize-node [flags]
+
+Flags:
+  -h, --help   help for deauthorize-node
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+```
+
+```sh
+#pf9ctl deauthorize-node
+✓ Loaded Config Successfully
+Node deauthorized
+```
+
+
+  **authorize-node**
+
+```sh
+#pf9ctl authorize-node --help
+Authorizes this node
+
+Usage:
+  pf9ctl authorize-node [flags]
+
+Flags:
+  -h, --help   help for authorize-node
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+```
+
+```sh
+#pf9ctl authorize-node
+✓ Loaded Config Successfully
+Node authorized
+```
+
+  **delete-cluster**
+
+```sh
+#pf9ctl delete-cluster --help
+Deletes the cluster with the specified name. Additionally the user can pass the cluster UID instead of the name.
+
+Usage:
+  pf9ctl delete-cluster [flags]
+
+Flags:
+  -h, --help          help for delete-cluster
+  -n, --name string   clusters name
+  -i, --uuid string   clusters uuid
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+
+```
+
+```sh
+#pf9ctl delete-cluster
+2021-11-08T10:25:22.544Z	FATAL	You must pass a cluster name or the cluster uuid
+```
+
+```sh
+#pf9ctl delete-cluster -n ClusterName
+✓ Loaded Config Successfully
+The cluster was deleted
+```
+
+```sh
+#pf9ctl delete-cluster -i 023be0b0-1348-4d8a-a9b7-25bd4293cbbd
+✓ Loaded Config Successfully
+The cluster was deleted
+```
+
+
+  **decommission-node**
+
+```sh
+#pf9ctl decommission-node --help
+Removes the host agent package and decommissions this node from the Platform9 control plane.
+
+Usage:
+  pf9ctl decommission-node [flags]
+
+Flags:
+  -h, --help   help for decommission-node
+
+Global Flags:
+      --dt        disable all user prompts
+      --verbose   print verbose logs
+```
+
+```sh
+#pf9ctl decommission-node
+✓ Loaded Config Successfully
+Removing packages
+...
+Removing /etc/pf9 logs
+Removing /opt/pf9 logs
+Removed the node form the UI
+Node decommissioned successfully
+
+```
+
+
   **check-amazon-provider**
 ```sh
 #pf9ctl check-amazon-provider -i iamUser -a access-key -s secret-key -r us-east-1

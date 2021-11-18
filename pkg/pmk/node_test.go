@@ -55,7 +55,7 @@ func TestOpenOSReleaseFile(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			result, err := openOSReleaseFile(tc.args.exec)
+			result, err := OpenOSReleaseFile(tc.args.exec)
 			assert.Equal(t, tc.want.err, err)
 			assert.Equal(t, tc.want.result, result)
 		})
