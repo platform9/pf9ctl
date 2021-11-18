@@ -31,6 +31,7 @@ var (
 	authfile    string
 	msgfile     string
 	lockfile    string
+	hostOS      string
 
 	//Errors returned from the functions
 	ErrHostIP        = fmt.Errorf("Host IP not found")
@@ -42,6 +43,14 @@ var (
 	//Timestamp used for generating targetfile
 	Timestamp = time.Now()
 )
+
+func HostOS(exec cmdexec.Executor) {
+	hostOS, err = pmk.ValidatePlatform(exec)
+	if err != nil {
+		zap.S().Fatalf("OS version is not supported")
+	}
+
+}
 
 // To get the Host IP address
 func HostIP(exec cmdexec.Executor) (string, error) {
@@ -60,7 +69,7 @@ func HostIP(exec cmdexec.Executor) (string, error) {
 func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote bool) error {
 
 	zap.S().Debugf("Received a call to upload pf9ctl supportBundle to %s bucket.\n", S3_BUCKET_NAME)
-
+	HostOS(allClients.Executor)
 	fileloc, err = GenSupportBundle(allClients.Executor, Timestamp, isRemote)
 	if err != nil && err != ErrPartialBundle {
 		if isRemote {
@@ -195,13 +204,18 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 		zap.S().Debug("Dmesg files not Found!! ", errDmesg)
 	}
 
-	os, err := pmk.ValidatePlatform(exec)
-	if err != nil {
-		zap.S().Fatalf("OS version is not supported")
-	}
-
 	//Assign specific files according to the platform
-	GenFiles(os, exec)
+	//GenFiles(os, exec)
+
+	if hostOS == "debian" {
+		authfile = util.AuthDeb
+		msgfile = util.MsgDeb
+		lockfile = util.LockDeb
+	} else {
+		authfile = util.AuthRed
+		msgfile = util.MsgRed
+		lockfile = util.LockRed
+	}
 
 	_, errAuth := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", authfile))
 	if errEtc != nil {
@@ -264,13 +278,5 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 
 //To assign platform-specific auth,messages,dpkg/yum files
 func GenFiles(os string, exec cmdexec.Executor) {
-	if os == "debian" {
-		authfile = util.AuthDeb
-		msgfile = util.MsgDeb
-		lockfile = util.LockDeb
-	} else {
-		authfile = util.AuthRed
-		msgfile = util.MsgRed
-		lockfile = util.LockRed
-	}
+
 }

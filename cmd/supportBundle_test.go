@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -73,7 +74,7 @@ func TestHostIP(t *testing.T) {
 //GenSupportBundle test case(Only for Local Host)
 func TestGenSupportBundle(t *testing.T) {
 
-	isRemote := cmdexec.CheckRemote(bundleConfig)
+	//isRemote := false
 
 	timestamp := time.Now()
 	type want struct {
@@ -84,6 +85,7 @@ func TestGenSupportBundle(t *testing.T) {
 	type args struct {
 		exec      cmdexec.Executor
 		timestamp time.Time
+		isRemote  bool
 	}
 
 	cases := map[string]struct {
@@ -121,8 +123,10 @@ func TestGenSupportBundle(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			_, err1 := supportBundle.GenSupportBundle(tc.exec, timestamp, isRemote)
+			_, err1 := supportBundle.GenSupportBundle(tc.exec, timestamp, false)
+			fmt.Printf("Printing error: %s %s", tc.want.err, err1)
 			test_utils.Equals(t, tc.want.err, err1)
+
 		})
 	}
 
