@@ -2,7 +2,6 @@
 package pmk
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -78,11 +77,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	}
 
 	if HostOS == "debian" {
-		zap.S().Debug("Disabling anattended updates")
-		err := DisableUnattendedUpdates(allClients)
-		if err != nil {
-			zap.S().Debugf("Error : %s", err)
-		}
+		defer EnableUnattendedUpdates(allClients)
 	}
 
 	present := pf9PackagesPresent(HostOS, allClients.Executor)
@@ -153,21 +148,11 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	return nil
 }
 
-func DisableUnattendedUpdates(allClients client.Client) error {
-	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl stop unattended-upgrades")
-	if err != nil {
-		return errors.New("failed to disabled unattended-upgrades")
-	} else {
-		return nil
-	}
-}
-
-func EnableUnattendedUpdates(allClients client.Client) error {
+func EnableUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Enabling unattended-upgrades")
 	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl start unattended-upgrades")
 	if err != nil {
-		return errors.New("failed to start unattended-upgrades")
-	} else {
-		return nil
+		zap.S().Debugf("failed to start unattended-upgrades : %s", err)
 	}
 }
 
