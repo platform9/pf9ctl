@@ -73,6 +73,8 @@ func TestHostIP(t *testing.T) {
 //GenSupportBundle test case(Only for Local Host)
 func TestGenSupportBundle(t *testing.T) {
 
+	isRemote := cmdexec.CheckRemote(bundleConfig)
+
 	timestamp := time.Now()
 	type want struct {
 		targetfile string
@@ -119,7 +121,7 @@ func TestGenSupportBundle(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			_, err1 := supportBundle.GenSupportBundle(tc.exec, timestamp)
+			_, err1 := supportBundle.GenSupportBundle(tc.exec, timestamp, isRemote)
 			test_utils.Equals(t, tc.want.err, err1)
 		})
 	}

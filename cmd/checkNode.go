@@ -52,7 +52,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	detachedMode := cmd.Flags().Changed("no-prompt")
 	isRemote := cmdexec.CheckRemote(nc)
 
-	if cmdexec.CheckRemote(nc) {
+	if isRemote {
 		if !config.ValidateNodeConfig(&nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
@@ -112,7 +112,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	result, err := pmk.CheckNode(*cfg, c, auth)
 	if err != nil {
 		// Uploads pf9cli log bundle if checknode fails
-		errbundle := supportBundle.SupportBundleUpload(*cfg, c)
+		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
 		if errbundle != nil {
 			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
 		}

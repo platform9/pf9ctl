@@ -47,7 +47,6 @@ var (
 	ips            []string
 	skipChecks     bool
 	disableSwapOff bool
-	FoundRemote    = false
 )
 
 var nodeConfig objects.NodeConfig
@@ -135,7 +134,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	result, err := pmk.CheckNode(*cfg, c, auth)
 	if err != nil {
 		// Uploads pf9cli log bundle if pre-requisite checks fails
-		errbundle := supportBundle.SupportBundleUpload(*cfg, c)
+		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
 		if errbundle != nil {
 			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
 		}
@@ -167,7 +166,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if err := pmk.PrepNode(*cfg, c, auth); err != nil {
 
 		// Uploads pf9cli log bundle if prepnode failed to get prepared
-		errbundle := supportBundle.SupportBundleUpload(*cfg, c)
+		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
 		if errbundle != nil {
 			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
 		}
