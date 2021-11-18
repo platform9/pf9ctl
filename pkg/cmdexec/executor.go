@@ -8,12 +8,9 @@ import (
 	"os/exec"
 	"strings"
 
-	// "github.com/platform9/pf9ctl/pkg/supportBundle"
-
 	"github.com/platform9/pf9ctl/pkg/objects"
-	"github.com/platform9/pf9ctl/pkg/util"
-
 	"github.com/platform9/pf9ctl/pkg/ssh"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -162,7 +159,6 @@ func GetExecutor(proxyURL string, nc objects.NodeConfig) (Executor, error) {
 func CheckRemote(nc objects.NodeConfig) bool {
 	for _, ip := range nc.IPs {
 		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
-			// supportBundle.RemoteBundle = true
 			return true
 		}
 	}

@@ -44,8 +44,9 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running supportBundleUpload==========")
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
+	isRemote := cmdexec.CheckRemote(bundleConfig)
 
-	if cmdexec.CheckRemote(bundleConfig) {
+	if isRemote {
 		if !config.ValidateNodeConfig(&bundleConfig, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
@@ -76,7 +77,7 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 	defer c.Segment.Close()
 
 	zap.S().Info("==========Uploading supportBundle to S3 bucket==========")
-	err = supportBundle.SupportBundleUpload(*cfg, c)
+	err = supportBundle.SupportBundleUpload(*cfg, c, isRemote)
 	if err != nil {
 		zap.S().Infof("Failed to upload pf9ctl supportBundle to %s bucket!!", supportBundle.S3_BUCKET_NAME)
 	} else {

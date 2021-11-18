@@ -11,6 +11,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
@@ -24,10 +25,13 @@ const (
 )
 
 var (
-	RemoteBundle bool = false
-	fileloc      string
-	err          error
-	S3_Location  string
+	fileloc     string
+	err         error
+	S3_Location string
+	authfile    string
+	msgfile     string
+	lockfile    string
+	hostOS      string
 
 	//Errors returned from the functions
 	ErrHostIP        = fmt.Errorf("Host IP not found")
@@ -39,6 +43,14 @@ var (
 	//Timestamp used for generating targetfile
 	Timestamp = time.Now()
 )
+
+func HostOS(exec cmdexec.Executor) {
+	hostOS, err = pmk.ValidatePlatform(exec)
+	if err != nil {
+		zap.S().Fatalf("OS version is not supported")
+	}
+
+}
 
 // To get the Host IP address
 func HostIP(exec cmdexec.Executor) (string, error) {
@@ -54,13 +66,13 @@ func HostIP(exec cmdexec.Executor) (string, error) {
 }
 
 // To upload pf9ctl log bundle to S3 bucket
-func SupportBundleUpload(ctx objects.Config, allClients client.Client) error {
+func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote bool) error {
 
 	zap.S().Debugf("Received a call to upload pf9ctl supportBundle to %s bucket.\n", S3_BUCKET_NAME)
-
-	fileloc, err = GenSupportBundle(allClients.Executor, Timestamp)
+	HostOS(allClients.Executor)
+	fileloc, err = GenSupportBundle(allClients.Executor, Timestamp, isRemote)
 	if err != nil && err != ErrPartialBundle {
-		if RemoteBundle {
+		if isRemote {
 			zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
 			return err
 		}
@@ -167,10 +179,10 @@ func RemoveBundle(exec cmdexec.Executor) error {
 
 //This function is used to generate the support bundles.
 //It copies all the log files specified into a directory and archives that given directory.
-func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time) (string, error) {
+func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool) (string, error) {
 
 	//Check whether the source directories exist in remote node.
-	if !RemoteBundle {
+	if !isRemote {
 		_, errPf9 := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.Pf9LogDir))
 		if err != nil {
 			zap.S().Debug("Log files directory not Found!!", errPf9)
@@ -187,6 +199,37 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time) (string, error
 		zap.S().Debug("Log files directory not Found!! ", errVar)
 	}
 
+	_, errDmesg := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.DmesgLog))
+	if errVar != nil {
+		zap.S().Debug("Dmesg files not Found!! ", errDmesg)
+	}
+
+	//Assign specific files according to the platform
+	if hostOS == "debian" {
+		authfile = util.AuthDeb
+		msgfile = util.MsgDeb
+		lockfile = util.LockDeb
+	} else {
+		authfile = util.AuthRed
+		msgfile = util.MsgRed
+		lockfile = util.LockRed
+	}
+
+	_, errAuth := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", authfile))
+	if errEtc != nil {
+		zap.S().Debug("Auth files not Found!! ", errAuth)
+	}
+
+	_, errMsg := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", msgfile))
+	if errEtc != nil {
+		zap.S().Debug("Auth files not Found!! ", errMsg)
+	}
+
+	_, errLock := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", lockfile))
+	if errEtc != nil {
+		zap.S().Debug("Auth files not Found!! ", errLock)
+	}
+
 	// To fetch the hostname of remote node
 	hostname, err := exec.RunWithStdout("bash", "-c", fmt.Sprintf("hostname"))
 	if err != nil {
@@ -198,12 +241,12 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time) (string, error
 	// To generate the targetfile name
 	targetfile := GenTargetFilename(timestamp, hostname)
 
-	if RemoteBundle {
+	if isRemote {
 		// Generate supportBundle if any of Etc / var logs are present or both
 		if errEtc == nil || errVar == nil {
 			// Generation of supportBundle in remote host case.
-			_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar -czf %s %s %s",
-				targetfile, util.VarDir, util.EtcDir))
+			_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar -czf %s %s %s %s %s %s %s",
+				targetfile, util.VarDir, util.EtcDir, util.DmesgLog, authfile, msgfile, lockfile))
 			if errbundle != nil {
 				zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle (Remote Host)", errbundle)
 			}
@@ -218,8 +261,8 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time) (string, error
 
 	} else {
 		// Generation of supportBundle in local host case.
-		_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s %s %s %s",
-			targetfile, util.Pf9DirLoc, util.Pf9LogLoc, util.VarDir, util.EtcDir))
+		_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s %s %s %s %s %s %s %s",
+			targetfile, util.Pf9DirLoc, util.Pf9LogLoc, util.VarDir, util.EtcDir, util.DmesgLog, authfile, msgfile, lockfile))
 		if errbundle != nil {
 			zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle", errbundle)
 			return targetfile, ErrPartialBundle
