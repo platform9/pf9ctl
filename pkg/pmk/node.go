@@ -25,6 +25,7 @@ import (
 var HostAgent int
 var IsRemoteExecutor bool
 var homeDir string
+var HostOS string
 
 const (
 	// Response Status Codes
@@ -64,24 +65,27 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Color("red")
 
 	zap.S().Debug("Received a call to start preparing node(s).")
-	zap.S().Debug("Disabling anattended updates")
-	err := DisableUnattendedUpdates(allClients)
-	if err != nil {
-		zap.S().Debugf("Error : %s", err)
-	}
 	s.Start() // Start the spinner
 	defer s.Stop()
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
 	s.Suffix = " Starting prep-node"
-
-	hostOS, err := ValidatePlatform(allClients.Executor)
-	if err != nil {
-		errStr := "Error: Invalid host OS. " + err.Error()
+	var err1 error
+	HostOS, err1 = ValidatePlatform(allClients.Executor)
+	if err1 != nil {
+		errStr := "Error: Invalid host OS. " + err1.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
-	present := pf9PackagesPresent(hostOS, allClients.Executor)
+	if HostOS == "debian" {
+		zap.S().Debug("Disabling anattended updates")
+		err := DisableUnattendedUpdates(allClients)
+		if err != nil {
+			zap.S().Debugf("Error : %s", err)
+		}
+	}
+
+	present := pf9PackagesPresent(HostOS, allClients.Executor)
 	if present {
 		errStr := "\n\nPlatform9 packages already present on the host." +
 			"\nPlease uninstall these packages if you want to prep the node again.\n" +
@@ -93,7 +97,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
 	s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
-	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
+	if err := installHostAgent(ctx, auth, HostOS, allClients.Executor); err != nil {
 		errStr := "Error: Unable to install hostagent. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)

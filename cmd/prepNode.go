@@ -167,11 +167,14 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if err := pmk.PrepNode(*cfg, c, auth); err != nil {
 
 		// Uploads pf9cli log bundle if prepnode failed to get prepared
-		zap.S().Debug("enabling anattended updates")
-		err := pmk.EnableUnattendedUpdates(c)
-		if err != nil {
-			zap.S().Debugf("Error : %s", err)
+		if pmk.HostOS == "debian" {
+			zap.S().Debug("enabling anattended updates")
+			err := pmk.EnableUnattendedUpdates(c)
+			if err != nil {
+				zap.S().Debugf("Error : %s", err)
+			}
 		}
+
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c)
 		if errbundle != nil {
 			zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
@@ -180,10 +183,12 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Debugf("Unable to prep node: %s\n", err.Error())
 		zap.S().Fatalf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
 	}
-	zap.S().Debug("enabling anattended updates")
-	err = pmk.EnableUnattendedUpdates(c)
-	if err != nil {
-		zap.S().Debugf("Error : %s", err)
+	if pmk.HostOS == "debian" {
+		zap.S().Debug("enabling anattended updates")
+		err := pmk.EnableUnattendedUpdates(c)
+		if err != nil {
+			zap.S().Debugf("Error : %s", err)
+		}
 	}
 
 	zap.S().Debug("==========Finished running prep-node==========")
