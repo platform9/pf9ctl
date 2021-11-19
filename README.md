@@ -546,3 +546,69 @@ Node decommissioned successfully
 
 ✓ Has access
 ```
+
+ **bootstrap**
+
+ ```sh
+./pf9ctl bootstrap --help
+Bootstrap a single node Kubernetes cluster with current node as the master node.
+
+Usage:
+  pf9ctl bootstrap [flags]
+
+Flags:
+      --allowWorkloadsOnMaster   Taint master nodes ( to enable workloads ) (default true)
+      --appCatalogEnabled        Enable Helm application catalog
+      --containersCidr string    CIDR for container overlay (default "10.20.0.0/16")
+      --externalDnsName string   External DNS for master VIP
+  -h, --help                     help for bootstrap
+  -i, --ip strings               IP address of host to be prepared
+      --masterVip string         IP Address for VIP for master nodes
+      --masterVipIf string       Interface name for master / worker nodes
+      --metallbIpRange string    Ip range for MetalLB
+      --networkPlugin string     Specify network plugin ( Possible values: flannel or calico ) (default "calico")
+  -p, --password string          ssh password for the nodes (use 'single quotes' to pass password)
+      --privileged               Enable privileged mode for K8s API. Default: true (default true)
+      --servicesCidr string      CIDR for services overlay (default "10.21.0.0/16")
+  -s, --ssh-key string           ssh key file for connecting to the nodes
+  -u, --user string              ssh username for the nodes
+
+Global Flags:
+      --no-prompt   disable all user prompts
+      --verbose     print verbose logs
+
+```
+
+```sh
+./pf9ctl bootstrap trial
+✓ Loaded Config Successfully
+✓ Node is not onboarded and not attached to any cluster
+✓ Removal of existing CLI
+✓ Existing Platform9 Packages Check
+✓ Required OS Packages Check
+✓ SudoCheck
+✓ CPUCheck
+✓ DiskCheck
+x MemoryCheck - At least 12 GB of memory is needed on host. Total memory found: 4 GB
+✓ PortCheck
+✓ Existing Kubernetes Cluster Check
+✓ Check lock on dpkg
+✓ Check lock on apt
+✓ Check if system is booted with systemd
+✓ Check time synchronization
+✓ Check if firewalld service is not running
+✓ Disabling swap and removing swap in fstab
+
+✓ Completed Pre-Requisite Checks successfully
+
+Optional pre-requisite check(s) failed. See /home/ubuntu/pf9/log/pf9ctl-20211119.log or use --verbose for logs 
+Prep local node as master node for kubernetes cluster (y/n): y
+✓ Platform9 packages installed successfully
+✓ Initialised host successfully
+✓ Host successfully attached to the Platform9 control-plane
+✓ Cluster created successfully
+✓ Host is connected
+✓ Attached node to the cluster
+2021-11-19T07:06:58.8159Z	INFO	=======Bootstrap successfully finished========
+
+```
