@@ -33,6 +33,7 @@ var decommissionNodeCmd = &cobra.Command{
 }
 
 func init() {
+	decommissionNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(decommissionNodeCmd)
 }
 
