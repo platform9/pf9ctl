@@ -63,7 +63,6 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Color("red")
 
 	zap.S().Debug("Received a call to start preparing node(s).")
-
 	s.Start() // Start the spinner
 	defer s.Stop()
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
@@ -74,6 +73,11 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		errStr := "Error: Invalid host OS. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
+	}
+
+	if hostOS == "debian" {
+		DisableUnattendedUpdates(allClients)
+		defer EnableUnattendedUpdates(allClients)
 	}
 
 	present := pf9PackagesPresent(hostOS, allClients.Executor)
@@ -142,6 +146,26 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	fmt.Println(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
 
 	return nil
+}
+
+func DisableUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Disabling unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl stop unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("failed to disable unattended-upgrades : %s", err)
+	} else {
+		zap.S().Debug("Disabled unattended-upgrades")
+	}
+}
+
+func EnableUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Enabling unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl start unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("failed to start unattended-upgrades : %s", err)
+	} else {
+		zap.S().Debug("Enabled unattended-upgrades")
+	}
 }
 
 func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {

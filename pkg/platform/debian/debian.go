@@ -212,7 +212,7 @@ func (d *Debian) checkMem() (bool, error) {
 }
 
 func (d *Debian) checkDisk() (bool, error) {
-	diskS, err := d.exec.RunWithStdout("bash", "-c", "df -k . --output=size | sed 1d | xargs | tr -d '\\n'")
+	diskS, err := d.exec.RunWithStdout("bash", "-c", "df -k / --output=size | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -228,7 +228,7 @@ func (d *Debian) checkDisk() (bool, error) {
 
 	zap.S().Debug("Total disk space: ", disk)
 
-	availS, err := d.exec.RunWithStdout("bash", "-c", "df -k . --output=avail | sed 1d | xargs | tr -d '\\n'")
+	availS, err := d.exec.RunWithStdout("bash", "-c", "df -k / --output=avail | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
