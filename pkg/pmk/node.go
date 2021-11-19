@@ -152,7 +152,9 @@ func DisableUnattendedUpdates(allClients client.Client) {
 	zap.S().Debug("Disabling unattended-upgrades")
 	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl stop unattended-upgrades")
 	if err != nil {
-		zap.S().Debugf("failed to disabled unattended-upgrades : %s", err)
+		zap.S().Debugf("failed to disable unattended-upgrades : %s", err)
+	} else {
+		zap.S().Debug("Disabled unattended-upgrades")
 	}
 }
 
@@ -161,6 +163,8 @@ func EnableUnattendedUpdates(allClients client.Client) {
 	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl start unattended-upgrades")
 	if err != nil {
 		zap.S().Debugf("failed to start unattended-upgrades : %s", err)
+	} else {
+		zap.S().Debug("Enabled unattended-upgrades")
 	}
 }
 
