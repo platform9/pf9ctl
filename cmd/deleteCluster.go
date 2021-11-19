@@ -44,7 +44,7 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("You must pass a cluster name or the cluster uuid")
 	}
 
-	detachedMode := cmd.Flags().Changed("dt")
+	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(nc) {
 		if !config.ValidateNodeConfig(&nc, !detachedMode) {
