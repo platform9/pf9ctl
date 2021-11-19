@@ -60,7 +60,7 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 		nodeIPs = append(nodeIPs, getIp().String())
 	}
 
-	detachedMode := cmd.Flags().Changed("dt")
+	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(nc) {
 		if !config.ValidateNodeConfig(&nc, !detachedMode) {
