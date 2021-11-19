@@ -4,7 +4,7 @@
 ![Go](https://github.com/roopakparikh/pf9ctl/workflows/Go/badge.svg)
 
 ### Purpose
-   CLI tool for Platform9 management. This is under heavy development, please use with care
+   CLI tool for Platform9 management.
    
 ### Requirements(Prerequisites)
 
