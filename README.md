@@ -551,7 +551,7 @@ Node decommissioned successfully
 
  ```sh
 ./pf9ctl bootstrap --help
-Bootstrap a single node Kubernetes cluster with your current node as the master node.
+Bootstrap a single node Kubernetes cluster with current node as the master node.
 
 Usage:
   pf9ctl bootstrap [flags]

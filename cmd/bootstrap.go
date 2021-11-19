@@ -25,8 +25,8 @@ import (
 // bootstrapCmd represents the bootstrap command
 var bootstrapCmd = &cobra.Command{
 	Use:   "bootstrap",
-	Short: "Create a single node k8s cluster with your current node",
-	Long:  `Bootstrap a single node Kubernetes cluster with your current node as the master node.`,
+	Short: "Create a single node k8s cluster with current node",
+	Long:  `Bootstrap a single node Kubernetes cluster with current node as the master node.`,
 
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {

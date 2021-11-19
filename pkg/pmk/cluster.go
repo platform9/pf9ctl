@@ -11,6 +11,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
 	"github.com/platform9/pf9ctl/pkg/qbert"
@@ -94,19 +95,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
 		//Deleting the cluster if the host is disconnected
-		err = c.Qbert.DeleteCluster(clusterID, keystoneAuth.ProjectID, token)
-
-		if err != nil {
-			if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
-			}
-			zap.S().Debugf("Unable to delete the cluster")
-		} else {
-			if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
-			}
-			zap.S().Debugf("Deleted the cluster successfully")
-		}
+		DeleteClusterBootstrap(clusterID, c, keystoneAuth, token)
 		zap.S().Fatalf("Host is disconnected....Unable to attach this node to the cluster " + req.Name)
 	}
 
@@ -133,19 +122,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		}
 
 		//Deleting the cluster if the node is not attached to the cluster
-		err = c.Qbert.DeleteCluster(clusterID, keystoneAuth.ProjectID, token)
-
-		if err != nil {
-			if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
-			}
-			zap.S().Debugf("Unable to delete the cluster")
-		} else {
-			if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
-			}
-			zap.S().Debugf("Deleted the cluster successfully")
-		}
+		DeleteClusterBootstrap(clusterID, c, keystoneAuth, token)
 		return fmt.Errorf("Unable to attach node to the cluster"+req.Name+": %w", err)
 	}
 
@@ -157,7 +134,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	if err = c.Segment.SendEvent("Bootstrap Completed Successfully", keystoneAuth, checkPass, ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 	}
-	zap.S().Info("=======Bootstrap successfully finished========")
+	fmt.Println(color.Green("✓") + " Bootstrap successfully finished")
 	return nil
 }
 
@@ -193,36 +170,44 @@ func PreReqBootstrap(executor cmdexec.Executor) (bool, bool, error) {
 		zap.S().Fatalf("OS version is not supported")
 	}
 
+	var Instance platform.Platform
 	if os == "debian" {
-		Instance := debian.NewDebian(executor)
-		val, err := Instance.CheckExistingInstallation()
-		if err != nil {
-			//zap.S().Fatalf("Could not run command Installation")
-			zap.S().Fatalf("Error %s", err)
-		}
+		Instance = debian.NewDebian(executor)
 
-		val1, err1 := Instance.CheckKubernetesCluster()
-		if err1 != nil {
-			//zap.S().Fatalf("Could not run command Cluster")
-			zap.S().Fatalf("Error %s", err1)
-		}
-		return val, val1, nil
 	} else if os == "redhat" {
-		Instance := centos.NewCentOS(executor)
-		val, err := Instance.CheckExistingInstallation()
-		if err != nil {
-			//zap.S().Fatalf("Could not run command Installation")
-			zap.S().Fatalf("Error %s", err)
-		}
-
-		val1, err1 := Instance.CheckKubernetesCluster()
-		if err1 != nil {
-			//zap.S().Fatalf("Could not run command Cluster")
-			zap.S().Fatalf("Error %s", err1)
-		}
-		return val, val1, nil
+		Instance = centos.NewCentOS(executor)
 	} else {
 		zap.S().Infof("OS version is not supported")
 		return false, false, fmt.Errorf("OS version is not supported")
+	}
+
+	val, err := Instance.CheckExistingInstallation()
+	if err != nil {
+		//zap.S().Fatalf("Could not run command Installation")
+		zap.S().Fatalf("Error %s", err)
+	}
+
+	val1, err1 := Instance.CheckKubernetesCluster()
+	if err1 != nil {
+		//zap.S().Fatalf("Could not run command Cluster")
+		zap.S().Fatalf("Error %s", err1)
+	}
+	return val, val1, nil
+}
+
+//Deleting the cluster if the node is not attached to the cluster
+func DeleteClusterBootstrap(clusterID string, c client.Client, keystoneAuth keystone.KeystoneAuth, token string) {
+	err := c.Qbert.DeleteCluster(clusterID, keystoneAuth.ProjectID, token)
+
+	if err != nil {
+		if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
+			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+		}
+		zap.S().Debugf("Unable to delete the cluster")
+	} else {
+		if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
+			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
+		}
+		zap.S().Debugf("Deleted the cluster successfully")
 	}
 }
