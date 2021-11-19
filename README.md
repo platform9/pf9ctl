@@ -20,6 +20,10 @@
 
 The CLI allows configuration where all HTTPS requests can be routed through a proxy. See the `Configuration` section to see how to configure the proxy URL.
 
+### Non-interative mode
+
+The CLI can be run in a non-interactive mode with flag `--no-prompt`. Using this disables all user prompts. If required flags are not passed to a sub-command or in case of any error, the CLI returns with a non zero code.
+
 ### Usage
 - Downloading the CLI 
 ```sh
@@ -47,6 +51,7 @@ Available Commands:
 
 Flags:
   -h, --help      help for pf9ctl
+      --no-prompt   disable all user prompts
       --verbose   print verbose logs
 
 Use "pf9ctl [command] --help" for more information about a command.
@@ -108,6 +113,7 @@ Flags:
   -h, --help   help for config
 
 Global Flags:
+      --no-prompt   disable all user prompts
       --verbose   print verbose logs
 
 Use "pf9ctl config [command] --help" for more information about a command.
@@ -127,6 +133,7 @@ Usage:
 Flags:
   -u, --account_url string   sets account_url
   -h, --help                 help for set
+      --mfa string           set MFA token
   -p, --password string      sets password (use 'single quotes' to pass password)
   -l, --proxy_url string     sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>
   -r, --region string        sets region
@@ -134,6 +141,7 @@ Flags:
   -e, --username string      sets username
 
 Global Flags:
+      --no-prompt   disable all user prompts
       --verbose   print verbose logs
 ```  
 
@@ -167,11 +175,13 @@ Usage:
 Flags:
   -h, --help              help for check-node
   -i, --ip strings        IP address of host to be prepared
+      --mfa string        MFA token
   -p, --password string   ssh password for the nodes
   -s, --ssh-key string    ssh key file for connecting to the nodes
   -u, --user string       ssh username for the nodes
 
 Global Flags:
+      --no-prompt   disable all user prompts
       --verbose   print verbose logs
 ```
 
@@ -231,12 +241,14 @@ Usage:
 Flags:
   -h, --help              help for prep-node
   -i, --ip strings        IP address of host to be prepared
+      --mfa string         MFA token
   -p, --password string   ssh password for the nodes
   -c, --skipChecks        Will skip optional checks if true
   -s, --ssh-key string    ssh key file for connecting to the nodes
   -u, --user string       ssh username for the nodes
 
 Global Flags:
+      --no-prompt   disable all user prompts
       --verbose   print verbose logs
 
 ```
@@ -303,11 +315,13 @@ Usage:
 Flags:
   -h, --help              help for bundle
   -i, --ip strings        IP address of host to be prepared
+      --mfa string        MFA token
   -p, --password string   ssh password for the nodes
   -s, --ssh-key string    ssh key file for connecting to the nodes
   -u, --user string       ssh username for the nodes
 
 Global Flags:
+      --no-prompt disable all user prompts
       --verbose   print verbose logs
 ```
    **bundle(Local)**
@@ -344,9 +358,11 @@ Usage:
 Flags:
   -h, --help                help for attach-node
   -m, --master-ip strings   master node ip address
+      --mfa string          set MFA token
   -w, --worker-ip strings   worker node ip address
 
 Global Flags:
+      --no-prompt disable all user prompts
       --verbose   print verbose logs
 ```
 
@@ -372,7 +388,7 @@ Flags:
   -n, --node-ip strings   node ip address
 
 Global Flags:
-      --dt        disable all user prompts
+      --no-prompt disable all user prompts
       --verbose   print verbose logs
 ```
 
@@ -415,7 +431,7 @@ Flags:
   -h, --help   help for deauthorize-node
 
 Global Flags:
-      --dt        disable all user prompts
+      --no-prompt disable all user prompts
       --verbose   print verbose logs
 ```
 
@@ -439,7 +455,7 @@ Flags:
   -h, --help   help for authorize-node
 
 Global Flags:
-      --dt        disable all user prompts
+      --no-prompt disable all user prompts
       --verbose   print verbose logs
 ```
 
@@ -464,7 +480,7 @@ Flags:
   -i, --uuid string   clusters uuid
 
 Global Flags:
-      --dt        disable all user prompts
+      --no-prompt disable all user prompts
       --verbose   print verbose logs
 
 ```
@@ -500,7 +516,7 @@ Flags:
   -h, --help   help for decommission-node
 
 Global Flags:
-      --dt        disable all user prompts
+      --no-prompt disable all user prompts
       --verbose   print verbose logs
 ```
 
