@@ -24,7 +24,6 @@ import (
 var HostAgent int
 var IsRemoteExecutor bool
 var homeDir string
-var HostOS string
 
 const (
 	// Response Status Codes
@@ -68,19 +67,20 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	defer s.Stop()
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
 	s.Suffix = " Starting prep-node"
-	var err1 error
-	HostOS, err1 = ValidatePlatform(allClients.Executor)
-	if err1 != nil {
-		errStr := "Error: Invalid host OS. " + err1.Error()
+
+	hostOS, err := ValidatePlatform(allClients.Executor)
+	if err != nil {
+		errStr := "Error: Invalid host OS. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
-	if HostOS == "debian" {
+	if hostOS == "debian" {
+		DisableUnattendedUpdates(allClients)
 		defer EnableUnattendedUpdates(allClients)
 	}
 
-	present := pf9PackagesPresent(HostOS, allClients.Executor)
+	present := pf9PackagesPresent(hostOS, allClients.Executor)
 	if present {
 		errStr := "\n\nPlatform9 packages already present on the host." +
 			"\nPlease uninstall these packages if you want to prep the node again.\n" +
@@ -92,7 +92,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
 	s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
-	if err := installHostAgent(ctx, auth, HostOS, allClients.Executor); err != nil {
+	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
 		errStr := "Error: Unable to install hostagent. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
@@ -146,6 +146,14 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	fmt.Println(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
 
 	return nil
+}
+
+func DisableUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Disabling unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl stop unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("failed to disabled unattended-upgrades : %s", err)
+	}
 }
 
 func EnableUnattendedUpdates(allClients client.Client) {

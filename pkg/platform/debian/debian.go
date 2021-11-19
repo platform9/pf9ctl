@@ -77,9 +77,6 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkFirewalldIsRunning()
 	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = d.DisableUnattendedUpdates()
-	checks = append(checks, platform.Check{"Disabling unattended updates", false, result, err, fmt.Sprintf("%s", err)})
-
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
 		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
@@ -527,14 +524,5 @@ func (d *Debian) checkFirewalldIsRunning() (bool, error) {
 		return true, nil
 	} else {
 		return false, errors.New("firewalld service is running")
-	}
-}
-
-func (d *Debian) DisableUnattendedUpdates() (bool, error) {
-	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl stop unattended-upgrades")
-	if err != nil {
-		return false, errors.New("failed to disabled unattended-upgrades")
-	} else {
-		return true, nil
 	}
 }
