@@ -625,6 +625,5 @@ Prep local node as master node for kubernetes cluster (y/n): y
 ✓ Cluster created successfully
 ✓ Host is connected
 ✓ Attached node to the cluster
-2021-11-19T07:06:58.8159Z	INFO	=======Bootstrap successfully finished========
-
+✓ Bootstrap successfully finished
 ```
