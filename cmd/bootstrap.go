@@ -54,6 +54,8 @@ func init() {
 	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
+	bootstrapCmd.Flags().StringVar(&bootConfig.MFA, "mfa", "", "MFA token")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	rootCmd.AddCommand(bootstrapCmd)
 }
 

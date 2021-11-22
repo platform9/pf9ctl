@@ -588,12 +588,15 @@ Flags:
       --masterVip string         IP Address for VIP for master nodes
       --masterVipIf string       Interface name for master / worker nodes
       --metallbIpRange string    Ip range for MetalLB
+      --mfa string               MFA token
       --networkPlugin string     Specify network plugin ( Possible values: flannel or calico ) (default "calico")
   -p, --password string          ssh password for the nodes (use 'single quotes' to pass password)
       --privileged               Enable privileged mode for K8s API. Default: true (default true)
       --servicesCidr string      CIDR for services overlay (default "10.21.0.0/16")
   -s, --ssh-key string           ssh key file for connecting to the nodes
+  -e, --sudo-pass string         sudo password for user on remote host
   -u, --user string              ssh username for the nodes
+
 
 Global Flags:
       --no-prompt   disable all user prompts
