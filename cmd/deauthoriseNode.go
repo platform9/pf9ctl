@@ -31,6 +31,7 @@ var deauthNodeCmd = &cobra.Command{
 
 func init() {
 	deauthNodeCmd.Flags().BoolVarP(&skipCheck, "skipCheck", "s", false, "skips node check")
+	deauthNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(deauthNodeCmd)
 }
 
