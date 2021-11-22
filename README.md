@@ -358,7 +358,7 @@ Usage:
 Flags:
   -h, --help                help for attach-node
   -m, --master-ip strings   master node ip address
-      --mfa string          set MFA token
+      --mfa string          MFA token
   -w, --worker-ip strings   worker node ip address
 
 Global Flags:
@@ -385,6 +385,7 @@ Usage:
 
 Flags:
   -h, --help              help for detach-node
+      --mfa string          MFA token
   -n, --node-ip strings   node ip address
 
 Global Flags:
@@ -422,13 +423,15 @@ Starting detaching process
 
 ```sh
 #pf9ctl deauthorize-node --help
-Deauthorizes this node. If the node is a master node or a part of a single node cluster it will delete the cluster.
+Deauthorizes this node. It will warn the user if the node was a master node or a part of a single node cluster.
 
 Usage:
   pf9ctl deauthorize-node [flags]
 
 Flags:
   -h, --help   help for deauthorize-node
+      --mfa string   MFA token
+  -s, --skipCheck    skips node check
 
 Global Flags:
       --no-prompt disable all user prompts
@@ -453,6 +456,7 @@ Usage:
 
 Flags:
   -h, --help   help for authorize-node
+      --mfa string   MFA token
 
 Global Flags:
       --no-prompt disable all user prompts
@@ -476,6 +480,7 @@ Usage:
 
 Flags:
   -h, --help          help for delete-cluster
+      --mfa string    MFA token
   -n, --name string   clusters name
   -i, --uuid string   clusters uuid
 
@@ -514,6 +519,7 @@ Usage:
 
 Flags:
   -h, --help   help for decommission-node
+      --mfa string   MFA token
 
 Global Flags:
       --no-prompt disable all user prompts

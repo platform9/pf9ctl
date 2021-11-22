@@ -30,6 +30,7 @@ var authNodeCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(authNodeCmd)
+	authNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 }
 
 func authNodeRun(cmd *cobra.Command, args []string) {
