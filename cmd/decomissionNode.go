@@ -74,6 +74,25 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
+	var c client.Client
+	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
+	}
+
+	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
+	if err != nil {
+		zap.S().Debug("Failed to get keystone %s", err.Error())
+	}
+
+	var nodeIPs []string
+	nodeIPs = append(nodeIPs, getIp().String())
+	token := auth.Token
+	nodeUuid, _ := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
+
+	if len(nodeUuid) == 0 {
+		zap.S().Fatalf("Could not remove the node from the UI, check if the host agent is installed.")
+	}
+
 	version, _ := pmk.OpenOSReleaseFile(executor)
 
 	if err != nil {
@@ -102,25 +121,6 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		fmt.Println("Removing /opt/pf9 logs")
 		runCommandWait("sudo rm -rf /opt/pf9")
 
-	}
-
-	var c client.Client
-	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
-		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
-	}
-
-	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
-	if err != nil {
-		zap.S().Debug("Failed to get keystone %s", err.Error())
-	}
-
-	var nodeIPs []string
-	nodeIPs = append(nodeIPs, getIp().String())
-	token := auth.Token
-	nodeUuid, _ := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
-
-	if len(nodeUuid) == 0 {
-		zap.S().Fatalf("Could not remove the node from the UI, check if the host agent is installed.")
 	}
 
 	err = c.Qbert.DeauthoriseNode(nodeUuid[0], token)
