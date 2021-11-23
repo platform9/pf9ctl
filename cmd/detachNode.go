@@ -102,7 +102,12 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 	projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
 
-	nodeUuids, _ := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
+	nodeUuids, err := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
+
+	if err != nil {
+		zap.S().Fatalf("%v", err)
+		return
+	}
 
 	detachNodes := getNodesFromUuids(nodeUuids, projectNodes)
 
