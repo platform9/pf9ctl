@@ -36,6 +36,7 @@ func init() {
 	supportBundleCmd.Flags().StringVarP(&bundleConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	supportBundleCmd.Flags().StringSliceVarP(&bundleConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	supportBundleCmd.Flags().StringVar(&bundleConfig.MFA, "mfa", "", "MFA token")
+	supportBundleCmd.Flags().StringVarP(&bundleConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 
 	rootCmd.AddCommand(supportBundleCmd)
 }
@@ -75,6 +76,12 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 	}
 
 	defer c.Segment.Close()
+
+	if isRemote {
+		if err := SudoPasswordCheck(executor, detachedMode, bundleConfig.SudoPassword); err != nil {
+			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
+		}
+	}
 
 	zap.S().Info("==========Uploading supportBundle to S3 bucket==========")
 	err = supportBundle.SupportBundleUpload(*cfg, c, isRemote)
