@@ -111,7 +111,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	if isRemote {
 		if err := SudoPasswordCheck(executor, detachedMode, bootConfig.SudoPassword); err != nil {
-			zap.S().Fatal(err.Error())
+			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}
 

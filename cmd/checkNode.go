@@ -105,7 +105,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	if isRemote {
 		if err := SudoPasswordCheck(executor, detachedMode, nc.SudoPassword); err != nil {
-			zap.S().Fatal("Failed to check sudo password for remote machine:", err.Error())
+			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}
 

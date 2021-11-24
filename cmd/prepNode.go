@@ -126,7 +126,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 	if isRemote {
 		if err := SudoPasswordCheck(executor, detachedMode, nodeConfig.SudoPassword); err != nil {
-			zap.S().Fatal(err.Error())
+			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}
 
@@ -181,6 +181,8 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 // To check if Remote Host needs Password to access Sudo and prompt for Sudo Password if exists.
 func SudoPasswordCheck(exec cmdexec.Executor, detached bool, sudoPass string) error {
 
+	ssh.SudoPassword = sudoPass
+
 	_, err := exec.RunWithStdout("-l | grep '(ALL) PASSWD: ALL'")
 	if err == nil {
 		if detached {
@@ -188,34 +190,27 @@ func SudoPasswordCheck(exec cmdexec.Executor, detached bool, sudoPass string) er
 				return errors.New("sudo password is required for the user on remote host, use -e to pass")
 			} else if validateSudoPassword(exec) == util.Invalid {
 				return errors.New("Invalid password for user on remote host")
-			} else {
-				ssh.SudoPassword = sudoPass
-				return nil
 			}
 		}
+
 		// To bail out if Sudo Password entered is invalid multiple times.
 		loopcounter := 1
 		for true {
-			loopcounter += 1
-			fmt.Printf("Enter Sudo password for Remote Host: ")
-			sudopassword, _ := terminal.ReadPassword(0)
-			ssh.SudoPassword = string(sudopassword)
+			if loopcounter >= 4 {
+				zap.S().Fatalf("\n" + color.Red("x ") + "Invalid Sudo Password entered multiple times")
+			}
 			// Validate Sudo Password entered.
 			if ssh.SudoPassword == "" || validateSudoPassword(exec) == util.Invalid {
+				loopcounter += 1
 				fmt.Printf("\n" + color.Red("x ") + "Invalid Sudo Password provided of Remote Host\n")
-				if loopcounter >= 4 {
-					fmt.Printf("\n")
-					zap.S().Fatalf(color.Red("x ") + "Invalid Sudo Password entered multiple times")
-				} else {
-					continue
-				}
+				fmt.Printf("Enter Sudo password for Remote Host: ")
+				sudopassword, _ := terminal.ReadPassword(0)
+				ssh.SudoPassword = string(sudopassword)
 			} else {
-				break
+				return nil
 			}
 		}
-		fmt.Printf("\n")
 	}
-
 	return nil
 }
 
