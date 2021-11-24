@@ -109,9 +109,14 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	detachNodes := getNodesFromUuids(nodeUuids, projectNodes)
+	detachNodes, err := getNodesFromUuids(nodeUuids, projectNodes)
+
+	if err != nil {
+		zap.S().Fatalf(err.Error())
+	}
 
 	fmt.Println("Starting detaching process")
+
 	if err := c.Segment.SendEvent("Starting detach-node", auth, "", ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
 	}
@@ -149,18 +154,24 @@ func getAllProjectNodes(exec cmdexec.Executor, fqdn string, token string, projec
 }
 
 //returns the nodes whos ip's were passed in the flag (or the node installed on the machine if no ip was passed)
-func getNodesFromUuids(nodeUuids []string, allNodes []Node) []Node {
+func getNodesFromUuids(nodeUuids []string, allNodes []Node) ([]Node, error) {
 
 	var nodesUuid []Node
 	for i := range allNodes {
 		for j := range nodeUuids {
-			if nodeUuids[j] == allNodes[i].Uuid && allNodes[i].ClusterUuid != "" {
-				nodesUuid = append(nodesUuid, allNodes[i])
-				break
+
+			if nodeUuids[j] == allNodes[i].Uuid {
+
+				if allNodes[i].ClusterUuid == "" {
+					return nodesUuid, fmt.Errorf("The node %v is not connected to any clusters", allNodes[i].PrimaryIp)
+				} else {
+					nodesUuid = append(nodesUuid, allNodes[i])
+					break
+				}
 			}
 		}
 	}
-	return nodesUuid
+	return nodesUuid, nil
 }
 
 //returns a list of all clusters the nodes are attached to
