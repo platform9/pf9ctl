@@ -83,7 +83,7 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 
 	isMaster := getNode(c.Executor, cfg.Fqdn, token, projectId, nodeUuids[0])
 
-	if detachedMode {
+	if !detachedMode && isMaster.ClusterUuid != "" {
 
 		projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
 
