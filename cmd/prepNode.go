@@ -28,7 +28,7 @@ import (
 // prepNodeCmd represents the prepNode command
 var prepNodeCmd = &cobra.Command{
 	Use:   "prep-node",
-	Short: "set up prerequisites & prep the node for k8s",
+	Short: "Set up prerequisites & prep the node for k8s",
 	Long: `Prepare a node to be ready to be added to a Kubernetes cluster. Read more
 	at http://pf9.io/cli_clprep.`,
 	Run: prepNodeRun,
@@ -187,7 +187,7 @@ func SudoPasswordCheck(exec cmdexec.Executor, detached bool, sudoPass string) er
 	if err == nil {
 		if detached {
 			if sudoPass == "" {
-				return errors.New("sudo password is required for the user on remote host, use -e to pass")
+				return errors.New("sudo password is required for the user on remote host, use --sudo-pass(-e) flag to pass")
 			} else if validateSudoPassword(exec) == util.Invalid {
 				return errors.New("Invalid password for user on remote host")
 			}

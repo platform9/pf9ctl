@@ -90,7 +90,7 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 		clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
 
 		if len(clusterNodes) == 1 || isMaster.IsMaster == "1" {
-			fmt.Println("Warning: The node is either the master node of the last node in the cluster.")
+			fmt.Println("Warning: The node is either the master node or the last node in the cluster.")
 			fmt.Print("Do you still want to deauthorize it?")
 			answer, err := util.AskBool("")
 			if err != nil {
