@@ -174,7 +174,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		if !detachedMode {
 			resp, err := util.AskBool("Prep local node as master node for kubernetes cluster")
 			if err != nil || !resp {
-				zap.S().Fatalf(" Declined to proceed with creating a Kubernetes cluster with the current node as the masternode ")
+				zap.S().Fatalf(" Declined to proceed with creating a Kubernetes cluster with the current node as the master node ")
 			}
 		} else {
 			fmt.Println(" Proceeding to create a Kubernetes cluster with current node as master node")

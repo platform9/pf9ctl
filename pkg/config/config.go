@@ -27,7 +27,7 @@ var (
 	INVALID_CREDS      error = errors.New("Invalid Credentials")
 	NO_CONFIG                = errors.New("No config found, please create with `pf9ctl config set`")
 	MISSSING_FIELDS          = errors.New("Missing mandatory field(s) (Platform9 Account URL/Username/Password/Region/Tenant)")
-	MAX_ATTEMPTS_ERROR       = errors.New("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant/MFA Token)")
+	MAX_ATTEMPTS_ERROR       = errors.New("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant/Proxy URL/MFA Token)")
 )
 
 // StoreConfig simply updates the in-memory object
