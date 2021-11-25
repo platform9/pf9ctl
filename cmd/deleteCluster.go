@@ -96,6 +96,6 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.S().Fatalf("Error deleting cluster ", err.Error())
 	}
-	fmt.Println("The cluster was deleted")
+	fmt.Println("Cluster deletion started....This may take a few minutes.")
 
 }
