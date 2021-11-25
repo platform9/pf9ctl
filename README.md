@@ -62,7 +62,7 @@ Use "pf9ctl [command] --help" for more information about a command.
 ```sh
 #pf9ctl version
 
-pf9ctl version: v1.8
+pf9ctl version: v1.10
 
 ```
 - **Upgrading**
