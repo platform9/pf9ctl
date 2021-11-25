@@ -14,7 +14,7 @@
 - Sudo access to the user
 - OS(Supported) : 
     - Ubuntu (16.04,18.04,20.04)
-    - Centos (7.x)
+    - RHEL/Centos (7.x)
 
 ### Proxy support
 
