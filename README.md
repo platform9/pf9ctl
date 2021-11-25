@@ -510,13 +510,13 @@ Global Flags:
 ```sh
 #pf9ctl delete-cluster -n ClusterName
 ✓ Loaded Config Successfully
-The cluster was deleted
+Cluster deletion started....This may take a few minutes.
 ```
 
 ```sh
 #pf9ctl delete-cluster -i 023be0b0-1348-4d8a-a9b7-25bd4293cbbd
 ✓ Loaded Config Successfully
-The cluster was deleted
+Cluster deletion started....This may take a few minutes.
 ```
 
 
@@ -643,8 +643,9 @@ Prep local node as master node for kubernetes cluster (y/n): y
 ✓ Platform9 packages installed successfully
 ✓ Initialised host successfully
 ✓ Host successfully attached to the Platform9 control-plane
-✓ Cluster created successfully
+✓ Cluster creation started
 ✓ Host is connected
 ✓ Attached node to the cluster
 ✓ Bootstrap successfully finished
+Cluster creation started...This may take a few minutes. Please check the UI for latest status.
 ```

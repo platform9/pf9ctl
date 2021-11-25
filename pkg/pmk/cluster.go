@@ -50,7 +50,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		return fmt.Errorf("Unable to create cluster"+req.Name+": %w", err)
 	}
 
-	fmt.Println(color.Green("✓") + " Cluster created successfully")
+	fmt.Println(color.Green("✓") + " Cluster creation started")
 
 	if err = c.Segment.SendEvent("Cluster creation(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
 		zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
@@ -135,6 +135,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 	}
 	fmt.Println(color.Green("✓") + " Bootstrap successfully finished")
+	fmt.Println("Cluster creation started...This may take a few minutes. Please check the UI for latest status.")
 	return nil
 }
 
