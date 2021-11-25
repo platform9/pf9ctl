@@ -14,7 +14,7 @@
 - Sudo access to the user
 - OS(Supported) : 
     - Ubuntu (16.04,18.04,20.04)
-    - Centos (7.x ,8.3)
+    - RHEL/Centos (7.x)
 
 ### Proxy support
 
@@ -39,20 +39,30 @@ CLI tool for Platform9 management.
 
 Usage:
   pf9ctl [command]
-  
+
 Available Commands:
-  attach-node Attaches node to k8s cluster
-  bundle      Gathers support bundle and uploads to S3
-  check-node  Check prerequisites for k8s
-  config      Create or get config
-  help        Help about any command
-  prep-node   set up prerequisites & prep the node for k8s
-  version     Current version of CLI being used
+  attach-node           Attaches node to kubernetes cluster
+  authorize-node        Authorizes this node.
+  bootstrap             Create a single node k8s cluster with current node
+  bundle                Gathers support bundle and uploads to S3
+  check-amazon-provider Checks if user has amazon cloud permissions
+  check-azure-provider  Checks if user has azure cloud permissions
+  check-google-provider Checks if user has google cloud permissions
+  check-node            Check prerequisites for k8s
+  config                Create or get config
+  deauthorize-node      Deauthorizes this node from the Platform9 control plane
+  decommission-node     Decomisisons this node from the Platform9 control plane
+  delete-cluster        Deletes the cluster.
+  detach-node           Detaches a node from a kubernetes cluster
+  help                  Help about any command
+  prep-node             Set up prerequisites & prep the node for k8s
+  upgrade               Checks for a new version of the CLI
+  version               Current version of CLI being used
 
 Flags:
-  -h, --help      help for pf9ctl
+  -h, --help        help for pf9ctl
       --no-prompt   disable all user prompts
-      --verbose   print verbose logs
+      --verbose     print verbose logs
 
 Use "pf9ctl [command] --help" for more information about a command.
 ```
@@ -165,7 +175,6 @@ Global Flags:
        - Resources(CPU,Disk,Memory check)
 ```sh
 #pf9ctl check-node --help
-
 Check if a node satisfies prerequisites to be ready to be added to a Kubernetes cluster. Read more
 	at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/
 
@@ -173,16 +182,17 @@ Usage:
   pf9ctl check-node [flags]
 
 Flags:
-  -h, --help              help for check-node
-  -i, --ip strings        IP address of host to be prepared
-      --mfa string        MFA token
-  -p, --password string   ssh password for the nodes
-  -s, --ssh-key string    ssh key file for connecting to the nodes
-  -u, --user string       ssh username for the nodes
+  -h, --help               help for check-node
+  -i, --ip strings         IP address of host to be prepared
+      --mfa string         MFA token
+  -p, --password string    ssh password for the nodes (use 'single quotes' to pass password)
+  -s, --ssh-key string     ssh key file for connecting to the nodes
+  -e, --sudo-pass string   sudo password for user on remote host
+  -u, --user string        ssh username for the nodes
 
 Global Flags:
       --no-prompt   disable all user prompts
-      --verbose   print verbose logs
+      --verbose     print verbose logs
 ```
 
    **Check-Node(Local)**
@@ -231,7 +241,6 @@ Enter password for remote host:
  This command onboards a node. It installs platform9 packages on the host. After completion of this command, the node is available to be managed on the Platform9 control plane.
  ```sh
 #pf9ctl prep-node --help
-
 Prepare a node to be ready to be added to a Kubernetes cluster. Read more
 	at http://pf9.io/cli_clprep.
 
@@ -239,17 +248,18 @@ Usage:
   pf9ctl prep-node [flags]
 
 Flags:
-  -h, --help              help for prep-node
-  -i, --ip strings        IP address of host to be prepared
+  -h, --help               help for prep-node
+  -i, --ip strings         IP address of host to be prepared
       --mfa string         MFA token
-  -p, --password string   ssh password for the nodes
-  -c, --skipChecks        Will skip optional checks if true
-  -s, --ssh-key string    ssh key file for connecting to the nodes
-  -u, --user string       ssh username for the nodes
+  -p, --password string    ssh password for the nodes (use 'single quotes' to pass password)
+  -c, --skipChecks         Will skip optional checks if true
+  -s, --ssh-key string     ssh key file for connecting to the nodes
+  -e, --sudo-pass string   sudo password for user on remote host
+  -u, --user string        ssh username for the nodes
 
 Global Flags:
       --no-prompt   disable all user prompts
-      --verbose   print verbose logs
+      --verbose     print verbose logs
 
 ```
   **prep-Node(Local)**
@@ -313,16 +323,18 @@ Usage:
   pf9ctl bundle [flags]
 
 Flags:
-  -h, --help              help for bundle
-  -i, --ip strings        IP address of host to be prepared
-      --mfa string        MFA token
-  -p, --password string   ssh password for the nodes
-  -s, --ssh-key string    ssh key file for connecting to the nodes
-  -u, --user string       ssh username for the nodes
+  -h, --help               help for bundle
+  -i, --ip strings         IP address of host to be prepared
+      --mfa string         MFA token
+  -p, --password string    ssh password for the nodes (use 'single quotes' to pass password)
+  -s, --ssh-key string     ssh key file for connecting to the nodes
+  -e, --sudo-pass string   sudo password for user on remote host
+  -u, --user string        ssh username for the nodes
 
 Global Flags:
-      --no-prompt disable all user prompts
-      --verbose   print verbose logs
+      --no-prompt   disable all user prompts
+      --verbose     print verbose logs
+
 ```
    **bundle(Local)**
 ```sh
@@ -572,7 +584,7 @@ Node decommissioned successfully
  **bootstrap**
 
  ```sh
-./pf9ctl bootstrap --help
+#pf9ctl bootstrap --help
 Bootstrap a single node Kubernetes cluster with current node as the master node.
 
 Usage:
@@ -605,7 +617,7 @@ Global Flags:
 ```
 
 ```sh
-./pf9ctl bootstrap trial
+#pf9ctl bootstrap trial
 ✓ Loaded Config Successfully
 ✓ Node is not onboarded and not attached to any cluster
 ✓ Removal of existing CLI
