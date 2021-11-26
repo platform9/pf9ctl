@@ -164,7 +164,7 @@ func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]s
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
 	for _, ip := range IPs {
 		ip = fmt.Sprintf(`"%v"`, ip)
-		cmd := fmt.Sprintf("curl -sH %v -X GET %v/resmgr/v1/hosts | jq -r '.[]  | select(.extensions.ip_address.data[]==(%v)) | .id' ", tkn, fqdn, ip)
+		cmd := fmt.Sprintf("curl -sH %v -X GET %v/resmgr/v1/hosts | jq -r '.[] | select(.extensions!=\"\")  | select(.extensions.ip_address.data[]==(%v)) | .id' ", tkn, fqdn, ip)
 		hostid, _ := exec.RunWithStdout("bash", "-c", cmd)
 		hostid = strings.TrimSpace(strings.Trim(hostid, "\n"))
 		if len(hostid) == 0 {
