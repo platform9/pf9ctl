@@ -109,6 +109,8 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		runCommandWait("sudo rm -rf /etc/pf9")
 		fmt.Println("Removing /opt/pf9 logs")
 		runCommandWait("sudo rm -rf /opt/pf9")
+		fmt.Println("Removing pf9 HOME dir")
+		runCommandWait("sudo rm -rf $HOME/pf9")
 
 	} else {
 		//command = "sudo yum erase -y pf9-hostagent -y"
@@ -121,6 +123,8 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		runCommandWait("sudo rm -rf /etc/pf9")
 		fmt.Println("Removing /opt/pf9 logs")
 		runCommandWait("sudo rm -rf /opt/pf9")
+		fmt.Println("Removing pf9 HOME dir")
+		runCommandWait("sudo rm -rf $HOME/pf9")
 
 	}
 
@@ -129,7 +133,7 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 	if err != nil {
 		zap.S().Fatalf("Error removing the node from the UI ", err.Error())
 	}
-	fmt.Println("Removed the node form the UI")
+	fmt.Println("Removed the node from the UI")
 
 	fmt.Println("Node decommissioned successfully")
 
