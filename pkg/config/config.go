@@ -211,16 +211,18 @@ func ConfigCmdCreateAmazonRun(cfg *objects.Config) error {
 		fmt.Printf("Amazon Access Key: ")
 		accessKey, _ := terminal.ReadPassword(0)
 		cfg.AwsAccessKey = string(accessKey)
+		fmt.Println()
 	}
 
 	if cfg.AwsSecretKey == "" {
-		fmt.Printf("\nAmazon Secret Key: ")
+		fmt.Printf("Amazon Secret Key: ")
 		secretKey, _ := terminal.ReadPassword(0)
 		cfg.AwsSecretKey = string(secretKey)
+		fmt.Println()
 	}
 	var region string
 	if cfg.AwsRegion == "" {
-		fmt.Printf("\nRegion [us-east-1]: ")
+		fmt.Printf("Region: ")
 		region, _ = reader.ReadString('\n')
 		cfg.AwsRegion = strings.TrimSuffix(region, "\n")
 	}
@@ -315,10 +317,11 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 		fmt.Printf("Password: ")
 		passwordBytes, _ := terminal.ReadPassword(0)
 		cfg.Password = string(passwordBytes)
+		fmt.Println()
 	}
 	var region string
 	if cfg.Region == "" {
-		fmt.Printf("\nRegion [RegionOne]: ")
+		fmt.Printf("Region [RegionOne]: ")
 		region, _ = reader.ReadString('\n')
 		cfg.Region = strings.TrimSuffix(region, "\n")
 	}

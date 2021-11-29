@@ -49,7 +49,7 @@ func init() {
 	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsIamUsername, "iam_user", "i", "", "sets the iam user (required)")
 	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsAccessKey, "access_key", "a", "", "sets the access key (required)")
 	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsSecretKey, "secret_key", "s", "", "sets the secret key (required)")
-	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsRegion, "region", "r", "us-east-1", "sets the region")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsRegion, "region", "r", "", "sets the region (required)")
 	rootCmd.AddCommand(checkAmazonProviderCmd)
 
 	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureTenant, "tenant_id", "t", "", "sets the tenant id (required)")
@@ -69,7 +69,7 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.LoadConfigInteractive("google.json", &cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("google.json", &cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -90,7 +90,7 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.LoadConfigInteractive("amazon.json", &cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("amazon.json", &cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -110,7 +110,7 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.LoadConfigInteractive("azure.json", &cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("azure.json", &cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n")
