@@ -3,6 +3,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -24,14 +25,16 @@ import (
 
 // bootstrapCmd represents the bootstrap command
 var bootstrapCmd = &cobra.Command{
-	Use:   "bootstrap",
+	Use:   "bootstrap [flags] cluster-name",
 	Short: "Create a single node k8s cluster with current node",
 	Long:  `Bootstrap a single node Kubernetes cluster with current node as the master node.`,
-
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return fmt.Errorf("Missing required argument: clusterName")
+	Args: func(attachNodeCmd *cobra.Command, args []string) error {
+		if len(args) > 1 {
+			return errors.New("Only cluster name is accepted as a parameter")
+		} else if len(args) < 1 {
+			return errors.New("Cluster name is required for bootstrap")
 		}
+		clusterName = args[0]
 		return nil
 	},
 	Run: bootstrapCmdRun,
@@ -197,10 +200,8 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 	defer c.Segment.Close()
 
-	name := args[0]
-
 	payload := qbert.ClusterCreateRequest{
-		Name:                  name,
+		Name:                  clusterName,
 		ContainerCIDR:         containersCIDR,
 		ServiceCIDR:           servicesCIDR,
 		MasterVirtualIP:       masterVIP,
