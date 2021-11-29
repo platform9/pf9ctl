@@ -211,16 +211,18 @@ func ConfigCmdCreateAmazonRun(cfg *objects.Config) error {
 		fmt.Printf("Amazon Access Key: ")
 		accessKey, _ := terminal.ReadPassword(0)
 		cfg.AwsAccessKey = string(accessKey)
+		fmt.Println()
 	}
 
 	if cfg.AwsSecretKey == "" {
-		fmt.Printf("\nAmazon Secret Key: ")
+		fmt.Printf("Amazon Secret Key: ")
 		secretKey, _ := terminal.ReadPassword(0)
 		cfg.AwsSecretKey = string(secretKey)
+		fmt.Println()
 	}
 	var region string
 	if cfg.AwsRegion == "" {
-		fmt.Printf("\nRegion [us-east-1]: ")
+		fmt.Printf("Region: ")
 		region, _ = reader.ReadString('\n')
 		cfg.AwsRegion = strings.TrimSuffix(region, "\n")
 	}
@@ -236,31 +238,33 @@ func ConfigCmdCreateAzureRun(cfg *objects.Config) error {
 
 	zap.S().Debug("==========Running set config==========")
 
-	if cfg.AzureTetant == "" {
+	if cfg.AzureTenant == "" {
 		fmt.Printf("Azure TenantID: ")
 		azureTenant, _ := terminal.ReadPassword(0)
-		cfg.AzureTetant = string(azureTenant)
+		cfg.AzureTenant = string(azureTenant)
+		fmt.Println()
 	}
 
 	if cfg.AzureClient == "" {
-		fmt.Printf("\nAzure ApplicationID: ")
+		fmt.Printf("Azure ApplicationID: ")
 		azureClient, _ := terminal.ReadPassword(0)
 		cfg.AzureClient = string(azureClient)
+		fmt.Println()
 	}
 
 	if cfg.AzureSubscription == "" {
-		fmt.Printf("\nAzure SubscriptionID: ")
+		fmt.Printf("Azure SubscriptionID: ")
 		azureSub, _ := terminal.ReadPassword(0)
 		cfg.AzureSubscription = string(azureSub)
+		fmt.Println()
 	}
 
 	if cfg.AzureSecret == "" {
 		fmt.Printf("\nAzure Secret Key: ")
 		azureSecret, _ := terminal.ReadPassword(0)
 		cfg.AzureSecret = string(azureSecret)
+		fmt.Println()
 	}
-
-	fmt.Printf("\n")
 
 	return nil
 }
@@ -315,10 +319,11 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 		fmt.Printf("Password: ")
 		passwordBytes, _ := terminal.ReadPassword(0)
 		cfg.Password = string(passwordBytes)
+		fmt.Println()
 	}
 	var region string
 	if cfg.Region == "" {
-		fmt.Printf("\nRegion [RegionOne]: ")
+		fmt.Printf("Region [RegionOne]: ")
 		region, _ = reader.ReadString('\n')
 		cfg.Region = strings.TrimSuffix(region, "\n")
 	}

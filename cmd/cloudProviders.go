@@ -15,18 +15,7 @@ import (
 )
 
 var (
-	awsIamUser         string
-	awsAccessKey       string
-	awsSecretKey       string
-	awsRegion          string
-	azureAppID         string
-	azureTenantID      string
-	azureSubID         string
-	azureSecretKey     string
-	googlePath         string
-	googleProjectName  string
-	googleServiceEmail string
-	loadConfig         bool
+	loadConfig bool
 )
 
 var checkGoogleProviderCmd = &cobra.Command{
@@ -52,27 +41,26 @@ var checkAzureProviderCmd = &cobra.Command{
 
 func init() {
 
-	checkGoogleProviderCmd.Flags().StringVarP(&googlePath, "service_account_path", "p", "", "sets the service account path (required)")
-	checkGoogleProviderCmd.Flags().StringVarP(&googleProjectName, "project_name", "n", "", "sets the project name (required)")
-	checkGoogleProviderCmd.Flags().StringVarP(&googleServiceEmail, "service_account_email", "e", "", "sets the service account email (required)")
+	checkGoogleProviderCmd.Flags().StringVarP(&cfg.GooglePath, "service_account_path", "p", "", "sets the service account path (required)")
+	checkGoogleProviderCmd.Flags().StringVarP(&cfg.GoogleProjectName, "project_name", "n", "", "sets the project name (required)")
+	checkGoogleProviderCmd.Flags().StringVarP(&cfg.GoogleServiceEmail, "service_account_email", "e", "", "sets the service account email (required)")
 	rootCmd.AddCommand(checkGoogleProviderCmd)
 
-	checkAmazonProviderCmd.Flags().StringVarP(&awsIamUser, "iam_user", "i", "", "sets the iam user (required)")
-	checkAmazonProviderCmd.Flags().StringVarP(&awsAccessKey, "access_key", "a", "", "sets the access key (required)")
-	checkAmazonProviderCmd.Flags().StringVarP(&awsSecretKey, "secret_key", "s", "", "sets the secret key (required)")
-	checkAmazonProviderCmd.Flags().StringVarP(&awsRegion, "region", "r", "us-east-1", "sets the region")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsIamUsername, "iam_user", "i", "", "sets the iam user (required)")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsAccessKey, "access_key", "a", "", "sets the access key (required)")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsSecretKey, "secret_key", "s", "", "sets the secret key (required)")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsRegion, "region", "r", "", "sets the region (required)")
 	rootCmd.AddCommand(checkAmazonProviderCmd)
 
-	checkAzureProviderCmd.Flags().StringVarP(&azureTenantID, "tenant_id", "t", "", "sets the tenant id (required)")
-	checkAzureProviderCmd.Flags().StringVarP(&azureAppID, "client_id", "c", "", "sets the client(applicaiton) id (required)")
-	checkAzureProviderCmd.Flags().StringVarP(&azureSubID, "subscription_id", "s", "", "sets the ssubscription id (required)")
-	checkAzureProviderCmd.Flags().StringVarP(&azureSecretKey, "secret_key", "k", "", "sets the secret key (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureTenant, "tenant_id", "t", "", "sets the tenant id (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureClient, "client_id", "c", "", "sets the client(applicaiton) id (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureSubscription, "subscription_id", "s", "", "sets the ssubscription id (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureSecret, "secret_key", "k", "", "sets the secret key (required)")
 	rootCmd.AddCommand(checkAzureProviderCmd)
 }
 
 func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 
-	cfg := &objects.Config{}
 	var err error
 	if cmd.Flags().Changed("no-prompt") {
 		flagsNotSet := checkFlags(cmd)
@@ -80,9 +68,8 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))
 			os.Exit(1)
 		}
-		err = config.LoadConfig("google.json", cfg, objects.NodeConfig{})
 	} else {
-		err = config.LoadConfigInteractive("google.json", cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("google.json", &cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -95,7 +82,6 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 }
 
 func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
-	cfg := &objects.Config{}
 	var err error
 	if cmd.Flags().Changed("no-prompt") {
 		flagsNotSet := checkFlags(cmd)
@@ -103,14 +89,12 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))
 			os.Exit(1)
 		}
-		err = config.LoadConfig("amazon.json", cfg, objects.NodeConfig{})
 	} else {
-		err = config.LoadConfigInteractive("amazon.json", cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("amazon.json", &cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
-
 	if !pmk.CheckAmazonPovider(cfg.AwsIamUsername, cfg.AwsAccessKey, cfg.AwsSecretKey, cfg.AwsRegion) {
 		os.Exit(1)
 	}
@@ -118,7 +102,6 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 
 func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 
-	cfg := &objects.Config{}
 	var err error
 	if cmd.Flags().Changed("no-prompt") {
 		flagsNotSet := checkFlags(cmd)
@@ -126,15 +109,14 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 			fmt.Printf(color.Red("x ")+"Missing required flags: %v\n", strings.Join(flagsNotSet, ", "))
 			os.Exit(1)
 		}
-		err = config.LoadConfig("azure.json", cfg, objects.NodeConfig{})
 	} else {
-		err = config.LoadConfigInteractive("azure.json", cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("azure.json", &cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n")
 	}
 
-	if !pmk.CheckAzureProvider(cfg.AzureTetant, cfg.AzureClient, cfg.AzureSubscription, cfg.AzureSecret) {
+	if !pmk.CheckAzureProvider(cfg.AzureTenant, cfg.AzureClient, cfg.AzureSubscription, cfg.AzureSecret) {
 		os.Exit(1)
 	}
 
