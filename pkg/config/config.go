@@ -242,27 +242,29 @@ func ConfigCmdCreateAzureRun(cfg *objects.Config) error {
 		fmt.Printf("Azure TenantID: ")
 		azureTenant, _ := terminal.ReadPassword(0)
 		cfg.AzureTenant = string(azureTenant)
+		fmt.Println()
 	}
 
 	if cfg.AzureClient == "" {
-		fmt.Printf("\nAzure ApplicationID: ")
+		fmt.Printf("Azure ApplicationID: ")
 		azureClient, _ := terminal.ReadPassword(0)
 		cfg.AzureClient = string(azureClient)
+		fmt.Println()
 	}
 
 	if cfg.AzureSubscription == "" {
-		fmt.Printf("\nAzure SubscriptionID: ")
+		fmt.Printf("Azure SubscriptionID: ")
 		azureSub, _ := terminal.ReadPassword(0)
 		cfg.AzureSubscription = string(azureSub)
+		fmt.Println()
 	}
 
 	if cfg.AzureSecret == "" {
 		fmt.Printf("\nAzure Secret Key: ")
 		azureSecret, _ := terminal.ReadPassword(0)
 		cfg.AzureSecret = string(azureSecret)
+		fmt.Println()
 	}
-
-	fmt.Printf("\n")
 
 	return nil
 }
