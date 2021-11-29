@@ -43,11 +43,12 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	s.Stop()
 
 	if err != nil {
+		fmt.Println(color.Red("x ") + " Unable to create cluster")
+		zap.S().Debug("Unable to create cluster. Error:", err)
 		if err = c.Segment.SendEvent("Cluster creation(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
-		fmt.Println(color.Red("x ") + " Unable to create a Cluster")
-		return fmt.Errorf("Unable to create cluster"+req.Name+": %w", err)
+		return fmt.Errorf("Unable to create cluster " + req.Name)
 	}
 
 	fmt.Println(color.Green("✓") + " Cluster creation started")
@@ -91,6 +92,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		}
 	} else {
 		fmt.Println(color.Red("x ") + " Host is disconnected")
+		zap.S().Errorf("Host is disconnected")
 		if err = c.Segment.SendEvent("Host Connected(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
@@ -117,13 +119,14 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 
 	if err != nil {
 		fmt.Println(color.Red("x ") + " Unable to attach-node to cluster")
+		zap.S().Debug("Unable to attach-node to cluster. Error:", err)
 		if err = c.Segment.SendEvent("Attach-Node(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
 
 		//Deleting the cluster if the node is not attached to the cluster
 		DeleteClusterBootstrap(clusterID, c, keystoneAuth, token)
-		return fmt.Errorf("Unable to attach node to the cluster"+req.Name+": %w", err)
+		return fmt.Errorf("Unable to attach node to cluster " + req.Name)
 	}
 
 	fmt.Println(color.Green("✓") + " Attached node to the cluster")
@@ -204,7 +207,7 @@ func DeleteClusterBootstrap(clusterID string, c client.Client, keystoneAuth keys
 		if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
-		zap.S().Debugf("Unable to delete the cluster")
+		zap.S().Debugf("Unable to delete cluster")
 	} else {
 		if err = c.Segment.SendEvent("Delete Cluster(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())

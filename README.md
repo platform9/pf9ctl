@@ -588,7 +588,7 @@ Node decommissioning started....This may take a few minutes....Check the latest 
 Bootstrap a single node Kubernetes cluster with current node as the master node.
 
 Usage:
-  pf9ctl bootstrap [flags]
+  pf9ctl bootstrap [flags] cluster-name
 
 Flags:
       --allowWorkloadsOnMaster   Taint master nodes ( to enable workloads ) (default true)
