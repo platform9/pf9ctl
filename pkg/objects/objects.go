@@ -17,7 +17,7 @@ type Config struct {
 	AwsAccessKey       string        `json:"aws_access_key"`
 	AwsSecretKey       string        `json:"aws_secret_key"`
 	AwsRegion          string        `json:"aws_region"`
-	AzureTetant        string        `json:"azure_tenant"`
+	AzureTenant        string        `json:"azure_tenant"`
 	AzureClient        string        `json:"azure_application"`
 	AzureSubscription  string        `json:"azure_subscription"`
 	AzureSecret        string        `json:"azure_secret"`

@@ -236,10 +236,10 @@ func ConfigCmdCreateAzureRun(cfg *objects.Config) error {
 
 	zap.S().Debug("==========Running set config==========")
 
-	if cfg.AzureTetant == "" {
+	if cfg.AzureTenant == "" {
 		fmt.Printf("Azure TenantID: ")
 		azureTenant, _ := terminal.ReadPassword(0)
-		cfg.AzureTetant = string(azureTenant)
+		cfg.AzureTenant = string(azureTenant)
 	}
 
 	if cfg.AzureClient == "" {
