@@ -86,6 +86,6 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Error authorising node ", err1.Error())
 	}
 
-	fmt.Println("Node authorized")
+	fmt.Println("Node authorization started....This may take a few minutes....Check the latest status in UI")
 
 }

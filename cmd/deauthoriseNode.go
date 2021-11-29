@@ -111,7 +111,7 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Error deauthorising node ", err.Error())
 	}
 
-	fmt.Println("Node deauthorized")
+	fmt.Println("Node deauthorization started....This may take a few minutes....Check the latest status in UI")
 
 }
 

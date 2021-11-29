@@ -453,7 +453,7 @@ Global Flags:
 ```sh
 #pf9ctl deauthorize-node
 ✓ Loaded Config Successfully
-Node deauthorized
+Node deauthorization started....This may take a few minutes....Check the latest status in UI
 ```
 
 
@@ -478,7 +478,7 @@ Global Flags:
 ```sh
 #pf9ctl authorize-node
 ✓ Loaded Config Successfully
-Node authorized
+Node authorization started....This may take a few minutes....Check the latest status in UI
 ```
 
   **delete-cluster**
@@ -545,9 +545,9 @@ Removing packages
 ...
 Removing /etc/pf9 logs
 Removing /opt/pf9 logs
+Removing pf9 HOME dir
 Removed the node form the UI
-Node decommissioned successfully
-
+Node decommission started....This may take a few minutes....Check the status in UI
 ```
 
 
