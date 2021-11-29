@@ -547,7 +547,7 @@ Removing /etc/pf9 logs
 Removing /opt/pf9 logs
 Removing pf9 HOME dir
 Removed the node form the UI
-Node decommissioning started....This may take a few minutes....Check the status in UI
+Node decommissioning started....This may take a few minutes....Check the latest status in UI
 ```
 
 

@@ -135,6 +135,6 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 	}
 	fmt.Println("Removed the node from the UI")
 
-	fmt.Println("Node decommissioning started....This may take a few minutes....Check the status in UI")
+	fmt.Println("Node decommissioning started....This may take a few minutes....Check the latest status in UI")
 
 }
