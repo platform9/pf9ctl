@@ -145,7 +145,7 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 	}
 
 	LoopVariable := 1
-	for LoopVariable <= util.MaxLoopValue {
+	for LoopVariable <= util.MaxRetryValue {
 		if resp.StatusCode != 200 {
 			time.Sleep(30 * time.Second)
 			resp, err = Attach_Status(attachEndpoint, token, byt)

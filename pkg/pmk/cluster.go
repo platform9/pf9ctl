@@ -43,7 +43,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	s.Stop()
 
 	if err != nil {
-		fmt.Println(color.Red("x ") + " Unable to create cluster")
+		fmt.Println(color.Red("x") + " Unable to create cluster")
 		zap.S().Debug("Unable to create cluster. Error:", err)
 		if err = c.Segment.SendEvent("Cluster creation(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
@@ -91,7 +91,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
 	} else {
-		fmt.Println(color.Red("x ") + " Host is disconnected")
+		fmt.Println(color.Red("x") + " Host is disconnected")
 		zap.S().Errorf("Host is disconnected")
 		if err = c.Segment.SendEvent("Host Connected(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
@@ -138,7 +138,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 	}
 	fmt.Println(color.Green("✓") + " Bootstrap successfully finished")
-	fmt.Println("Cluster creation started...This may take a few minutes. Please check the UI for latest status.")
+	fmt.Println("Cluster creation started....This may take a few minutes....Check the latest status in UI")
 	return nil
 }
 

@@ -38,6 +38,8 @@ const (
 	MinAvailDisk = 15
 	// Counter variable max value
 	MaxLoopValue = 3
+	//Attach Status Loop variable
+	MaxRetryValue = 6
 
 	CheckPass       = "PASS"
 	CheckFail       = "FAIL"

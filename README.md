@@ -647,5 +647,5 @@ Prep local node as master node for kubernetes cluster (y/n): y
 ✓ Host is connected
 ✓ Attached node to the cluster
 ✓ Bootstrap successfully finished
-Cluster creation started...This may take a few minutes. Please check the UI for latest status.
+Cluster creation started....This may take a few minutes....Check the latest status in UI
 ```
