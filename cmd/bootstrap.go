@@ -50,7 +50,6 @@ func init() {
 	bootstrapCmd.Flags().StringVar(&servicesCIDR, "servicesCidr", "10.21.0.0/16", "CIDR for services overlay")
 	bootstrapCmd.Flags().StringVar(&externalDNSName, "externalDnsName", "", "External DNS for master VIP")
 	bootstrapCmd.Flags().BoolVar(&privileged, "privileged", true, "Enable privileged mode for K8s API. Default: true")
-	bootstrapCmd.Flags().BoolVar(&appCatalogEnabled, "appCatalogEnabled", false, "Enable Helm application catalog")
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allowWorkloadsOnMaster", true, "Taint master nodes ( to enable workloads )")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "networkPlugin", "calico", "Specify network plugin ( Possible values: flannel or calico )")
 	bootstrapCmd.Flags().StringVarP(&bootConfig.User, "user", "u", "", "ssh username for the nodes")
@@ -70,7 +69,6 @@ var (
 	servicesCIDR           string
 	externalDNSName        string
 	privileged             bool
-	appCatalogEnabled      bool
 	allowWorkloadsOnMaster bool
 	networkPlugin          string
 )
@@ -234,7 +232,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		}
 
 		zap.S().Debugf("Unable to bootstrap node: %s\n", err.Error())
-		zap.S().Fatalf("\nFailed to bootstrap node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
+		zap.S().Fatalf("Failed to bootstrap node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
 	}
 	zap.S().Debug("==========Finished running bootstrap==========")
 }
