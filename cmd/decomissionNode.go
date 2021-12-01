@@ -37,7 +37,7 @@ func init() {
 	rootCmd.AddCommand(decommissionNodeCmd)
 }
 
-func runCommandWait(command string) {
+func RunCommandWait(command string) {
 	output := exec.Command("/bin/sh", "-c", command)
 	output.Stdout = os.Stdout
 	output.Stdin = os.Stdin
@@ -102,29 +102,37 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 
 	if strings.Contains(string(version), util.Ubuntu) {
 		fmt.Println("Removing packages")
-		runCommandWait("sudo dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
+		RunCommandWait("sudo dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
 		fmt.Println("Purging packages")
-		runCommandWait("sudo dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
+		RunCommandWait("sudo dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
 		fmt.Println("Removing /etc/pf9 logs")
-		runCommandWait("sudo rm -rf /etc/pf9")
+		RunCommandWait("sudo rm -rf /etc/pf9")
 		fmt.Println("Removing /opt/pf9 logs")
-		runCommandWait("sudo rm -rf /opt/pf9")
+		RunCommandWait("sudo rm -rf /opt/pf9")
 		fmt.Println("Removing pf9 HOME dir")
-		runCommandWait("sudo rm -rf $HOME/pf9")
+		RunCommandWait("sudo rm -rf $HOME/pf9")
+
+		RunCommandWait("sudo pkill -9 `pidof kubelet`")
+		RunCommandWait("sudo pkill -9 `pidof etcd`")
+		RunCommandWait("sudo pkill -9 `pidof kube_proxy`")
 
 	} else {
 		//command = "sudo yum erase -y pf9-hostagent -y"
 		fmt.Println("Removing packages")
-		runCommandWait("sudo yum erase -y pf9-comms")
-		runCommandWait("sudo yum erase -y pf9-kube")
-		runCommandWait("sudo yum erase -y pf9-hostagent")
-		runCommandWait("sudo yum erase -y pf9-muster")
+		RunCommandWait("sudo yum erase -y pf9-comms")
+		RunCommandWait("sudo yum erase -y pf9-kube")
+		RunCommandWait("sudo yum erase -y pf9-hostagent")
+		RunCommandWait("sudo yum erase -y pf9-muster")
 		fmt.Println("Removing /etc/pf9 logs")
-		runCommandWait("sudo rm -rf /etc/pf9")
+		RunCommandWait("sudo rm -rf /etc/pf9")
 		fmt.Println("Removing /opt/pf9 logs")
-		runCommandWait("sudo rm -rf /opt/pf9")
+		RunCommandWait("sudo rm -rf /opt/pf9")
 		fmt.Println("Removing pf9 HOME dir")
-		runCommandWait("sudo rm -rf $HOME/pf9")
+		RunCommandWait("sudo rm -rf $HOME/pf9")
+
+		RunCommandWait("sudo pkill -9 `pidof kubelet`")
+		RunCommandWait("sudo pkill -9 `pidof etcd`")
+		RunCommandWait("sudo pkill -9 `pidof kube_proxy`")
 
 	}
 
