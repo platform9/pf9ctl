@@ -148,6 +148,7 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 	for LoopVariable <= util.MaxRetryValue {
 		if resp.StatusCode != 200 {
 			time.Sleep(30 * time.Second)
+			zap.S().Debug("Trying to attach-node to cluster")
 			resp, err = Attach_Status(attachEndpoint, token, byt)
 			if err != nil {
 				return err
@@ -391,6 +392,7 @@ func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Respo
 	client := http.Client{}
 	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {
+		zap.S().Debugf("Unable to create a request: ", err)
 		return nil, fmt.Errorf("Unable to create a request: %w", err)
 	}
 	req.Header.Set("X-Auth-Token", token)
@@ -398,6 +400,7 @@ func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Respo
 
 	resp, err := client.Do(req)
 	if err != nil {
+		zap.S().Debugf("Unable to POST request through client: ", err)
 		return resp, fmt.Errorf("Unable to POST request through client: %w", err)
 	}
 

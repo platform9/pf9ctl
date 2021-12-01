@@ -43,7 +43,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	s.Stop()
 
 	if err != nil {
-		fmt.Println(color.Red("x") + " Unable to create cluster")
+		fmt.Println(color.Red("x")+" Unable to create cluster. Error:", err)
 		zap.S().Debug("Unable to create cluster. Error:", err)
 		if err = c.Segment.SendEvent("Cluster creation(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
@@ -60,7 +60,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	s.Color("red")
 	s.Start() // Start the spinner
 	defer s.Stop()
-	s.Suffix = "Checking Host Status"
+	s.Suffix = " Checking Host Status"
 
 	cmd := `grep ^host_id /etc/pf9/host_id.conf | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := c.Executor.RunWithStdout("bash", "-c", cmd)
@@ -81,6 +81,10 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		LoopVariable = LoopVariable + 1
 	}
 
+	if LoopVariable > util.MaxLoopValue {
+		util.HostDown = true
+	}
+
 	s.Stop()
 
 	if !util.HostDown {
@@ -91,14 +95,14 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
 	} else {
-		fmt.Println(color.Red("x") + " Host is disconnected")
-		zap.S().Errorf("Host is disconnected")
+		fmt.Println(color.Red("x") + " Host is disconnected. Unable to attach this node to the cluster " + req.Name + " Run prep-node/authorize-node and try again")
+		zap.S().Debug("Host is disconnected. Unable to attach this node to the cluster " + req.Name + " Run prep-node/authorize-node and try again")
 		if err = c.Segment.SendEvent("Host Connected(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
 		//Deleting the cluster if the host is disconnected
 		DeleteClusterBootstrap(clusterID, c, keystoneAuth, token)
-		zap.S().Fatalf("Host is disconnected....Unable to attach this node to the cluster " + req.Name)
+		return fmt.Errorf("Host is disconnected. Unable to attach this node to the cluster " + req.Name + " Run prep-node/authorize-node and try again")
 	}
 
 	attachname := fmt.Sprintf(" Attaching node to the cluster %s", req.Name)
@@ -118,7 +122,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	s.Stop() //Stop the Spinner
 
 	if err != nil {
-		fmt.Println(color.Red("x ") + " Unable to attach-node to cluster")
+		fmt.Println(color.Red("x") + " Unable to attach-node to cluster " + req.Name + "Run bootstrap again")
 		zap.S().Debug("Unable to attach-node to cluster. Error:", err)
 		if err = c.Segment.SendEvent("Attach-Node(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
@@ -126,7 +130,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 
 		//Deleting the cluster if the node is not attached to the cluster
 		DeleteClusterBootstrap(clusterID, c, keystoneAuth, token)
-		return fmt.Errorf("Unable to attach node to cluster " + req.Name)
+		return fmt.Errorf("Unable to attach node to cluster " + req.Name + "Run bootstrap again")
 	}
 
 	fmt.Println(color.Green("✓") + " Attached node to the cluster")
@@ -153,7 +157,7 @@ func Host_Status(exec cmdexec.Executor, fqdn string, token string, hostID string
 	var err1 error
 
 	if isRemote {
-		cmnd := fmt.Sprintf(`bash %s`, cmd)
+		cmnd := fmt.Sprintf(`%s`, cmd)
 		status, err1 = exec.RunWithStdout(cmnd)
 	} else {
 		status, err1 = exec.RunWithStdout("bash", "-c", cmd)
