@@ -96,7 +96,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		}
 	} else {
 		fmt.Println(color.Red("x") + " Host is disconnected. Unable to attach this node to the cluster " + req.Name + " Run prep-node/authorize-node and try again")
-		zap.S().Debug("Host is disconnected")
+		zap.S().Debug("Host is disconnected. Unable to attach this node to the cluster " + req.Name + " Run prep-node/authorize-node and try again")
 		if err = c.Segment.SendEvent("Host Connected(Bootstrap)", keystoneAuth, checkFail, ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 		}
