@@ -122,6 +122,14 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	for i := range detachNodes {
+
+		isMaster := getNode(c.Executor, cfg.Fqdn, token, projectId, nodeUuids[0])
+		clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
+
+		if len(clusterNodes) == 1 || isMaster.IsMaster == "1" {
+			fmt.Printf("Node %v is is either the master node or the last node in the cluster\n", isMaster.Uuid)
+		}
+
 		err1 := c.Qbert.DetachNode(detachNodes[i].ClusterUuid, projectId, token, detachNodes[i].Uuid)
 
 		if err1 != nil {
