@@ -118,6 +118,7 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 
 		RunCommandWait("sudo rm -rf /opt/cni")
 		RunCommandWait("sudo rm -rf /opt/containerd")
+		RunCommandWait("sudo rm -rf /var/lib/containerd")
 
 	} else {
 		//command = "sudo yum erase -y pf9-hostagent -y"
@@ -139,6 +140,7 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 
 		RunCommandWait("sudo rm -rf /opt/cni")
 		RunCommandWait("sudo rm -rf /opt/containerd")
+		RunCommandWait("sudo rm -rf /var/lib/containerd")
 
 	}
 
