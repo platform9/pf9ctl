@@ -112,16 +112,7 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		fmt.Println("Removing pf9 HOME dir")
 		RunCommandWait("sudo rm -rf $HOME/pf9")
 
-		RunCommandWait("sudo pkill -9 `pidof kubelet`")
-		RunCommandWait("sudo pkill -9 `pidof etcd`")
-		RunCommandWait("sudo pkill -9 `pidof kube_proxy`")
-
-		RunCommandWait("sudo rm -rf /opt/cni")
-		RunCommandWait("sudo rm -rf /opt/containerd")
-		RunCommandWait("sudo rm -rf /var/lib/containerd")
-
 	} else {
-		//command = "sudo yum erase -y pf9-hostagent -y"
 		fmt.Println("Removing packages")
 		RunCommandWait("sudo yum erase -y pf9-comms")
 		RunCommandWait("sudo yum erase -y pf9-kube")
@@ -134,15 +125,20 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		fmt.Println("Removing pf9 HOME dir")
 		RunCommandWait("sudo rm -rf $HOME/pf9")
 
-		RunCommandWait("sudo pkill -9 `pidof kubelet`")
-		RunCommandWait("sudo pkill -9 `pidof etcd`")
-		RunCommandWait("sudo pkill -9 `pidof kube_proxy`")
-
-		RunCommandWait("sudo rm -rf /opt/cni")
-		RunCommandWait("sudo rm -rf /opt/containerd")
-		RunCommandWait("sudo rm -rf /var/lib/containerd")
-
 	}
+
+	RunCommandWait("sudo pkill kubelet")
+	RunCommandWait("sudo pkill etcd")
+	RunCommandWait("sudo pkill kube-proxy")
+	RunCommandWait("sudo pkill kube-apiserve")
+	RunCommandWait("sudo pkill kube-schedule")
+	RunCommandWait("sudo pkill kube-controll")
+
+	RunCommandWait("sudo rm -rf /opt/cni")
+	RunCommandWait("sudo rm -rf /opt/containerd")
+	RunCommandWait("sudo rm -rf /var/lib/containerd")
+	RunCommandWait("sudo rm -rf /var/opt/pf9")
+	RunCommandWait("sudo rm -rf /var/log/pf9")
 
 	err = c.Qbert.DeauthoriseNode(nodeUuid[0], token)
 
