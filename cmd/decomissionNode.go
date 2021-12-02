@@ -116,6 +116,8 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		RunCommandWait("sudo pkill -9 `pidof etcd`")
 		RunCommandWait("sudo pkill -9 `pidof kube_proxy`")
 
+		RunCommandWait("sudo rm -rf /opt")
+
 	} else {
 		//command = "sudo yum erase -y pf9-hostagent -y"
 		fmt.Println("Removing packages")
@@ -133,6 +135,8 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		RunCommandWait("sudo pkill -9 `pidof kubelet`")
 		RunCommandWait("sudo pkill -9 `pidof etcd`")
 		RunCommandWait("sudo pkill -9 `pidof kube_proxy`")
+
+		RunCommandWait("sudo rm -rf /opt")
 
 	}
 
