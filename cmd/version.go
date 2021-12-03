@@ -90,8 +90,10 @@ func getLatestVersion() (bool, error) {
 	}
 	hashString := hex.EncodeToString(hash.Sum(nil))
 	eTag := getEtag()
+	if eTag == "" {
+		return false, nil
+	}
 	return !strings.Contains(eTag, hashString), nil
-
 }
 
 func getEtag() string {
@@ -105,8 +107,10 @@ func getEtag() string {
 		Key:    aws.String(util.AWSBucketKey),
 	}
 	result, err := svc.GetObject(input)
-	if err != nil {
-		fmt.Errorf("Error while getting the latest version " + err.Error())
+	if err != nil || result == nil || result.ETag == nil {
+		fmt.Print("Could not check the latest CLI version")
+		zap.S().Errorf("Could not check the latest CLI version", err.Error())
+		return ""
 	}
 	return *result.ETag
 }
