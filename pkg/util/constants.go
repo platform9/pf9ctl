@@ -104,7 +104,7 @@ var (
 )
 
 func init() {
-	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "8285", "3306"}
+	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "3306", "8158", "5672", "5673", "8023", "9080", "6264"}
 	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "kube-controller"}
 	Pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
 
