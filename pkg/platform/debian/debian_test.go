@@ -200,7 +200,7 @@ func TestPort(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "22\n25\n123\n5395", nil
+						return "22\n25\n123", nil
 					},
 				},
 			},
