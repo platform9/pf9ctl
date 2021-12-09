@@ -33,7 +33,7 @@ var prepNodeCmd = &cobra.Command{
 	at http://pf9.io/cli_clprep.`,
 	Run: prepNodeRun,
 	Args: func(prepNodeCmd *cobra.Command, args []string) error {
-		if prepNodeCmd.Flags().Changed("disableSwapOff") {
+		if prepNodeCmd.Flags().Changed("disable-swapoff") {
 			util.SwapOffDisabled = true
 		}
 		return nil
@@ -56,10 +56,10 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	prepNodeCmd.Flags().StringSliceVarP(&nodeConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
-	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skipChecks", "c", false, "Will skip optional checks if true")
-	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disableSwapOff", "d", false, "Will skip swapoff")
+	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
+	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
 	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
-	prepNodeCmd.Flags().MarkHidden("disableSwapOff")
+	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 
 	rootCmd.AddCommand(prepNodeCmd)

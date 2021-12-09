@@ -94,7 +94,7 @@ Successfully updated.
 ```
 
 ```sh
-#pf9ctl upgrade --skipCheck
+#pf9ctl upgrade --skip-check
 New version found. Please upgrade to the newest version
 
 Downloading the CLI
@@ -141,11 +141,11 @@ Usage:
   pf9ctl config set [flags]
 
 Flags:
-  -u, --account_url string   sets account_url
+  -u, --account-url string   sets account_url
   -h, --help                 help for set
       --mfa string           set MFA token
   -p, --password string      sets password (use 'single quotes' to pass password)
-  -l, --proxy_url string     sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>
+  -l, --proxy-url string     sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>
   -r, --region string        sets region
   -t, --tenant string        sets tenant
   -e, --username string      sets username
@@ -252,7 +252,7 @@ Flags:
   -i, --ip strings         IP address of host to be prepared
       --mfa string         MFA token
   -p, --password string    ssh password for the nodes (use 'single quotes' to pass password)
-  -c, --skipChecks         Will skip optional checks if true
+  -c, --skip-checks         Will skip optional checks if true
   -s, --ssh-key string     ssh key file for connecting to the nodes
   -e, --sudo-pass string   sudo password for user on remote host
   -u, --user string        ssh username for the nodes
@@ -443,7 +443,6 @@ Usage:
 Flags:
   -h, --help   help for deauthorize-node
       --mfa string   MFA token
-  -s, --skipCheck    skips node check
 
 Global Flags:
       --no-prompt disable all user prompts
@@ -591,20 +590,20 @@ Usage:
   pf9ctl bootstrap [flags] cluster-name
 
 Flags:
-      --allowWorkloadsOnMaster   Taint master nodes ( to enable workloads ) (default true)
+      --allow-workloads-on-master   Taint master nodes ( to enable workloads ) (default true)
       --appCatalogEnabled        Enable Helm application catalog
-      --containersCidr string    CIDR for container overlay (default "10.20.0.0/16")
-      --externalDnsName string   External DNS for master VIP
+      --containers-cidr string    CIDR for container overlay (default "10.20.0.0/16")
+      --external-dns-name string   External DNS for master VIP
   -h, --help                     help for bootstrap
   -i, --ip strings               IP address of host to be prepared
-      --masterVip string         IP Address for VIP for master nodes
-      --masterVipIf string       Interface name for master / worker nodes
-      --metallbIpRange string    Ip range for MetalLB
+      --master-vip string         IP Address for VIP for master nodes
+      --master-vip-if string       Interface name for master / worker nodes
+      --metallb-ip-range string    Ip range for MetalLB
       --mfa string               MFA token
-      --networkPlugin string     Specify network plugin ( Possible values: flannel or calico ) (default "calico")
+      --network-plugin string     Specify network plugin ( Possible values: flannel or calico ) (default "calico")
   -p, --password string          ssh password for the nodes (use 'single quotes' to pass password)
       --privileged               Enable privileged mode for K8s API. Default: true (default true)
-      --servicesCidr string      CIDR for services overlay (default "10.21.0.0/16")
+      --services-cidr string      CIDR for services overlay (default "10.21.0.0/16")
   -s, --ssh-key string           ssh key file for connecting to the nodes
   -e, --sudo-pass string         sudo password for user on remote host
   -u, --user string              ssh username for the nodes
