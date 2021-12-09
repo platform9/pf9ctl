@@ -31,7 +31,7 @@ const (
 )
 
 /* This flag is set true, to have warning "!" message,
-when user passes --skipChecks and optional checks fails.
+when user passes --skip-checks and optional checks fails.
 */
 var WarningOptionalChecks bool
 

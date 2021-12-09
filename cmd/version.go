@@ -150,7 +150,7 @@ func init() {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(upgrade)
 
-	upgrade.Flags().BoolVarP(&skipCheck, "skipCheck", "c", false, "Will skip the version checks if true")
+	upgrade.Flags().BoolVarP(&skipCheck, "skip-check", "c", false, "Will skip the version checks if true")
 
 	// Here you will define your flags and configuration settings.
 

@@ -69,10 +69,10 @@ func init() {
 	configCmdCreate.AddCommand(configCmdGet)
 	configCmdCreate.AddCommand(configCmdSet)
 
-	configCmdSet.Flags().StringVarP(&cfg.Fqdn, "account_url", "u", "", "sets account_url")
+	configCmdSet.Flags().StringVarP(&cfg.Fqdn, "account-url", "u", "", "sets account-url")
 	configCmdSet.Flags().StringVarP(&cfg.Username, "username", "e", "", "sets username")
 	configCmdSet.Flags().StringVarP(&cfg.Password, "password", "p", "", "sets password (use 'single quotes' to pass password)")
-	configCmdSet.Flags().StringVarP(&cfg.ProxyURL, "proxy_url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
+	configCmdSet.Flags().StringVarP(&cfg.ProxyURL, "proxy-url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
 	configCmdSet.Flags().StringVarP(&cfg.Region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&cfg.Tenant, "tenant", "t", "", "sets tenant")
 	configCmdSet.Flags().StringVar(&cfg.MfaToken, "mfa", "", "set MFA token")
