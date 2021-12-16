@@ -81,7 +81,7 @@ download_cli_binary() {
 	echo ""
 	echo "Downloading Platform9 CLI binary..."
     # Downloading the binary under the name pf9ctl_new so that the current installed version doesnt get deleted
-	cd ${pf9_bin} > /dev/null && sudo curl -s -o pf9ctl_new "${cli_path}" -o ${log_file} 2>&1 && cd - > /dev/null
+	cd ${pf9_bin} > /dev/null && sudo curl -vHs -o pf9ctl_new "${cli_path}" > ${log_file} 2>&1 && cd - > /dev/null
 	sudo chmod 555 ${cli_exec}_new
 	echo ""
 	echo "Platform9 CLI binary downloaded."
