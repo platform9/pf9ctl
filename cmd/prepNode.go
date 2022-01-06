@@ -104,7 +104,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
-
+	defer c.Segment.Close()
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
 		cfg.Username,
