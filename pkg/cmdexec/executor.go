@@ -19,6 +19,7 @@ var StdErrSudoPassword string
 
 const (
 	httpsProxy = "https_proxy"
+	noProxy    = "no_proxy"
 	env_path   = "PATH"
 )
 
@@ -31,12 +32,17 @@ type Executor interface {
 // LocalExecutor as the name implies executes commands locally
 type LocalExecutor struct {
 	ProxyUrl string
+	NoProxy  string
 }
 
 // Run runs a command locally returning just success or failure
 func (c LocalExecutor) Run(name string, args ...string) error {
 	if c.ProxyUrl != "" {
-		args = append([]string{httpsProxy + "=" + c.ProxyUrl, name}, args...)
+		if c.NoProxy != "" {
+			args = append([]string{httpsProxy + "=" + c.ProxyUrl, noProxy + "=" + c.NoProxy, name}, args...)
+		} else {
+			args = append([]string{httpsProxy + "=" + c.ProxyUrl, name}, args...)
+		}
 	} else {
 		args = append([]string{name}, args...)
 	}
@@ -49,7 +55,11 @@ func (c LocalExecutor) Run(name string, args ...string) error {
 // RunWithStdout runs a command locally returning stdout and err
 func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error) {
 	if c.ProxyUrl != "" {
-		args = append([]string{httpsProxy + "=" + c.ProxyUrl, name}, args...)
+		if c.NoProxy != "" {
+			args = append([]string{httpsProxy + "=" + c.ProxyUrl, noProxy + "=" + c.NoProxy, name}, args...)
+		} else {
+			args = append([]string{httpsProxy + "=" + c.ProxyUrl, name}, args...)
+		}
 	} else {
 		args = append([]string{name}, args...)
 	}
@@ -79,6 +89,7 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 type RemoteExecutor struct {
 	Client   ssh.Client
 	proxyURL string
+	NoProxy  string
 }
 
 // Run runs a command locally returning just success or failure
@@ -94,7 +105,11 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 		cmd = fmt.Sprintf("%s \"%s\"", cmd, arg)
 	}
 	if r.proxyURL != "" {
-		cmd = fmt.Sprintf("%s=%s %s", httpsProxy, r.proxyURL, cmd)
+		if r.NoProxy != "" {
+			cmd = fmt.Sprintf("%s=%s %s=%s %s", httpsProxy, r.proxyURL, noProxy, r.NoProxy, cmd)
+		} else {
+			cmd = fmt.Sprintf("%s=%s %s", httpsProxy, r.proxyURL, cmd)
+		}
 	}
 	stdout, stderr, err := r.Client.RunCommand(cmd)
 	// To fetch the stderr after executing command.
@@ -108,12 +123,12 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 }
 
 // NewRemoteExecutor create an Executor interface to execute commands remotely
-func NewRemoteExecutor(host string, port int, username string, privateKey []byte, password, proxyURL string) (Executor, error) {
+func NewRemoteExecutor(host string, port int, username string, privateKey []byte, password, proxyURL string, noProxy string) (Executor, error) {
 	client, err := ssh.NewClient(host, port, username, privateKey, password, proxyURL)
 	if err != nil {
 		return nil, err
 	}
-	re := &RemoteExecutor{Client: client, proxyURL: proxyURL}
+	re := &RemoteExecutor{Client: client, proxyURL: proxyURL, NoProxy: noProxy}
 	return re, nil
 }
 
@@ -140,7 +155,7 @@ func ConfidentialInfoRemover(cmd string) string {
 	return cmd
 }
 
-func GetExecutor(proxyURL string, nc objects.NodeConfig) (Executor, error) {
+func GetExecutor(proxyURL string, noProxy string, nc objects.NodeConfig) (Executor, error) {
 	if CheckRemote(nc) {
 		var pKey []byte
 		var err error
@@ -150,10 +165,10 @@ func GetExecutor(proxyURL string, nc objects.NodeConfig) (Executor, error) {
 				zap.S().Fatalf("Unable to read the sshKey %s, %s", nc.SshKey, err.Error())
 			}
 		}
-		return NewRemoteExecutor(nc.IPs[0], 22, nc.User, pKey, nc.Password, proxyURL)
+		return NewRemoteExecutor(nc.IPs[0], 22, nc.User, pKey, nc.Password, proxyURL, noProxy)
 	}
 	zap.S().Debug("Using local executor")
-	return LocalExecutor{ProxyUrl: proxyURL}, nil
+	return LocalExecutor{ProxyUrl: proxyURL, NoProxy: noProxy}, nil
 }
 
 func CheckRemote(nc objects.NodeConfig) bool {

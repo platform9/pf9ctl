@@ -76,6 +76,7 @@ func init() {
 	configCmdSet.Flags().StringVarP(&cfg.Region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&cfg.Tenant, "tenant", "t", "", "sets tenant")
 	configCmdSet.Flags().StringVar(&cfg.MfaToken, "mfa", "", "set MFA token")
+	configCmdSet.Flags().StringVarP(&cfg.NoProxy, "noproxy", "", "", "exclude proxy for specified urls. this should be comma-separated list of hostnames or domain names")
 }
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
@@ -83,6 +84,10 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 
 	var err error
 	if err = config.SetProxy(cfg.ProxyURL); err != nil {
+		zap.S().Fatal(color.Red("x "), err)
+	}
+
+	if err = config.SetNoProxy(cfg.NoProxy); err != nil {
 		zap.S().Fatal(color.Red("x "), err)
 	}
 

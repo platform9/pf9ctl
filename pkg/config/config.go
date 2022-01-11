@@ -340,6 +340,12 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 		cfg.ProxyURL = strings.TrimSuffix(proxyURL, "\n")
 	}
 
+	if cfg.NoProxy == "" {
+		fmt.Print("Noproxy [None]: ")
+		URL, _ := reader.ReadString('\n')
+		cfg.NoProxy = strings.TrimSuffix(URL, "\n")
+	}
+
 	if cfg.Region == "" {
 		cfg.Region = "RegionOne"
 	}
@@ -359,7 +365,7 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 }
 
 func createClient(cfg *objects.Config, nc objects.NodeConfig) (client.Client, error) {
-	executor, err := cmdexec.GetExecutor(cfg.ProxyURL, nc)
+	executor, err := cmdexec.GetExecutor(cfg.ProxyURL, cfg.NoProxy, nc)
 	if err != nil {
 		//debug first since Fatalf calls os.Exit
 		zap.S().Debug("Error connecting to host %s", err.Error())
@@ -417,6 +423,15 @@ func SetProxy(proxyURL string) error {
 	if proxyURL != "" {
 		if err := os.Setenv("https_proxy", proxyURL); err != nil {
 			return errors.New("Error setting proxy as environment variable")
+		}
+	}
+	return nil
+}
+
+func SetNoProxy(NoProxy string) error {
+	if NoProxy != "" {
+		if err := os.Setenv("no_proxy", NoProxy); err != nil {
+			return errors.New("Error setting no_proxy as environment variable")
 		}
 	}
 	return nil

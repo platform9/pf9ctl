@@ -96,7 +96,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nodeConfig); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, cfg.NoProxy, nodeConfig); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 

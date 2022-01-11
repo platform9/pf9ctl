@@ -12,6 +12,7 @@ type Config struct {
 	WaitPeriod         time.Duration `json:"wait_period"`
 	AllowInsecure      bool          `json:"allow_insecure"`
 	ProxyURL           string        `json:"proxy_url"`
+	NoProxy            string        `json:"no_proxy"`
 	MfaToken           string        `json:"mfa_token"`
 	AwsIamUsername     string        `json:"aws_iam_username"`
 	AwsAccessKey       string        `json:"aws_access_key"`
