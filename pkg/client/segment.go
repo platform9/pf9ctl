@@ -15,7 +15,7 @@ import (
 )
 
 //Added segment key for the source PRD-PMKFT Metrics-Aggregator
-var SegmentWriteKey = "4jevYUNBF5sY3vZJWm5TrhfdsFzQIQ3y"
+var SegmentWriteKey string
 
 type Segment interface {
 	SendEvent(string, interface{}, string, string) error
