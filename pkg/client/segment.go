@@ -125,11 +125,11 @@ func (c SegmentImpl) Close() {
 	c.client.Close()
 }
 
-func (c *SegmentNoopLogger) Logf(format string, args ...interface{}) {
-	zap.S().Debug("Could not send segment event")
+func (c *SegmentNoopLogger) Logf(err string, args ...interface{}) {
+	zap.S().Debugf("Could not send segment event: ", err, args)
 }
-func (c *SegmentNoopLogger) Errorf(format string, args ...interface{}) {
-	zap.S().Debug("Could not send segment event")
+func (c *SegmentNoopLogger) Errorf(err string, args ...interface{}) {
+	zap.S().Debugf("Could not send segment event: ", err, args)
 }
 
 // The Noop Implementation of Segment
