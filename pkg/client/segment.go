@@ -126,10 +126,10 @@ func (c SegmentImpl) Close() {
 }
 
 func (c *SegmentNoopLogger) Logf(format string, args ...interface{}) {
-	zap.S().Debug("Cloud not send segment event")
+	zap.S().Debug("Could not send segment event")
 }
 func (c *SegmentNoopLogger) Errorf(format string, args ...interface{}) {
-	zap.S().Debug("Cloud not send segment event")
+	zap.S().Debug("Could not send segment event")
 }
 
 // The Noop Implementation of Segment
