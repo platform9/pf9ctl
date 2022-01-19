@@ -118,7 +118,7 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 	fmt.Println("Starting detaching process")
 
 	if err := c.Segment.SendEvent("Starting detach-node", auth, "", ""); err != nil {
-		zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
+		zap.S().Debugf("Unable to send Segment event for detach node. Error: %s", err.Error())
 	}
 
 	for i := range detachNodes {
@@ -134,12 +134,12 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 		if err1 != nil {
 			if err := c.Segment.SendEvent("Detaching-node", auth, "Failed to detach node", ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
+				zap.S().Debugf("Unable to send Segment event for detach node. Error: %s", err.Error())
 			}
 			zap.S().Info("Encountered an error while detaching the", detachNodes[i].PrimaryIp, " node from a Kubernetes cluster : ", err1)
 		} else {
 			if err := c.Segment.SendEvent("Detaching-node", detachNodes[i].PrimaryIp, "Node detached", ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for detach node. Error: %s", err.Error())
+				zap.S().Debugf("Unable to send Segment event for detach node. Error: %s", err.Error())
 			}
 			zap.S().Infof("Node [%v] detached from cluster", detachNodes[i].Uuid)
 		}
