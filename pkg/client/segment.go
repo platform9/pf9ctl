@@ -31,6 +31,9 @@ type SegmentImpl struct {
 type NoopSegment struct {
 }
 
+type SegmentNoopLogger struct {
+}
+
 func NewSegment(fqdn string, noTracking bool) Segment {
 	// mock out segment if the user wants no Tracking
 	envCheck := os.Getenv("PF9CTL_SEGMENT_EVENTS_DISABLE")
@@ -44,7 +47,9 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 	if noTracking || segmentEventDisabled {
 		return NoopSegment{}
 	}
-	client := analytics.New(SegmentWriteKey)
+	client, _ := analytics.NewWithConfig(SegmentWriteKey, analytics.Config{
+		Logger: &SegmentNoopLogger{},
+	})
 
 	return SegmentImpl{
 		fqdn:   fqdn,
@@ -118,6 +123,13 @@ func InfraCheck() bool {
 
 func (c SegmentImpl) Close() {
 	c.client.Close()
+}
+
+func (c *SegmentNoopLogger) Logf(format string, args ...interface{}) {
+	zap.S().Debug("Could not send segment event")
+}
+func (c *SegmentNoopLogger) Errorf(format string, args ...interface{}) {
+	zap.S().Debug("Could not send segment event")
 }
 
 // The Noop Implementation of Segment
