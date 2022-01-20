@@ -149,6 +149,8 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 					}
 					zap.S().Infof("Worker node(s) %v attached to cluster", wokerids)
 				}
+			} else {
+				zap.S().Infof("All workers are already attached. No worker node available to attach to the cluster")
 			}
 
 		}
@@ -177,6 +179,8 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 					}
 					zap.S().Infof("Master node(s) %v attached to cluster", masterids)
 				}
+			} else {
+				zap.S().Infof("All masters are already attached. No master node available to attach to the cluster")
 			}
 
 		}
@@ -218,6 +222,7 @@ func cluster_Status(exec cmdexec.Executor, fqdn string, token string, projectID 
 	return status
 }
 
+//Check if the node being attached is already attached to any cluster
 func isConnectedToAnyCluster(exec cmdexec.Executor, fqdn string, token string, projectID string, hostId string) string {
 	zap.S().Debug("Checking if node is connected to any cluster")
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
