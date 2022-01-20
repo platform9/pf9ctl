@@ -64,7 +64,10 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 		args = append([]string{name}, args...)
 	}
 	cmd := exec.Command("sudo", args...)
+
 	cmd.Env = append(cmd.Env, httpsProxy+"="+c.ProxyUrl, noProxy+"="+c.NoProxy)
+	cmd.Env = append(cmd.Env, env_path+"="+os.Getenv("PATH"))
+
 	byt, err := cmd.Output()
 	stderr := ""
 	if exitError, ok := err.(*exec.ExitError); ok {
