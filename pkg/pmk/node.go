@@ -47,7 +47,7 @@ func sendSegmentEvent(allClients client.Client, eventStr string, auth keystone.K
 	}
 
 	if err := allClients.Segment.SendEvent(suffixStr, auth, status, errorStr); err != nil {
-		zap.S().Errorf("Unable to send Segment event for Node prep. Error: %s", err.Error())
+		zap.S().Debugf("Unable to send Segment event for Node prep. Error: %s", err.Error())
 	}
 
 	// Close the segment for error path. Cmd level closure does not work due to FatalF.
