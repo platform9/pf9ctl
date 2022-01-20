@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
@@ -120,62 +119,63 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	_, cluster_uuid, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
 	clusterStatus := cluster_Status(c.Executor, cfg.Fqdn, token, projectId, cluster_uuid)
 
-	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	spinnerMsg := fmt.Sprintf(" Attaching node to the cluster %s", clusterName)
-	s.Color("red")
-	s.Start() // Start the spinner
-	defer s.Stop()
-	s.Suffix = spinnerMsg
+	fmt.Printf("Attaching node to the cluster %s\n", clusterName)
 	if clusterStatus == "ok" {
 		//Attaching worker node(s) to cluster
 		if err := c.Segment.SendEvent("Starting Attach-node", auth, "", ""); err != nil {
 			zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
 		}
 		if len(worker_hostIds) > 0 {
+			var wokerids []string
 			for _, worker := range worker_hostIds {
-				if cname := isConnectedToAnyCluster(c.Executor, cfg.Fqdn, token, projectId, worker); cname != "" {
+				if cname := isConnectedToAnyCluster(c.Executor, cfg.Fqdn, token, projectId, worker); cname != "null" {
 					fmt.Printf("\n")
 					zap.S().Infof("Node with host id %s is connected to %s cluster", worker, cname)
 				} else {
-					err1 := c.Qbert.AttachNode(cluster_uuid, projectId, token, worker_hostIds, "worker")
-					s.Stop()
-					if err1 != nil {
-						if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach worker node", ""); err != nil {
-							zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
-						}
-						zap.S().Info("Encountered an error while attaching worker node to a Kubernetes cluster : ", err1)
-					} else {
-						if err := c.Segment.SendEvent("Attaching-node", auth, "Worker node attached", ""); err != nil {
-							zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
-						}
-						zap.S().Infof("Worker node(s) %v attached to cluster", worker_hostIds)
-						fmt.Println(color.Green("✓") + " Attached worker node(s) to the cluster")
+					wokerids = append(wokerids, worker)
+				}
+			}
+			if len(wokerids) > 0 {
+				err1 := c.Qbert.AttachNode(cluster_uuid, projectId, token, wokerids, "worker")
+
+				if err1 != nil {
+					if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach worker node", ""); err != nil {
+						zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
 					}
+					zap.S().Info("Encountered an error while attaching worker node to a Kubernetes cluster : ", err1)
+				} else {
+					if err := c.Segment.SendEvent("Attaching-node", auth, "Worker node attached", ""); err != nil {
+						zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
+					}
+					zap.S().Infof("Worker node(s) %v attached to cluster", wokerids)
 				}
 			}
 
 		}
 		//Attaching master node(s) to cluster
 		if len(master_hostIds) > 0 {
+			var masterids []string
 			for _, master := range master_hostIds {
-				if cname := isConnectedToAnyCluster(c.Executor, cfg.Fqdn, token, projectId, master); cname != "" {
+				if cname := isConnectedToAnyCluster(c.Executor, cfg.Fqdn, token, projectId, master); cname != "null" {
 					fmt.Printf("\n")
 					zap.S().Infof("Node with host id %s is connected to %s cluster", master, cname)
 				} else {
-					err1 := c.Qbert.AttachNode(cluster_uuid, projectId, token, master_hostIds, "master")
-					s.Stop()
-					if err1 != nil {
-						if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach master node", ""); err != nil {
-							zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
-						}
-						zap.S().Info("Encountered an error while attaching master node to a Kubernetes cluster : ", err1)
-					} else {
-						if err := c.Segment.SendEvent("Attaching-node", auth, "Master node attached", ""); err != nil {
-							zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
-						}
-						zap.S().Infof("Master node(s) %v attached to cluster", master_hostIds)
-						fmt.Println(color.Green("✓") + " Attached master node(s) to the cluster")
+					masterids = append(masterids, master)
+				}
+			}
+			if len(masterids) > 0 {
+				err1 := c.Qbert.AttachNode(cluster_uuid, projectId, token, masterids, "master")
+
+				if err1 != nil {
+					if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach master node", ""); err != nil {
+						zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
 					}
+					zap.S().Info("Encountered an error while attaching master node to a Kubernetes cluster : ", err1)
+				} else {
+					if err := c.Segment.SendEvent("Attaching-node", auth, "Master node attached", ""); err != nil {
+						zap.S().Errorf("Unable to send Segment event for attach node. Error: %s", err.Error())
+					}
+					zap.S().Infof("Master node(s) %v attached to cluster", masterids)
 				}
 			}
 
@@ -226,5 +226,6 @@ func isConnectedToAnyCluster(exec cmdexec.Executor, fqdn string, token string, p
 	if err != nil {
 		zap.S().Debug("Unable to check if node is connected to any cluster")
 	}
+	clusterName = strings.TrimSpace(strings.Trim(clusterName, "\n\""))
 	return clusterName
 }
