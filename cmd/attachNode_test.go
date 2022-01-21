@@ -9,7 +9,7 @@ import (
 
 func TestHostID(t *testing.T) {
 	type want struct {
-		err error
+		ip []string
 	}
 
 	type args struct {
@@ -20,39 +20,23 @@ func TestHostID(t *testing.T) {
 		args
 		want
 	}{
-		//Success case.The HostId function returns nil error on successful execution
+		//Success case.if empty slice of ips are passed will return empty slice of hostIds
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "hostid", nil
+						return "", nil
 					},
 				},
-			},
-			want: want{
-				err: nil,
-			},
-		},
-		//Failure case.The HostIP function returns error if failss
-		"CheckFail": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "", Errhostid
-					},
-				},
-			},
-			want: want{
-				err: Errhostid,
 			},
 		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-
-			_, err := hostId(tc.exec, "Fqdn", "token", masterIPs)
-			test_utils.Equals(t, tc.want.err, err)
+			//passing empty slices of ips
+			ips := hostId(tc.exec, "Fqdn", "token", masterIPs)
+			test_utils.Equals(t, tc.want.ip, ips)
 		})
 	}
 
