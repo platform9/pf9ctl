@@ -96,40 +96,32 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	projectId := auth.ProjectID
 	token := auth.Token
 
-	//master ips
-	var master_hostIds []string
-	if len(masterIPs) > 0 {
-		var err error
-		master_hostIds, err = hostId(c.Executor, cfg.Fqdn, token, masterIPs)
-		if err != nil {
-			zap.S().Fatalf("%v", err)
-		}
-	}
-
-	//worker ips
-	var worker_hostIds []string
-	if len(workerIPs) > 0 {
-		var err error
-		worker_hostIds, err = hostId(c.Executor, cfg.Fqdn, token, workerIPs)
-		if err != nil {
-			zap.S().Fatalf("%v", err)
-		}
-	}
-
 	_, cluster_uuid, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
 	clusterStatus := cluster_Status(c.Executor, cfg.Fqdn, token, projectId, cluster_uuid)
 
-	fmt.Printf("Attaching node to the cluster %s\n", clusterName)
 	if clusterStatus == "ok" {
+
+		//master ips
+		var master_hostIds []string
+		if len(masterIPs) > 0 {
+			master_hostIds = hostId(c.Executor, cfg.Fqdn, token, masterIPs)
+		}
+
+		//worker ips
+		var worker_hostIds []string
+		if len(workerIPs) > 0 {
+			worker_hostIds = hostId(c.Executor, cfg.Fqdn, token, workerIPs)
+		}
+
 		//Attaching worker node(s) to cluster
 		if err := c.Segment.SendEvent("Starting Attach-node", auth, "", ""); err != nil {
 			zap.S().Debugf("Unable to send Segment event for attach node. Error: %s", err.Error())
 		}
 		if len(worker_hostIds) > 0 {
+			fmt.Printf("Attaching node to the cluster %s\n", clusterName)
 			var wokerids []string
 			for _, worker := range worker_hostIds {
 				if cname := isConnectedToAnyCluster(c.Executor, cfg.Fqdn, token, projectId, worker); cname != "null" {
-					fmt.Printf("\n")
 					zap.S().Infof("Node with host id %s is connected to %s cluster", worker, cname)
 				} else {
 					wokerids = append(wokerids, worker)
@@ -150,16 +142,16 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 					zap.S().Infof("Worker node(s) %v attached to cluster", wokerids)
 				}
 			} else {
-				zap.S().Infof("All workers are already attached. No worker node available to attach to the cluster")
+				zap.S().Infof("No worker node available to attach to the cluster")
 			}
 
 		}
 		//Attaching master node(s) to cluster
 		if len(master_hostIds) > 0 {
+			fmt.Printf("Attaching node to the cluster %s\n", clusterName)
 			var masterids []string
 			for _, master := range master_hostIds {
 				if cname := isConnectedToAnyCluster(c.Executor, cfg.Fqdn, token, projectId, master); cname != "null" {
-					fmt.Printf("\n")
 					zap.S().Infof("Node with host id %s is connected to %s cluster", master, cname)
 				} else {
 					masterids = append(masterids, master)
@@ -180,7 +172,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 					zap.S().Infof("Master node(s) %v attached to cluster", masterids)
 				}
 			} else {
-				zap.S().Infof("All masters are already attached. No master node available to attach to the cluster")
+				zap.S().Infof("No master node available to attach to the cluster")
 			}
 
 		}
@@ -190,7 +182,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 
 }
 
-func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]string, error) {
+func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) []string {
 	zap.S().Debug("Getting host IDs")
 	var hostIdsList []string
 	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
@@ -200,13 +192,12 @@ func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) ([]s
 		hostid, _ := exec.RunWithStdout("bash", "-c", cmd)
 		hostid = strings.TrimSpace(strings.Trim(hostid, "\n"))
 		if len(hostid) == 0 {
-			Errhostid = fmt.Errorf("Unable to find host with IP %v please try again or run prep-node first", ip)
-			return hostIdsList, Errhostid
+			zap.S().Infof("Unable to find host with IP %v please try again or run prep-node first", ip)
 		} else {
 			hostIdsList = append(hostIdsList, hostid)
 		}
 	}
-	return hostIdsList, nil
+	return hostIdsList
 }
 
 func cluster_Status(exec cmdexec.Executor, fqdn string, token string, projectID string, clusterID string) string {
