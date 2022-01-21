@@ -339,7 +339,7 @@ func (d *Debian) checkIfdpkgISLock() (bool, error) {
 		if err != nil {
 			return true, nil
 		} else {
-			zap.S().Infof("Unable to acquire the dpkg lock on %s", file)
+			zap.S().Debugf("Unable to acquire the dpkg lock on %s", file)
 			return false, fmt.Errorf("Unable to acquire the dpkg")
 		}
 	}
