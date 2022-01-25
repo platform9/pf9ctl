@@ -20,7 +20,7 @@ func TestHostID(t *testing.T) {
 		args
 		want
 	}{
-		//Success case.if empty slice of ips are passed will return empty slice of hostIds
+		// Success case.if empty slice of ips are passed will return empty slice of hostIds
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -34,7 +34,7 @@ func TestHostID(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			//passing empty slices of ips
+			// passing empty slices of ips
 			ips := hostId(tc.exec, "Fqdn", "token", masterIPs)
 			test_utils.Equals(t, tc.want.ip, ips)
 		})
@@ -55,7 +55,7 @@ func TestClusterStatus(t *testing.T) {
 		args
 		want
 	}{
-		//Success case.The cluster_status function returns ok if cluster is ready
+		// Success case.The cluster_status function returns ok if cluster is ready
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -68,7 +68,7 @@ func TestClusterStatus(t *testing.T) {
 				status: "ok",
 			},
 		},
-		//Failure case.The cluster_status function returns pending if cluster is not ready
+		// Failure case.The cluster_status function returns pending if cluster is not ready
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
@@ -86,7 +86,7 @@ func TestClusterStatus(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			status := cluster_Status(tc.exec, "Fqdn", "token", "projectid", "clusterid")
+			status := fetchClusterStatus(tc.exec, "Fqdn", "token", "projectid", "clusterid")
 			test_utils.Equals(t, tc.want.status, status)
 		})
 	}
