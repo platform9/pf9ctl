@@ -93,10 +93,8 @@ var (
 
 	//Auth,Dmesg,dpkg/yum files for Debian/Redhat
 	DmesgLog = "/var/log/dmesg"
-	AuthDeb  = "/var/log/auth.log"
 	MsgDeb   = "/var/log/syslog"
 	LockDeb  = "/var/log/dpkg.log"
-	AuthRed  = "/var/log/secure"
 	MsgRed   = "/var/log/messages"
 	LockRed  = "/var/log/yum.log"
 
