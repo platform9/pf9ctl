@@ -84,6 +84,8 @@ var (
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
 
+	OptDir = "/var/opt/pf9"
+
 	//Location of ovf service file
 	OVFLoc    = "/etc/systemd/system/ovf.service"
 	VarDir    = "/var/log/pf9"
