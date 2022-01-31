@@ -240,7 +240,7 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 
 	if isRemote {
 		// Generate supportBundle if any of Etc / var logs are present or both
-		if errEtc == nil || errVar == nil {
+		if errEtc == nil || errVar == nil || errOpt == nil {
 			// Generation of supportBundle in remote host case.
 			_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar -czf %s %s %s %s %s %s %s",
 				targetfile, util.VarDir, util.EtcDir, util.DmesgLog, msgfile, lockfile, util.OptDir))
