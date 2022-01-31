@@ -84,6 +84,8 @@ var (
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
 
+	OptDir = "/var/opt/pf9"
+
 	//Location of ovf service file
 	OVFLoc    = "/etc/systemd/system/ovf.service"
 	VarDir    = "/var/log/pf9"
@@ -93,10 +95,8 @@ var (
 
 	//Auth,Dmesg,dpkg/yum files for Debian/Redhat
 	DmesgLog = "/var/log/dmesg"
-	AuthDeb  = "/var/log/auth.log"
 	MsgDeb   = "/var/log/syslog"
 	LockDeb  = "/var/log/dpkg.log"
-	AuthRed  = "/var/log/secure"
 	MsgRed   = "/var/log/messages"
 	LockRed  = "/var/log/yum.log"
 

@@ -28,7 +28,6 @@ var (
 	fileloc     string
 	err         error
 	S3_Location string
-	authfile    string
 	msgfile     string
 	lockfile    string
 	hostOS      string
@@ -204,20 +203,18 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 		zap.S().Debug("Dmesg files not Found!! ", errDmesg)
 	}
 
+	_, errOpt := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.OptDir))
+	if errOpt != nil {
+		zap.S().Debug(fmt.Sprintf("%s directory not found!!", util.OptDir))
+	}
+
 	//Assign specific files according to the platform
 	if hostOS == "debian" {
-		authfile = util.AuthDeb
 		msgfile = util.MsgDeb
 		lockfile = util.LockDeb
 	} else {
-		authfile = util.AuthRed
 		msgfile = util.MsgRed
 		lockfile = util.LockRed
-	}
-
-	_, errAuth := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", authfile))
-	if errEtc != nil {
-		zap.S().Debug("Auth files not Found!! ", errAuth)
 	}
 
 	_, errMsg := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", msgfile))
@@ -243,10 +240,10 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 
 	if isRemote {
 		// Generate supportBundle if any of Etc / var logs are present or both
-		if errEtc == nil || errVar == nil {
+		if errEtc == nil || errVar == nil || errOpt == nil {
 			// Generation of supportBundle in remote host case.
 			_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar -czf %s %s %s %s %s %s %s",
-				targetfile, util.VarDir, util.EtcDir, util.DmesgLog, authfile, msgfile, lockfile))
+				targetfile, util.VarDir, util.EtcDir, util.DmesgLog, msgfile, lockfile, util.OptDir))
 			if errbundle != nil {
 				zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle (Remote Host)", errbundle)
 			}
@@ -262,7 +259,7 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 	} else {
 		// Generation of supportBundle in local host case.
 		_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s %s %s %s %s %s %s %s",
-			targetfile, util.Pf9DirLoc, util.Pf9LogLoc, util.VarDir, util.EtcDir, util.DmesgLog, authfile, msgfile, lockfile))
+			targetfile, util.Pf9DirLoc, util.Pf9LogLoc, util.VarDir, util.EtcDir, util.DmesgLog, msgfile, lockfile, util.OptDir))
 		if errbundle != nil {
 			zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle", errbundle)
 			return targetfile, ErrPartialBundle
