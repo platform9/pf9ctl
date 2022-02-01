@@ -39,7 +39,7 @@ func (c *CentOS) Check() []platform.Check {
 	result, err := c.removePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
-	result, err = c.checkExistingInstallation()
+	result, err = c.CheckExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", true, result, err, util.ExisitngInstallationErr})
 
 	result, err = c.checkOSPackages()
@@ -60,17 +60,14 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.checkPort()
 	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = c.checkKubernetesCluster()
+	result, err = c.CheckKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
-
-	result, err = c.checkNoexecPermission()
-	checks = append(checks, platform.Check{"Check exec permission on /tmp", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.checkPIDofSystemd()
 	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.checkFirewalldIsRunning()
-	checks = append(checks, platform.Check{"Check if firewalld service is running", false, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
 		result, err = c.disableSwap()
@@ -80,7 +77,7 @@ func (c *CentOS) Check() []platform.Check {
 	return checks
 }
 
-func (c *CentOS) checkKubernetesCluster() (bool, error) {
+func (c *CentOS) CheckKubernetesCluster() (bool, error) {
 	for _, proc := range util.ProcessesList {
 		//Checking if kubernetes process is running on the host or not
 		_, err := c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -A | grep -i %s", proc))
@@ -108,7 +105,7 @@ func (c *CentOS) checkDocker() error {
 	return err
 }
 
-func (c *CentOS) checkExistingInstallation() (bool, error) {
+func (c *CentOS) CheckExistingInstallation() (bool, error) {
 
 	var (
 		out string
@@ -206,7 +203,7 @@ func (c *CentOS) checkMem() (bool, error) {
 }
 
 func (c *CentOS) checkDisk() (bool, error) {
-	diskS, err := c.exec.RunWithStdout("bash", "-c", "df -k . --output=size | sed 1d | xargs | tr -d '\\n'")
+	diskS, err := c.exec.RunWithStdout("bash", "-c", "df -k / --output=size | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -222,7 +219,7 @@ func (c *CentOS) checkDisk() (bool, error) {
 
 	zap.S().Debug("Total disk space: ", disk)
 
-	availS, err := c.exec.RunWithStdout("bash", "-c", "df -k . --output=avail | sed 1d | xargs | tr -d '\\n'")
+	availS, err := c.exec.RunWithStdout("bash", "-c", "df -k / --output=avail | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -292,7 +289,7 @@ func (c *CentOS) Version() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[3]\.*`, string(out)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
@@ -301,7 +298,7 @@ func (c *CentOS) Version() (string, error) {
 
 func (c *CentOS) installOSPackages(p string) error {
 	zap.S().Debug("Trying yum update...")
-	_, err := c.exec.RunWithStdout("bash", "-c", "yum update -y -q")
+	_, err := c.exec.RunWithStdout("bash", "-c", "yum clean all -q")
 	if err != nil {
 		return err
 	}
@@ -320,15 +317,6 @@ func (c *CentOS) disableSwap() (bool, error) {
 	}
 }
 
-func (c *CentOS) checkNoexecPermission() (bool, error) {
-	_, err := c.exec.RunWithStdout("bash", "-c", `mount | grep ' /tmp ' | grep 'noexec'`)
-	if err != nil {
-		return true, nil
-	} else {
-		return false, errors.New("/tmp is not having exec permission")
-	}
-}
-
 func (c *CentOS) checkPIDofSystemd() (bool, error) {
 	_, err := c.exec.RunWithStdout("bash", "-c", "ps -p 1 -o comm= | grep systemd")
 	if err != nil {
@@ -339,10 +327,10 @@ func (c *CentOS) checkPIDofSystemd() (bool, error) {
 }
 
 func (c *CentOS) checkFirewalldIsRunning() (bool, error) {
-	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld | grep 'inactive'")
+	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld")
 	if err != nil {
-		return false, errors.New("firewalld service is running")
-	} else {
 		return true, nil
+	} else {
+		return false, errors.New("firewalld service is running")
 	}
 }

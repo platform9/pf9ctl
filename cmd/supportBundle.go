@@ -4,9 +4,13 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/platform9/pf9ctl/pkg/client"
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
-	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/config"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -14,70 +18,73 @@ import (
 )
 
 // supportBundleCmd represents the supportBundle command
-var supportBundleCmd = &cobra.Command{
-	Use:   "bundle",
-	Short: "Gathers support bundle and uploads to S3",
-	Long:  `Gathers support bundle that includes logs for pf9 services and pf9ctl, uploads to S3 `,
-	Run:   supportBundleUpload,
-}
+var (
+	supportBundleCmd = &cobra.Command{
+		Use:   "bundle",
+		Short: "Gathers support bundle and uploads to S3",
+		Long:  `Gathers support bundle that includes logs for pf9 services and pf9ctl, uploads to S3 `,
+		Run:   supportBundleUpload,
+	}
+
+	bundleConfig objects.NodeConfig
+)
 
 //This initialization is using create commands which is not in use for now.
 func init() {
-	supportBundleCmd.Flags().StringVarP(&user, "user", "u", "", "ssh username for the nodes")
-	supportBundleCmd.Flags().StringVarP(&password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
-	supportBundleCmd.Flags().StringVarP(&sshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	supportBundleCmd.Flags().StringSliceVarP(&ips, "ip", "i", []string{}, "IP address of host to be prepared")
+	supportBundleCmd.Flags().StringVarP(&bundleConfig.User, "user", "u", "", "ssh username for the nodes")
+	supportBundleCmd.Flags().StringVarP(&bundleConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
+	supportBundleCmd.Flags().StringVarP(&bundleConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
+	supportBundleCmd.Flags().StringSliceVarP(&bundleConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
+	supportBundleCmd.Flags().StringVar(&bundleConfig.MFA, "mfa", "", "MFA token")
+	supportBundleCmd.Flags().StringVarP(&bundleConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 
 	rootCmd.AddCommand(supportBundleCmd)
 }
 
 func supportBundleUpload(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running supportBundleUpload==========")
-	// This flag is used to loop back if user enters invalid credentials during config set.
-	credentialFlag = true
-	// To bail out if loop runs recursively more than thrice
-	pmk.LoopCounter = 0
 
-	for credentialFlag {
+	detachedMode := cmd.Flags().Changed("no-prompt")
+	isRemote := cmdexec.CheckRemote(bundleConfig)
 
-		ctx, err = pmk.LoadConfig(util.Pf9DBLoc)
-		if err != nil {
-			zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	if isRemote {
+		if !config.ValidateNodeConfig(&bundleConfig, !detachedMode) {
+			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
+	}
 
-		executor, err := getExecutor(ctx.ProxyURL)
-		if err != nil {
-			zap.S().Debug("Error connecting to host %s", err.Error())
-			zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
-		}
+	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: bundleConfig.MFA}
+	var err error
+	if detachedMode {
+		err = config.LoadConfig(util.Pf9DBLoc, cfg, bundleConfig)
+	} else {
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, bundleConfig)
+	}
+	if err != nil {
+		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
+	}
+	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 
-		c, err = pmk.NewClient(ctx.Fqdn, executor, ctx.AllowInsecure, false)
-		if err != nil {
-			zap.S().Fatalf("Unable to load clients needed for the Cmd. Error: %s", err.Error())
-		}
+	var executor cmdexec.Executor
+	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, bundleConfig); err != nil {
+		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
+	}
 
-		// Validate the user credentials entered during config set and will loop back again if invalid
-		if err := validateUserCredentials(ctx, c); err != nil {
-			clearContext(&pmk.Context)
-			//Check if no or invalid config exists, then bail out if asked for correct config for maxLoop times.
-			err = configValidation(RegionInvalid, pmk.LoopCounter)
-		} else {
-			// We will store the set config if its set for first time using check-node
-			if pmk.IsNewConfig {
-				if err := pmk.StoreConfig(ctx, util.Pf9DBLoc); err != nil {
-					zap.S().Errorf("Failed to store config: %s", err.Error())
-				} else {
-					pmk.IsNewConfig = false
-				}
-			}
-			credentialFlag = false
-		}
+	var c client.Client
+	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
 	defer c.Segment.Close()
 
+	if isRemote {
+		if err := SudoPasswordCheck(executor, detachedMode, bundleConfig.SudoPassword); err != nil {
+			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
+		}
+	}
+
 	zap.S().Info("==========Uploading supportBundle to S3 bucket==========")
-	err := supportBundle.SupportBundleUpload(ctx, c)
+	err = supportBundle.SupportBundleUpload(*cfg, c, isRemote)
 	if err != nil {
 		zap.S().Infof("Failed to upload pf9ctl supportBundle to %s bucket!!", supportBundle.S3_BUCKET_NAME)
 	} else {

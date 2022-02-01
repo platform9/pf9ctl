@@ -2,11 +2,12 @@ package keystone_test
 
 import (
 	"bytes"
-	. "github.com/platform9/pf9ctl/pkg/keystone"
-	. "github.com/platform9/pf9ctl/pkg/test_utils"
 	"io/ioutil"
 	"net/http"
 	"testing"
+
+	. "github.com/platform9/pf9ctl/pkg/keystone"
+	. "github.com/platform9/pf9ctl/pkg/test_utils"
 )
 
 // RoundTripFunc .

@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -21,6 +23,10 @@ type CNIBackend string
 type Qbert interface {
 	CreateCluster(r ClusterCreateRequest, projectID, token string) (string, error)
 	AttachNode(clusterID, projectID, token string, nodeIDs []string, nodetype string) error
+	DetachNode(clusterID, projectID, token string, nodeID string) error
+	DeleteCluster(clusterID, projectID, token string) error
+	DeauthoriseNode(nodeUuid, token string) error
+	AuthoriseNode(nodeUuid, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
 	CheckClusterExists(Name, projectID, token string) (bool, string, error)
 }
@@ -133,9 +139,57 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 		"%s/qbert/v3/%s/clusters/%s/attach",
 		c.fqdn, projectID, clusterID)
 
+	resp, err := Attach_Status(attachEndpoint, token, byt)
+	if err != nil {
+		return err
+	}
+
+	LoopVariable := 1
+	for LoopVariable <= util.MaxRetryValue {
+		if resp.StatusCode != 200 {
+			time.Sleep(30 * time.Second)
+			zap.S().Debug("Trying to attach-node to cluster")
+			resp, err = Attach_Status(attachEndpoint, token, byt)
+			if err != nil {
+				return err
+			}
+			LoopVariable = LoopVariable + 1
+		} else {
+			break
+		}
+	}
+	if resp.StatusCode != 200 {
+		respString, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Errorf("Error occured while converting response body to string")
+		}
+		zap.S().Debug(string(respString))
+		return fmt.Errorf("%v", string(respString))
+	}
+	return nil
+}
+
+func (c QbertImpl) DetachNode(clusterID, projectID, token string, nodeID string) error {
+	zap.S().Debugf("Detaching the node: %s from cluster: %s", nodeID, clusterID)
+
+	var p []map[string]interface{}
+
+	p = append(p, map[string]interface{}{
+		"uuid": nodeID,
+	})
+
+	byt, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Errorf("Unable to marshal payload: %s", err.Error())
+	}
+
+	detachEndpoint := fmt.Sprintf(
+		"%s/qbert/v3/%s/clusters/%s/detach",
+		c.fqdn, projectID, clusterID)
+
 	client := http.Client{}
 
-	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	req, err := http.NewRequest("POST", detachEndpoint, strings.NewReader(string(byt)))
 	if err != nil {
 		return fmt.Errorf("Unable to create a request: %w", err)
 	}
@@ -145,6 +199,106 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Unable to POST request through client: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respString, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Info("Error occured while converting response body to string")
+		}
+		zap.S().Debug(string(respString))
+		return fmt.Errorf("%v", string(respString))
+	}
+	return nil
+}
+
+func (c QbertImpl) DeleteCluster(clusterID, projectID, token string) error {
+	zap.S().Debugf("Deleting the %s cluster: ", clusterID)
+
+	deleteEndpoint := fmt.Sprintf(
+		"%s/qbert/v3/%s/clusters/%s",
+		c.fqdn, projectID, clusterID)
+
+	client := http.Client{}
+
+	req, err := http.NewRequest("DELETE", deleteEndpoint, strings.NewReader(""))
+	if err != nil {
+		return fmt.Errorf("Unable to create a request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	//req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to DELETE request through client: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respString, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Info("Error occured while converting response body to string")
+		}
+		zap.S().Debug(string(respString))
+		return fmt.Errorf("%v", string(respString))
+	}
+	return nil
+}
+
+func (c QbertImpl) DeauthoriseNode(nodeUuid, token string) error {
+	zap.S().Debugf("Deauthorising the %s node: ", nodeUuid)
+
+	deleteEndpoint := fmt.Sprintf(
+		"%s/resmgr/v1/hosts/%s",
+		c.fqdn, nodeUuid)
+
+	client := http.Client{}
+
+	req, err := http.NewRequest("DELETE", deleteEndpoint, strings.NewReader(""))
+	if err != nil {
+		return fmt.Errorf("Unable to create a request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to DELETE request through client: %w", err)
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		respString, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Info("Error occured while converting response body to string")
+		}
+		zap.S().Debug(string(respString))
+		return fmt.Errorf("%v", string(respString))
+	}
+	return nil
+}
+
+func (c QbertImpl) AuthoriseNode(nodeUuid, token string) error {
+	zap.S().Debugf("Authorising the %s node: ", nodeUuid)
+
+	deleteEndpoint := fmt.Sprintf(
+		"%s/resmgr/v1/hosts/%s/roles/pf9-kube",
+		c.fqdn, nodeUuid)
+
+	client := http.Client{}
+
+	req, err := http.NewRequest("PUT", deleteEndpoint, strings.NewReader(""))
+	if err != nil {
+		return fmt.Errorf("Unable to create a request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to PUT request through client: %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -231,4 +385,25 @@ func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, stri
 	}
 
 	return false, "", nil
+}
+
+//Function to Check status of attach-node API
+func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Response, error) {
+	client := http.Client{}
+	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
+	if err != nil {
+		zap.S().Debugf("Unable to create a request: ", err)
+		return nil, fmt.Errorf("Unable to create a request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.S().Debugf("Unable to POST request through client: ", err)
+		return resp, fmt.Errorf("Unable to POST request through client: %w", err)
+	}
+
+	defer resp.Body.Close()
+	return resp, nil
 }

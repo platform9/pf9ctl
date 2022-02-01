@@ -1,6 +1,6 @@
 // Copyright © 2020 The Platform9 Systems Inc.
 
-package pmk
+package client
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 	"gopkg.in/segmentio/analytics-go.v3"
 )
@@ -30,6 +31,9 @@ type SegmentImpl struct {
 type NoopSegment struct {
 }
 
+type SegmentNoopLogger struct {
+}
+
 func NewSegment(fqdn string, noTracking bool) Segment {
 	// mock out segment if the user wants no Tracking
 	envCheck := os.Getenv("PF9CTL_SEGMENT_EVENTS_DISABLE")
@@ -43,7 +47,9 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 	if noTracking || segmentEventDisabled {
 		return NoopSegment{}
 	}
-	client := analytics.New(SegmentWriteKey)
+	client, _ := analytics.NewWithConfig(SegmentWriteKey, analytics.Config{
+		Logger: &SegmentNoopLogger{},
+	})
 
 	return SegmentImpl{
 		fqdn:   fqdn,
@@ -52,6 +58,15 @@ func NewSegment(fqdn string, noTracking bool) Segment {
 }
 
 func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err string) error {
+	//To differentiate between OVA and non-OVA node
+	var infra string
+	ovfservicepresent := InfraCheck()
+	if ovfservicepresent {
+		infra = "OVA"
+	} else {
+		infra = "CLI"
+	}
+
 	zap.S().Debug("Sending Segment Event: ", name)
 	data_struct, ok := data.(keystone.KeystoneAuth)
 	if ok {
@@ -63,6 +78,7 @@ func (c SegmentImpl) SendEvent(name string, data interface{}, status string, err
 				Set("dufqdn", data_struct.DUFqdn).
 				Set("email", data_struct.Email).
 				Set("status", status).
+				Set("infra", infra).
 				Set("errorMsg", err),
 			Integrations: analytics.NewIntegrations().Set("Amplitude", map[string]interface{}{
 				"session_id": time.Now().Unix(),
@@ -90,8 +106,30 @@ func (c SegmentImpl) SendGroupTraits(name string, data interface{}) error {
 	}
 }
 
+func InfraCheck() bool {
+	//Checking for OVF Service to determine infrastructure for node onboarding
+	var ovfservice bool
+	_, err1 := os.Stat(util.OVFLoc)
+	if err1 != nil {
+		zap.S().Debugf("OVF Service not present")
+		ovfservice = false
+
+	} else {
+		zap.S().Debugf("Node onboarded through OVA")
+		ovfservice = true
+	}
+	return ovfservice
+}
+
 func (c SegmentImpl) Close() {
 	c.client.Close()
+}
+
+func (c *SegmentNoopLogger) Logf(err string, args ...interface{}) {
+	zap.S().Debugf("Could not send segment event: ", err, args)
+}
+func (c *SegmentNoopLogger) Errorf(err string, args ...interface{}) {
+	zap.S().Debugf("Could not send segment event: ", err, args)
 }
 
 // The Noop Implementation of Segment

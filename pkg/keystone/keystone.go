@@ -74,10 +74,6 @@ func (k KeystoneImpl) GetAuth(
 		if err != nil {
 			return auth, err
 		}
-	}
-	auth.DUFqdn = k.fqdn
-	return auth, nil
-}
 
 func requestKeystone(clientOpts gophercloud.AuthOptions, tokenOpts tokens.AuthOptions) (auth KeystoneAuth, err error) {
 	provider, err := openstack.AuthenticatedClient(clientOpts)

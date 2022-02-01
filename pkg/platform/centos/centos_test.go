@@ -338,7 +338,7 @@ func TestExistingInstallation(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, err := c.checkExistingInstallation()
+			o, err := c.CheckExistingInstallation()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
@@ -504,7 +504,7 @@ func TestCheckKubernetesCluster(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, err := c.checkKubernetesCluster()
+			o, err := c.CheckKubernetesCluster()
 
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
@@ -614,56 +614,6 @@ func TestDisableSwap(t *testing.T) {
 	}
 }
 
-func TestNoexecPermissionCheck(t *testing.T) {
-	type want struct {
-		result bool
-		err    error
-	}
-
-	cases := map[string]struct {
-		args
-		want
-	}{
-		//Success case. successful execution of grep command returns error.
-		"CheckPass": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "0", nil
-					},
-				},
-			},
-			want: want{
-				result: false,
-				err:    errors.New("/tmp is not having exec permission"),
-			},
-		},
-		//Failure case. if output of grep command is empty then it returns nil error.
-		"CheckFail": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1", errors.New("ERROR")
-					},
-				},
-			},
-			want: want{
-				result: true,
-				err:    nil,
-			},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-			c := &CentOS{exec: tc.exec}
-			result, err := c.checkNoexecPermission()
-			assert.Equal(t, tc.result, result)
-			assert.Equal(t, tc.err, err)
-		})
-	}
-}
-
 func TestPIDofSystemdCheck(t *testing.T) {
 	type want struct {
 		result bool
@@ -734,8 +684,8 @@ func TestCheckFirewalldService(t *testing.T) {
 				},
 			},
 			want: want{
-				result: true,
-				err:    nil,
+				result: false,
+				err:    errors.New("firewalld service is running"),
 			},
 		},
 		//Failure case. if firewalld service is running then print message service is running.
@@ -748,8 +698,8 @@ func TestCheckFirewalldService(t *testing.T) {
 				},
 			},
 			want: want{
-				result: false,
-				err:    errors.New("firewalld service is running"),
+				result: true,
+				err:    nil,
 			},
 		},
 	}

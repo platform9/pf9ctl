@@ -1,14 +1,15 @@
 // Copyright © 2020 The Platform9 Systems Inc.
-package pmk
+package client
 
 import (
-	"github.com/platform9/pf9ctl/pkg/qbert"
-	"github.com/platform9/pf9ctl/pkg/keystone"
-	"github.com/platform9/pf9ctl/pkg/resmgr"
-	"github.com/platform9/pf9ctl/pkg/cmdexec"
-	"net/http"
 	"crypto/tls"
+	"net/http"
 	"time"
+
+	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/qbert"
+	"github.com/platform9/pf9ctl/pkg/resmgr"
 )
 
 const HTTPMaxRetry = 15

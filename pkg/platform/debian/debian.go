@@ -38,7 +38,7 @@ func (d *Debian) Check() []platform.Check {
 	result, err := d.removePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
-	result, err = d.checkExistingInstallation()
+	result, err = d.CheckExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", true, result, err, util.ExisitngInstallationErr})
 
 	result, err = d.checkOSPackages()
@@ -59,11 +59,8 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkPort()
 	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = d.checkKubernetesCluster()
+	result, err = d.CheckKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
-
-	result, err = d.checkNoexecPermission()
-	checks = append(checks, platform.Check{"Check exec permission on /tmp", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkIfdpkgISLock()
 	checks = append(checks, platform.Check{"Check lock on dpkg", true, result, err, fmt.Sprintf("%s", err)})
@@ -74,11 +71,11 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.checkPIDofSystemd()
 	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = d.checkIfSystemdTimesyncdServiceRunning()
-	checks = append(checks, platform.Check{"Check time synchronization", true, result, err, fmt.Sprintf("%s", err)})
+	result, err = d.checkIfTimesyncServiceRunning()
+	checks = append(checks, platform.Check{"Check time synchronization", false, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkFirewalldIsRunning()
-	checks = append(checks, platform.Check{"Check if firewalld service is running", false, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
 		result, err = d.disableSwap()
@@ -87,7 +84,7 @@ func (d *Debian) Check() []platform.Check {
 	return checks
 }
 
-func (d *Debian) checkKubernetesCluster() (bool, error) {
+func (d *Debian) CheckKubernetesCluster() (bool, error) {
 	for _, proc := range util.ProcessesList {
 		//Checking if kubernetes process is running on the host or not
 		_, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -A | grep -i %s", proc))
@@ -115,7 +112,7 @@ func (d *Debian) checkDocker() error {
 	return err
 }
 
-func (d *Debian) checkExistingInstallation() (bool, error) {
+func (d *Debian) CheckExistingInstallation() (bool, error) {
 
 	var (
 		out string
@@ -215,7 +212,7 @@ func (d *Debian) checkMem() (bool, error) {
 }
 
 func (d *Debian) checkDisk() (bool, error) {
-	diskS, err := d.exec.RunWithStdout("bash", "-c", "df -k . --output=size | sed 1d | xargs | tr -d '\\n'")
+	diskS, err := d.exec.RunWithStdout("bash", "-c", "df -k / --output=size | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -231,7 +228,7 @@ func (d *Debian) checkDisk() (bool, error) {
 
 	zap.S().Debug("Total disk space: ", disk)
 
-	availS, err := d.exec.RunWithStdout("bash", "-c", "df -k . --output=avail | sed 1d | xargs | tr -d '\\n'")
+	availS, err := d.exec.RunWithStdout("bash", "-c", "df -k / --output=avail | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
 	}
@@ -295,17 +292,22 @@ func (d *Debian) Version() (string, error) {
 	//using grep command os name and version are searched (pretty_name)
 	//using cut command required field is selected
 	//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
-	out, err := d.exec.RunWithStdout(
-		"bash",
-		"-c",
-		"cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
+	majorVersion, minorVersion, _, err := d.getVersion()
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if strings.Contains(string(out), "16") || strings.Contains(string(out), "18") || strings.Contains(string(out), "20") {
+	var isVersionMatch bool
+	if strings.Contains(string(majorVersion), "16") && strings.Contains(string(minorVersion), "04") {
+		isVersionMatch = true
+	} else if strings.Contains(string(majorVersion), "18") && strings.Contains(string(minorVersion), "04") {
+		isVersionMatch = true
+	} else if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
+		isVersionMatch = true
+	}
+	if isVersionMatch {
 		return "debian", nil
 	}
-	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
+	return "", fmt.Errorf("Unable to determine OS type")
 }
 
 func (d *Debian) installOSPackages(p string) error {
@@ -329,15 +331,6 @@ func (d *Debian) disableSwap() (bool, error) {
 	}
 }
 
-func (d *Debian) checkNoexecPermission() (bool, error) {
-	_, err := d.exec.RunWithStdout("bash", "-c", `mount | grep ' /tmp ' | grep 'noexec'`)
-	if err != nil {
-		return true, nil
-	} else {
-		return false, errors.New("/tmp is not having exec permission")
-	}
-}
-
 func (d *Debian) checkIfdpkgISLock() (bool, error) {
 
 	var f = []string{"lock", "lock-frontend"}
@@ -346,7 +339,7 @@ func (d *Debian) checkIfdpkgISLock() (bool, error) {
 		if err != nil {
 			return true, nil
 		} else {
-			zap.S().Infof("Unable to acquire the dpkg lock on %s", file)
+			zap.S().Debugf("Unable to acquire the dpkg lock on %s", file)
 			return false, fmt.Errorf("Unable to acquire the dpkg")
 		}
 	}
@@ -371,36 +364,165 @@ func (d *Debian) checkPIDofSystemd() (bool, error) {
 	}
 }
 
-func (d *Debian) checkIfSystemdTimesyncdServiceRunning() (bool, error) {
-	zap.S().Debug("Checking if systemd-timesyncd service is running")
-	if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl status systemd-timesyncd | grep 'active (running)'"); err != nil {
-		zap.S().Debug("systemd-timesyncd is not running. checking for ntp")
-		_, err := d.exec.RunWithStdout("bash", "-c", "systemctl status ntp | grep 'active (running)'")
+func (d *Debian) checkIfTimesyncServiceRunning() (bool, error) {
+
+	err := d.checkIfAnyTimeSyncServiceIsRunning()
+	if err != nil {
+		err := d.DownloadAndInstallTimesyncPkg()
 		if err != nil {
-			zap.S().Debug("NTP service is not running")
-			zap.S().Debug("Starting systemd-timesyncd service")
-			if _, err := d.exec.RunWithStdout("bash", "-c", "systemctl start systemd-timesyncd"); err != nil {
-				zap.S().Debug("Failed to start systemd-timesyncd")
-				return false, errors.New("Failed to start systemd-timesyncd")
+			zap.S().Debug("error installing timesync package")
+			return false, err
+		} else {
+			zap.S().Debug("installed timesync package")
+			majorVersion, minorVersion, _, err1 := d.getVersion()
+			if err1 != nil {
+				zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
+			}
+			var err error
+			if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
+				err = d.start("systemd-timesyncd")
 			} else {
-				zap.S().Debug("Started systemd-timesyncd service")
+				err = d.start("ntp")
+			}
+			if err != nil {
+				return false, err
+			} else {
 				return true, nil
 			}
-		} else {
-			zap.S().Debug("NTP service is running.")
-			return true, nil
+
 		}
 	} else {
-		zap.S().Debug("systemd-timesyncd service is running.")
 		return true, nil
+	}
+
+}
+
+func (d *Debian) checkIfAnyTimeSyncServiceIsRunning() error {
+	var timeSyncPkgs = []string{"systemd-timesyncd.service", "ntp.service", "chrony.service"}
+	var err error
+	for _, service := range timeSyncPkgs {
+		err = d.IsPresent(service)
+		if err != nil {
+			zap.S().Debugf("%s is not present. checking for another service", service)
+		} else {
+			err = d.IsRunning(service)
+			if err != nil {
+				err = d.start(service)
+				if err != nil {
+					return err
+				} else {
+					return nil
+				}
+			} else {
+				return nil
+			}
+		}
+	}
+	return err
+}
+
+func (d *Debian) getVersion() (string, string, string, error) {
+	version, err := d.exec.RunWithStdout("bash", "-c", "cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
+	if err != nil {
+		return "", "", "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
+	}
+	major, minor, patch := split(version, ".")
+	return major, minor, patch, nil
+}
+
+func split(version, delimiter string) (string, string, string) {
+	versionArray := strings.Split(version, delimiter)
+	if len(versionArray) < 2 {
+		return versionArray[0], "", ""
+	}
+	if len(versionArray) < 3 {
+		return versionArray[0], versionArray[1], ""
+	}
+	return versionArray[0], versionArray[1], versionArray[2]
+}
+
+func (d *Debian) IsPresent(service string) error {
+	zap.S().Debugf("checking if %s is present", service)
+	var cmd string
+	majorVersion, minorVersion, _, err1 := d.getVersion()
+	if err1 != nil {
+		zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
+	}
+	if strings.Contains(string(majorVersion), "16") && strings.Contains(string(minorVersion), "04") {
+		cmd = fmt.Sprintf(`systemctl status %s | grep 'not-found'`, service)
+		_, err := d.exec.RunWithStdout("bash", "-c", cmd)
+		if err != nil {
+			zap.S().Debugf("%s is present", service)
+			return nil
+		} else {
+			zap.S().Debugf("%s is not present", service)
+			return fmt.Errorf("%s is not present", service)
+		}
+	} else {
+		cmd = fmt.Sprintf(`systemctl list-unit-files %s | grep '%s'`, service, service)
+		_, err := d.exec.RunWithStdout("bash", "-c", cmd)
+		if err != nil {
+			zap.S().Debugf("%s is not present", service)
+			return err
+		} else {
+			zap.S().Debugf("%s is present", service)
+			return nil
+		}
+	}
+
+}
+
+func (d *Debian) IsRunning(service string) error {
+	zap.S().Debugf("checking if %s is running", service)
+	cmd := fmt.Sprintf("systemctl is-active %s", service)
+	_, err := d.exec.RunWithStdout("bash", "-c", cmd)
+	if err != nil {
+		zap.S().Debugf("%s is not running", service)
+		return err
+	} else {
+		zap.S().Debugf("%s is running", service)
+		return nil
+	}
+}
+
+func (d *Debian) start(service string) error {
+	zap.S().Debugf("starting %s", service)
+	cmd := fmt.Sprintf("systemctl start %s", service)
+	_, err := d.exec.RunWithStdout("bash", "-c", cmd)
+	if err != nil {
+		zap.S().Debugf("failed to start %s", service)
+		return err
+	} else {
+		zap.S().Debugf("%s is started", service)
+		return nil
+	}
+}
+
+func (d *Debian) DownloadAndInstallTimesyncPkg() error {
+	zap.S().Debug("timesync package not found installing timesync package")
+	majorVersion, minorVersion, _, err1 := d.getVersion()
+	if err1 != nil {
+		zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
+	}
+	var err error
+	if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
+		err = d.installOSPackages("systemd-timesyncd")
+	} else {
+		err = d.installOSPackages("ntp")
+	}
+
+	if err != nil {
+		return errors.New("could not install timesync package")
+	} else {
+		return nil
 	}
 }
 
 func (d *Debian) checkFirewalldIsRunning() (bool, error) {
-	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld | grep 'inactive'")
+	_, err := d.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld")
 	if err != nil {
-		return false, errors.New("firewalld service is running")
-	} else {
 		return true, nil
+	} else {
+		return false, errors.New("firewalld service is running")
 	}
 }
