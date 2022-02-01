@@ -74,7 +74,7 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 	nodeIPs = append(nodeIPs, getIp().String())
 
 	token := auth.Token
-	nodeUuids, _ := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
+	nodeUuids := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
 
 	if len(nodeUuids) == 0 {
 		zap.S().Fatalf("Could not find the node. Check if the node associated with this account")

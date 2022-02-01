@@ -63,7 +63,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	}
 
 	if err = allClients.Segment.SendEvent("Starting CheckNode", auth, checkPass, ""); err != nil {
-		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+		zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 
 	s.Start() // Start the spinner
@@ -84,14 +84,14 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 		if check.Result {
 			segment_str := "CheckNode: " + check.Name
 			if err := allClients.Segment.SendEvent(segment_str, auth, checkPass, ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+				zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
 			fmt.Printf(color.Green("✓ ")+"%s\n", check.Name)
 
 		} else {
 			segment_str := "CheckNode: " + check.Name
 			if err := allClients.Segment.SendEvent(segment_str, auth, checkFail, check.UserErr); err != nil {
-				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+				zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
 			// To print warning "!", if --skipchecks flag passed and optional checks failed.
 			if WarningOptionalChecks && !check.Mandatory {
@@ -113,7 +113,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	}
 
 	if err = allClients.Segment.SendEvent("CheckNode complete", auth, checkPass, ""); err != nil {
-		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+		zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 	fmt.Printf("\n")
 	if mandatoryCheck {
