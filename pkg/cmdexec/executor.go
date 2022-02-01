@@ -3,13 +3,14 @@ package cmdexec
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/platform9/pf9ctl/pkg/util"
-
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/ssh"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -54,6 +55,7 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 	}
 	cmd := exec.Command("sudo", args...)
 	cmd.Env = append(cmd.Env, httpsProxy+"="+c.ProxyUrl)
+	cmd.Env = append(cmd.Env, env_path+"="+os.Getenv("PATH"))
 	byt, err := cmd.Output()
 	stderr := ""
 	if exitError, ok := err.(*exec.ExitError); ok {
@@ -66,7 +68,7 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 		command = fmt.Sprintf("%s \"%s\"", command, arg)
 	}
 
-        // Avoid confidential info in the command from getting logged
+	// Avoid confidential info in the command from getting logged
 	command = ConfidentialInfoRemover(command)
 	zap.S().Debug("Ran command sudo", command)
 
@@ -137,4 +139,29 @@ func ConfidentialInfoRemover(cmd string) string {
 		}
 	}
 	return cmd
+}
+
+func GetExecutor(proxyURL string, nc objects.NodeConfig) (Executor, error) {
+	if CheckRemote(nc) {
+		var pKey []byte
+		var err error
+		if nc.SshKey != "" {
+			pKey, err = ioutil.ReadFile(nc.SshKey)
+			if err != nil {
+				zap.S().Fatalf("Unable to read the sshKey %s, %s", nc.SshKey, err.Error())
+			}
+		}
+		return NewRemoteExecutor(nc.IPs[0], 22, nc.User, pKey, nc.Password, proxyURL)
+	}
+	zap.S().Debug("Using local executor")
+	return LocalExecutor{ProxyUrl: proxyURL}, nil
+}
+
+func CheckRemote(nc objects.NodeConfig) bool {
+	for _, ip := range nc.IPs {
+		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
+			return true
+		}
+	}
+	return false
 }

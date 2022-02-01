@@ -16,6 +16,7 @@ import (
 
 var cfgFile string
 var verbosity bool
+var detach bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -36,8 +37,8 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := initializeBaseDirs(); err != nil {
-		fmt.Printf("Base directory initialization failed: %s\n", err.Error())
-		os.Exit(1)
+		// Fatalf does the same as Printf and os.Exit
+		zap.S().Fatalf("Base directory initialization failed: %s\n", err.Error())
 	}
 
 	if err := rootCmd.Execute(); err != nil {
@@ -62,6 +63,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().BoolVar(&verbosity, "verbose", false, "print verbose logs")
+	rootCmd.PersistentFlags().BoolVar(&detach, "no-prompt", false, "disable all user prompts")
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pf9ctl.yaml)")
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

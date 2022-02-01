@@ -4,15 +4,16 @@ package pmk
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
+	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/color"
+	"github.com/platform9/pf9ctl/pkg/keystone"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
-	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -29,8 +30,13 @@ const (
 	OptionalFail CheckNodeResult = "optionalFail"
 )
 
+/* This flag is set true, to have warning "!" message,
+when user passes --skip-checks and optional checks fails.
+*/
+var WarningOptionalChecks bool
+
 // CheckNode checks the prerequisites for k8s stack
-func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
+func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth) (CheckNodeResult, error) {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
@@ -53,32 +59,11 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	case "redhat":
 		platform = centos.NewCentOS(allClients.Executor)
 	default:
-		return RequiredFail, fmt.Errorf("This OS is not supported. Supported operating systems are: Ubuntu (16.04, 18.04, 20.04), CentOS (7.x, 8.3) & RHEL 7.x")
-	}
-
-	// Fetch the keystone token.
-	// This is used as a reference to the segment event.
-	auth, err := allClients.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-		ctx.MfaToken,
-	)
-
-	if err != nil {
-		// Certificate expiration is detected by the http library and
-		// only error object gets populated, which means that the http
-		// status code does not reflect the actual error code.
-		// So parsing the err to check for certificate expiration.
-		if strings.Contains(strings.ToLower(err.Error()), util.CertsExpireErr) {
-
-			return RequiredFail, fmt.Errorf("Possible clock skew detected. Check the system time and retry.")
-		}
-		return RequiredFail, fmt.Errorf("Unable to obtain keystone credentials: %s", err.Error())
+		return RequiredFail, fmt.Errorf("This OS is not supported. Supported operating systems are: Ubuntu (16.04, 18.04, 20.04), CentOS 7.x & RHEL 7.x")
 	}
 
 	if err = allClients.Segment.SendEvent("Starting CheckNode", auth, checkPass, ""); err != nil {
-		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+		zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 
 	s.Start() // Start the spinner
@@ -99,16 +84,21 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 		if check.Result {
 			segment_str := "CheckNode: " + check.Name
 			if err := allClients.Segment.SendEvent(segment_str, auth, checkPass, ""); err != nil {
-				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+				zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
 			fmt.Printf(color.Green("✓ ")+"%s\n", check.Name)
 
 		} else {
 			segment_str := "CheckNode: " + check.Name
 			if err := allClients.Segment.SendEvent(segment_str, auth, checkFail, check.UserErr); err != nil {
-				zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+				zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf(color.Red("x ")+"%s - %s\n", check.Name, check.UserErr)
+			// To print warning "!", if --skipchecks flag passed and optional checks failed.
+			if WarningOptionalChecks && !check.Mandatory {
+				fmt.Printf(color.Yellow("! ")+"%s - %s\n", check.Name, check.UserErr)
+			} else {
+				fmt.Printf(color.Red("x ")+"%s - %s\n", check.Name, check.UserErr)
+			}
 
 			if check.Mandatory {
 				mandatoryCheck = false
@@ -123,7 +113,7 @@ func CheckNode(ctx Config, allClients Client) (CheckNodeResult, error) {
 	}
 
 	if err = allClients.Segment.SendEvent("CheckNode complete", auth, checkPass, ""); err != nil {
-		zap.S().Errorf("Unable to send Segment event for check node. Error: %s", err.Error())
+		zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 	fmt.Printf("\n")
 	if mandatoryCheck {

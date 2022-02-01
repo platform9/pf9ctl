@@ -5,9 +5,10 @@ package keystone
 import (
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"net/url"
+
+	"go.uber.org/zap"
 )
 
 // Type definition for struct encapsulating endpoint manager APIs.
