@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/test_utils"
 )
 
@@ -35,7 +36,7 @@ func TestHostID(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			//passing empty slices of ips
-			ips := hostId(tc.exec, "Fqdn", "token", masterIPs)
+			ips := pmk.HostId(tc.exec, "Fqdn", "token", masterIPs)
 			test_utils.Equals(t, tc.want.ip, ips)
 		})
 	}

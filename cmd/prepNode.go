@@ -131,7 +131,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	result, err := pmk.CheckNode(*cfg, c, auth)
+	result, err := pmk.CheckNode(*cfg, c, auth, nodeConfig)
 	if err != nil {
 		// Uploads pf9cli log bundle if pre-requisite checks fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
@@ -143,6 +143,9 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 	if result == pmk.RequiredFail {
 		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+	} else if result == pmk.CleanInstallFail {
+		fmt.Println("\nPrevious Installation Removed")
+		return
 	}
 
 	if result == pmk.OptionalFail {

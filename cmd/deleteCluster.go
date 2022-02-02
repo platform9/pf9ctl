@@ -10,6 +10,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -92,11 +93,11 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 
 	}
 
-	nodeIPs = append(nodeIPs, getIp().String())
+	nodeIPs = append(nodeIPs, pmk.GetIp().String())
 
 	projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
 
-	nodeUuids := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
+	nodeUuids := pmk.HostId(c.Executor, cfg.Fqdn, token, nodeIPs)
 
 	localNode, err := getNodesFromUuids(nodeUuids, projectNodes)
 

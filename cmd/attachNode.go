@@ -11,6 +11,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -104,13 +105,13 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		//master ips
 		var master_hostIds []string
 		if len(masterIPs) > 0 {
-			master_hostIds = hostId(c.Executor, cfg.Fqdn, token, masterIPs)
+			master_hostIds = pmk.HostId(c.Executor, cfg.Fqdn, token, masterIPs)
 		}
 
 		//worker ips
 		var worker_hostIds []string
 		if len(workerIPs) > 0 {
-			worker_hostIds = hostId(c.Executor, cfg.Fqdn, token, workerIPs)
+			worker_hostIds = pmk.HostId(c.Executor, cfg.Fqdn, token, workerIPs)
 		}
 
 		//Attaching worker node(s) to cluster
@@ -180,24 +181,6 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Cluster is not ready. cluster status is %v", clusterStatus)
 	}
 
-}
-
-func hostId(exec cmdexec.Executor, fqdn string, token string, IPs []string) []string {
-	zap.S().Debug("Getting host IDs")
-	var hostIdsList []string
-	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
-	for _, ip := range IPs {
-		ip = fmt.Sprintf(`"%v"`, ip)
-		cmd := fmt.Sprintf("curl -sH %v -X GET %v/resmgr/v1/hosts | jq -r '.[] | select(.extensions!=\"\")  | select(.extensions.ip_address.data[]==(%v)) | .id' ", tkn, fqdn, ip)
-		hostid, _ := exec.RunWithStdout("bash", "-c", cmd)
-		hostid = strings.TrimSpace(strings.Trim(hostid, "\n"))
-		if len(hostid) == 0 {
-			zap.S().Infof("Unable to find host with IP %v please try again or run prep-node first", ip)
-		} else {
-			hostIdsList = append(hostIdsList, hostid)
-		}
-	}
-	return hostIdsList
 }
 
 func cluster_Status(exec cmdexec.Executor, fqdn string, token string, projectID string, clusterID string) string {
