@@ -38,6 +38,7 @@ var (
 	ErrGenBundle     = fmt.Errorf("Unable to generate supportBundle in remote host")
 	ErrUpload        = fmt.Errorf("Unable to upload supportBundle to S3")
 	ErrPartialBundle = fmt.Errorf("Failed to generate complete supportBundle, generated partial bundle")
+	ErrStat          = fmt.Errorf("Failed to stat")
 
 	//Timestamp used for generating targetfile
 	Timestamp = time.Now()
@@ -176,37 +177,31 @@ func RemoveBundle(exec cmdexec.Executor) error {
 	return nil
 }
 
+// Takes in an executor, and stats for a path, returns true if and only if all the `paths` could be successfully stat, false otherwise
+func statPaths(exec cmdexec.Executor, paths ...string) bool {
+	couldStatAll := true
+	for _, path := range paths {
+		_, errStat := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", path))
+		if errStat != nil {
+			zap.S().Debugf("Failed to stat %s\t%s", path, errStat.Error())
+			couldStatAll = false
+		}
+	}
+	return couldStatAll
+}
+
 //This function is used to generate the support bundles.
 //It copies all the log files specified into a directory and archives that given directory.
 func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool) (string, error) {
 
 	//Check whether the source directories exist in remote node.
 	if !isRemote {
-		_, errPf9 := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.Pf9LogDir))
-		if err != nil {
-			zap.S().Debug("Log files directory not Found!!", errPf9)
-		}
+		statPaths(exec, util.Pf9LogDir)
 	}
 
-	_, errEtc := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.EtcDir))
-	if errEtc != nil {
-		zap.S().Debug("Log files directory not Found!! ", errEtc)
-	}
-
-	_, errVar := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.VarDir))
-	if errVar != nil {
-		zap.S().Debug("Log files directory not Found!! ", errVar)
-	}
-
-	_, errDmesg := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.DmesgLog))
-	if errVar != nil {
-		zap.S().Debug("Dmesg files not Found!! ", errDmesg)
-	}
-
-	_, errOpt := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", util.OptDir))
-	if errOpt != nil {
-		zap.S().Debug(fmt.Sprintf("%s directory not found!!", util.OptDir))
-	}
+	statEtc := statPaths(exec, util.EtcDir)
+	statVar := statPaths(exec, util.VarDir)
+	statOpt := statPaths(exec, util.OptDir)
 
 	//Assign specific files according to the platform
 	if hostOS == "debian" {
@@ -217,15 +212,8 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 		lockfile = util.LockRed
 	}
 
-	_, errMsg := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", msgfile))
-	if errEtc != nil {
-		zap.S().Debug("Auth files not Found!! ", errMsg)
-	}
-
-	_, errLock := exec.RunWithStdout("bash", "-c", fmt.Sprintf("stat %s", lockfile))
-	if errEtc != nil {
-		zap.S().Debug("Auth files not Found!! ", errLock)
-	}
+	// Some other important files
+	statPaths(exec, util.DmesgLog, msgfile, lockfile)
 
 	// To fetch the hostname of remote node
 	hostname, err := exec.RunWithStdout("bash", "-c", fmt.Sprintf("hostname"))
@@ -240,7 +228,7 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 
 	if isRemote {
 		// Generate supportBundle if any of Etc / var logs are present or both
-		if errEtc == nil || errVar == nil || errOpt == nil {
+		if statEtc || statVar || statOpt {
 			// Generation of supportBundle in remote host case.
 			_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar -czf %s %s %s %s %s %s %s",
 				targetfile, util.VarDir, util.EtcDir, util.DmesgLog, msgfile, lockfile, util.OptDir))
@@ -249,7 +237,8 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 			}
 
 		} else {
-			zap.S().Debug("Failed to generate supportBundle (Remote Host)", errVar, errEtc)
+			zap.S().Debug("Failed to generate supportBundle (Remote Host)")
+			zap.S().Debugf("Failed to stat any of %s, %s and %s paths", util.EtcDir, util.VarDir, util.OptDir)
 			return targetfile, ErrGenBundle
 		}
 
