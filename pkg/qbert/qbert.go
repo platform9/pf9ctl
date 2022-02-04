@@ -29,7 +29,7 @@ type Qbert interface {
 	AuthoriseNode(nodeUuid, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
 	CheckClusterExists(Name, projectID, token string) (bool, string, error)
-	CheckClusterExistsWithUuid(uuid, projectID, token string) (bool, string, error)
+	CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error)
 }
 
 func NewQbert(fqdn string) Qbert {
@@ -388,40 +388,42 @@ func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, stri
 	return false, "", nil
 }
 
-func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (bool, string, error) {
-	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
+func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error) {
+	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters/%s", c.fqdn, projectID, uuid)
 	client := http.Client{}
 	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
 
 	if err != nil {
-		return false, "", fmt.Errorf("Unable to create request to check cluster name: %w", err)
+		return "", fmt.Errorf("Unable to create request to check cluster name: %w", err)
 	}
 
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, "", err
+		return "", err
 	}
-	if resp.StatusCode != 200 {
-		return false, "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
+	if resp.StatusCode == 400 {
+		return "", fmt.Errorf("cluster with given uuid does not exist: %d", resp.StatusCode)
+	} else if resp.StatusCode != 200 {
+		return "", fmt.Errorf("could not query the qbert Endpoint: %d", resp.StatusCode)
 	}
 	var payload []map[string]interface{}
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
 	if err != nil {
-		return false, "", err
+		return "", err
 	}
 
 	for _, val := range payload {
 		if val["uuid"] == uuid {
 			cluster_name := val["name"].(string)
-			return true, cluster_name, nil
+			return cluster_name, nil
 		}
 	}
 
-	return false, "", nil
+	return "", nil
 }
 
 //Function to Check status of attach-node API

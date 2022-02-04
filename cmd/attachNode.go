@@ -29,7 +29,9 @@ var (
 		Short: "Attaches a node to the Kubernetes cluster",
 		Long:  "Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached",
 		Args: func(attachNodeCmd *cobra.Command, args []string) error {
-			// even if '-u' option is specified use some dummy cluster name
+			if clusterUuid != "" {
+				return nil
+			}
 			if len(args) > 1 {
 				return errors.New("Only cluster name is accepted as a parameter")
 			} else if len(args) < 1 {
@@ -47,7 +49,7 @@ var (
 func init() {
 	attachNodeCmd.Flags().StringSliceVarP(&masterIPs, "master-ip", "m", []string{}, "master node ip address")
 	attachNodeCmd.Flags().StringSliceVarP(&workerIPs, "worker-ip", "w", []string{}, "worker node ip address")
-	attachNodeCmd.Flags().StringVarP(&clusterUuid, "uuid", "u", "", "cluster uuid")
+	attachNodeCmd.Flags().StringVarP(&clusterUuid, "uuid", "u", "", "uuid of a cluser to attach the node to")
 	attachNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(attachNodeCmd)
 	// '-u' option for inetrnal use only for now
@@ -101,10 +103,10 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	token := auth.Token
 	var clusterUUID string
 	if clusterUuid != "" {
-		var exists bool
-		if exists, clusterName, err = c.Qbert.CheckClusterExistsWithUuid(clusterUuid, projectId, token); err != nil {
+		if clusterName, err = c.Qbert.CheckClusterExistsWithUuid(clusterUuid, projectId, token); err != nil {
 			zap.S().Fatalf("unable to verify cluster using uuid", err.Error())
-		} else if exists {
+
+		} else if clusterName != "" {
 			clusterUUID = clusterUuid
 		} else {
 			zap.S().Fatalf("cluster with given uuid does not exist")

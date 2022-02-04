@@ -5,14 +5,12 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
+	"go.uber.org/zap"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
-	"go.uber.org/zap"
-
 )
-
 
 var (
 
@@ -75,9 +73,6 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 	return false, nil
 }
 
-
-
-
 // AskBool function asks for the user input
 // for a boolean input
 func AskBool(msg string, args ...interface{}) (bool, error) {
@@ -109,7 +104,8 @@ func AskBool(msg string, args ...interface{}) (bool, error) {
 // standard log.Logger.
 type ZapWrapper struct {
 }
-/* 
+
+/*
 	Implmenting the LeveledLogger for retry http
 	type LeveledLogger interface {
 		Error(msg string, keysAndValues ...interface{})
