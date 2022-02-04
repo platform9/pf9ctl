@@ -38,7 +38,6 @@ var (
 	ErrGenBundle     = fmt.Errorf("Unable to generate supportBundle in remote host")
 	ErrUpload        = fmt.Errorf("Unable to upload supportBundle to S3")
 	ErrPartialBundle = fmt.Errorf("Failed to generate complete supportBundle, generated partial bundle")
-	ErrStat          = fmt.Errorf("Failed to stat")
 
 	//Timestamp used for generating targetfile
 	Timestamp = time.Now()
