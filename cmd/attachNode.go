@@ -102,7 +102,6 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	if clusterUuid != "" {
 		if clusterName, err = c.Qbert.CheckClusterExistsWithUuid(clusterUuid, projectId, token); err != nil {
 			zap.S().Fatalf("unable to verify cluster using uuid", err.Error())
-
 		} else if clusterName != "" {
 			clusterUUID = clusterUuid
 		} else {
