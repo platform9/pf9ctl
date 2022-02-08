@@ -3,8 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"os"
-	"os/exec"
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
@@ -33,17 +31,6 @@ var decommissionNodeCmd = &cobra.Command{
 func init() {
 	decommissionNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(decommissionNodeCmd)
-}
-
-func RunCommandWait(command string) {
-	output := exec.Command("/bin/sh", "-c", command)
-	output.Stdout = os.Stdout
-	output.Stdin = os.Stdin
-	err := output.Start()
-	output.Wait()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
 }
 
 func decommissionNodeRun(cmd *cobra.Command, args []string) {

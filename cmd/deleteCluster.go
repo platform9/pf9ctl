@@ -102,9 +102,9 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 	localNode, err := getNodesFromUuids(nodeUuids, projectNodes)
 
 	if len(localNode) == 1 && localNode[0].ClusterUuid == clusterUuid {
-		RunCommandWait("sudo pkill -9 `pidof kubelet`")
-		RunCommandWait("sudo pkill -9 `pidof etcd`")
-		RunCommandWait("sudo pkill -9 `pidof kube-proxy`")
+		pmk.RunCommandWait("sudo pkill -9 `pidof kubelet`")
+		pmk.RunCommandWait("sudo pkill -9 `pidof etcd`")
+		pmk.RunCommandWait("sudo pkill -9 `pidof kube-proxy`")
 	}
 
 	err = c.Qbert.DeleteCluster(clusterUuid, projectId, token)
