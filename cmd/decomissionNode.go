@@ -17,7 +17,7 @@ import (
 
 var decommissionNodeCmd = &cobra.Command{
 	Use:   "decommission-node",
-	Short: "Decomisisons this node from the Platform9 control plane",
+	Short: "Decommissions this node from the Platform9 control plane",
 	Long:  "Removes the host agent package and decommissions this node from the Platform9 control plane.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
@@ -55,6 +55,6 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 	}
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 
-	pmk.DecommissionNode(cfg, nc)
+	pmk.DecommissionNode(cfg, nc, true)
 
 }

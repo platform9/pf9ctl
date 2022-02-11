@@ -24,7 +24,17 @@ func RunCommandWait(command string) {
 	}
 }
 
-func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig) {
+func removePf9() {
+	fmt.Println("Removing /etc/pf9 logs")
+	RunCommandWait("sudo rm -rf /etc/pf9")
+	fmt.Println("Removing /opt/pf9 logs")
+	RunCommandWait("sudo rm -rf /opt/pf9")
+	fmt.Println("Removing pf9 HOME dir")
+	RunCommandWait("sudo rm -rf $HOME/pf9")
+
+}
+
+func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removeAll bool) {
 
 	var executor cmdexec.Executor
 	var err error
@@ -59,12 +69,6 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig) {
 		RunCommandWait("sudo dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
 		fmt.Println("Purging packages")
 		RunCommandWait("sudo dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
-		fmt.Println("Removing /etc/pf9 logs")
-		RunCommandWait("sudo rm -rf /etc/pf9")
-		fmt.Println("Removing /opt/pf9 logs")
-		RunCommandWait("sudo rm -rf /opt/pf9")
-		fmt.Println("Removing pf9 HOME dir")
-		RunCommandWait("sudo rm -rf $HOME/pf9")
 
 	} else {
 		fmt.Println("Removing packages")
@@ -72,13 +76,10 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig) {
 		RunCommandWait("sudo yum erase -y pf9-kube")
 		RunCommandWait("sudo yum erase -y pf9-hostagent")
 		RunCommandWait("sudo yum erase -y pf9-muster")
-		fmt.Println("Removing /etc/pf9 logs")
-		RunCommandWait("sudo rm -rf /etc/pf9")
-		fmt.Println("Removing /opt/pf9 logs")
-		RunCommandWait("sudo rm -rf /opt/pf9")
-		fmt.Println("Removing pf9 HOME dir")
-		RunCommandWait("sudo rm -rf $HOME/pf9")
+	}
 
+	if removeAll {
+		removePf9()
 	}
 
 	RunCommandWait("sudo pkill kubelet")

@@ -136,8 +136,8 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 
 		if strings.ToLower(removeCurrentInstallation) == "yes" {
 
-			fmt.Print("Decommissioning Node ...\n\n")
-			DecommissionNode(&ctx, nc)
+			fmt.Print("Removing packages ...\n\n")
+			DecommissionNode(&ctx, nc, false)
 			return CleanInstallFail, nil
 
 		}
