@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -19,6 +20,36 @@ type CloudProviderType string
 
 // CNIBackend specifies the networking solution used for the k8s cluster
 type CNIBackend string
+
+/*Tag + Monitoring older pmk versions
+type tagInfoOldPMK struct {
+	//pf9-system:monitoring: "true",
+	//key-pf9: "pf9-value"
+}
+
+/*type Monitoring struct {
+	RetentionTime string `json:"retentionTime"`
+}
+
+//monitoring have seperate field
+type tagInfoLatestPMK struct {
+	//key-pf9: "pf9-value"
+}*/
+
+type TagInfo struct {
+	Key string
+}
+
+type Storageproperties struct {
+	LocalPath string `json:"localPath"`
+}
+
+type EtcdBackup struct {
+	StorageType         string            `json:"storageType"`
+	IsEtcdBackupEnabled int               `json:"isEtcdBackupEnabled"`
+	StorageProperties   Storageproperties `json:"storageProperties"`
+	IntervalInMins      int               `json:"intervalInMins"`
+}
 
 type Qbert interface {
 	CreateCluster(r ClusterCreateRequest, projectID, token string) (string, error)
@@ -39,20 +70,55 @@ type QbertImpl struct {
 	fqdn string
 }
 
+var (
+	IStag                bool
+	IsPMKversionDefined  bool
+	Tag                  string
+	Monitoring           string
+	SplitPMKversion      []string
+	SplitKeyValue        []string
+	IsMonitoringDisabled bool
+)
+
 type ClusterCreateRequest struct {
-	Name                  string     `json:"name"`
-	ContainerCIDR         string     `json:"containersCidr"`
-	ServiceCIDR           string     `json:"servicesCidr"`
-	MasterVirtualIP       string     `json:"masterVipIpv4"`
-	MasterVirtualIPIface  string     `json:"masterVipIface"`
-	AllowWorkloadOnMaster bool       `json:"allowWorkloadsOnMaster"`
-	Privileged            bool       `json:"privileged"`
-	ExternalDNSName       string     `json:"externalDnsName"`
-	NetworkPlugin         CNIBackend `json:"networkPlugin"`
-	MetalLBAddressPool    string     `json:"metallbCidr"`
-	NodePoolUUID          string     `json:"nodePoolUuid"`
-	EnableMetalLb         bool       `json:"enableMetallb"`
-	Masterless            bool       `json:"masterless"`
+	Name                   string     `json:"name"`
+	ContainerCIDR          string     `json:"containersCidr"`
+	ServiceCIDR            string     `json:"servicesCidr"`
+	MasterVirtualIP        string     `json:"masterVipIpv4"`
+	MasterVirtualIPIface   string     `json:"masterVipIface"`
+	AllowWorkloadOnMaster  bool       `json:"allowWorkloadsOnMaster"`
+	Privileged             bool       `json:"privileged"`
+	ExternalDNSName        string     `json:"externalDnsName"`
+	NetworkPlugin          CNIBackend `json:"networkPlugin"`
+	MetalLBAddressPool     string     `json:"metallbCidr"`
+	NodePoolUUID           string     `json:"nodePoolUuid"`
+	EnableMetalLb          bool       `json:"enableMetallb"`
+	Masterless             bool       `json:"masterless"`
+	EtcdBackup             EtcdBackup `json:"etcdBackup"`
+	NetworkPluginOperator  bool       `json:"deployLuigiOperator"`
+	EnableKubVirt          bool       `json:"deployKubevirt"`
+	EnableProfileAgent     bool       `json:"enableProfileAgent"`
+	PmkVersion             string     `json:"kubeRoleVersion"`
+	IPEncapsulation        string     `json:"calicoIpIpMode"`
+	InterfaceDetection     string     `json:"calicoIPv4DetectionMethod"`
+	UseHostName            bool       `json:"useHostname"`
+	MtuSize                string     `json:"mtuSize"`
+	BlockSize              string     `json:"calicoV4BlockSize"`
+	ContainerRuntime       string     `json:"containerRuntime"`
+	NetworkStack           int        `json:"ipv6"`
+	TopologyManagerPolicy  string     `json:"topologyManagerPolicy"`
+	ReservedCPUs           string     `json:"reservedCPUs"`
+	ApiServerFlags         []string   `json:"apiServerFlags"`
+	ControllerManagerFlags []string   `json:"controllerManagerFlags"`
+	SchedulerFlags         []string   `json:"schedulerFlags"`
+	RuntimeConfig          string     `json:"runtimeConfig"`
+	//Tag                    *strings.Reader `json:"tag"`
+	/*if latest pmk
+	PrometheusMonitoring   Monitoring `json:"monitoring"`
+	Tag                    tagInfoLatestPMK*/
+
+	/*if oldest pmk (monitoring and tag is combined)
+	Tag                  tagInfoOldPMK   `json:"tag"`*/
 }
 
 func (c QbertImpl) CreateCluster(
@@ -80,10 +146,12 @@ func (c QbertImpl) CreateCluster(
 		return "", fmt.Errorf("Unable to marshal payload: %s", err.Error())
 	}
 
-	url := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID)
+	payLoad := updatePayload(string(byt))
+
+	url := fmt.Sprintf("%s/qbert/v4/%s/clusters", c.fqdn, projectID)
 
 	client := http.Client{}
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(byt)))
+	req, err := http.NewRequest("POST", url, strings.NewReader(payLoad))
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -98,7 +166,11 @@ func (c QbertImpl) CreateCluster(
 	}
 
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			zap.S().Debugf("unable to read resp body")
+		}
+		return "", fmt.Errorf(string(bodyBytes))
 	}
 
 	var payload map[string]string
@@ -406,4 +478,60 @@ func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Respo
 
 	defer resp.Body.Close()
 	return resp, nil
+}
+
+func updatePayload(p string) string {
+	// IsPMKversionDefined then check which version is and update payload accordingly
+	// if not IsPMKversionDefined then prepare payload for latest version
+	//first condition if version is not given create payload with defaults (monitoring and tag will be separate)
+	//if version is given then check version and create payload with defaults
+	var monitoringDetails string
+	var tagDetails string
+	if IsPMKversionDefined {
+		if SplitPMKversion[0] <= "1.20.11" {
+			tagDetails = getTagDetails()
+		} else {
+			//latest pmk version
+			//append monitoring and check if tag is also enabled
+			monitoringDetails = getMonitoringDetails()
+		}
+	} else {
+		//latest pmk version
+		//append monitoring and check if tag is also enabled
+		monitoringDetails = getMonitoringDetails()
+	}
+	p = p[:len(p)-1]
+	p = p + tagDetails + monitoringDetails + "}"
+	return p
+}
+
+func getMonitoringDetails() string {
+	if !IsMonitoringDisabled {
+		Monitoring = fmt.Sprintf(`,"monitoring":"{\"retentionTime\":\"7d\"}"`)
+	} else {
+		Monitoring = ""
+	}
+	if IStag {
+		Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}`, SplitKeyValue[0], SplitKeyValue[1])
+	} else {
+		Tag = ""
+	}
+	return Monitoring + Tag
+}
+
+func getTagDetails() string {
+	if !IsMonitoringDisabled {
+		if IStag {
+			Tag = fmt.Sprintf(`,"tags":{"%s":"%s","pf9-system:monitoring":"true"}`, SplitKeyValue[0], SplitKeyValue[1])
+		} else {
+			Tag = fmt.Sprintf(`,"tags":{"pf9-system:monitoring":"true"}`)
+		}
+	} else {
+		if IStag {
+			Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}`, SplitKeyValue[0], SplitKeyValue[1])
+		} else {
+			Tag = ""
+		}
+	}
+	return Tag
 }

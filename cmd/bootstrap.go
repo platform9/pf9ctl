@@ -43,8 +43,29 @@ var bootstrapCmd = &cobra.Command{
 var bootConfig objects.NodeConfig
 
 func init() {
-	bootstrapCmd.Flags().StringVar(&masterVIP, "master-vip", "", "IP Address for VIP for master nodes")
-	bootstrapCmd.Flags().StringVar(&masterVIPIf, "master-vip-if", "", "Interface name for master / worker nodes")
+	bootstrapCmd.Flags().IntVar(&networkStack, "network-stack", 0, "0 for ipv4 and 1 for ipv6")
+	bootstrapCmd.Flags().StringVar(&containerRuntime, "container-runtime", "docker", "The container runtime for the cluster")
+	bootstrapCmd.Flags().StringVar(&mtuSize, "mtu-size", "1440", "NAT outgoing custome mtu size")
+	bootstrapCmd.Flags().StringVar(&blockSize, "block-size", "26", "NAT outgoing custome block size")
+	bootstrapCmd.Flags().StringVar(&topologyManagerPolicy, "topology-manager-policy", "none", "topology manager policy")
+	bootstrapCmd.Flags().StringVar(&reservedCPUs, "reserved-cpu", "", "comma separated list of CPUs to be reserved for the system, e.g: 4-8,9-12")
+	bootstrapCmd.Flags().StringSliceVarP(&apiServerFlags, "api-server-flags", "", []string{}, "comma separated list of supported kube-apiserver flags, e.g: --request-timeout=2m0s,--kubelet-timeout=20s")
+	bootstrapCmd.Flags().StringSliceVarP(&controllerManagerFlags, "controller-manager-flags", "", []string{}, "comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10")
+	bootstrapCmd.Flags().StringSliceVarP(&schedulerFlags, "scheduler-flags", "", []string{}, "comma separated list of supported kube-scheduler flags, e.g: --kube-api-burst=120,--log_file_max_size=3000")
+	bootstrapCmd.Flags().StringVar(&advancedAPIconfiguration, "advanced-api-configuration", "", "Make sure you are familiar with the Kubernetes API configuration documentation before enabling this option")
+	bootstrapCmd.Flags().StringVar(&pmkVersion, "pmk-version", "", "Kubernetes pmk version")
+	//bootstrapCmd.MarkFlagRequired("pmk-version")
+	bootstrapCmd.Flags().StringVar(&tag, "tag", "", "Add tag metadata to this cluster (key=value)")
+	bootstrapCmd.Flags().StringVar(&interfaceDetection, "interface-detction-method", "first-found", "")
+	bootstrapCmd.Flags().StringVar(&ipEncapsulation, "ip-encapsulation", "Always", "Encapsulates POD traffic in IP-in-IP between nodes.")
+	bootstrapCmd.Flags().StringVar(&masterVIP, "master-virtual-ip", "", "virtual IP address for cluster")
+	bootstrapCmd.Flags().StringVar(&masterVIPIf, "master-virtual-interface", "", "Physical interface for virtual IP association")
+	bootstrapCmd.Flags().BoolVar(&useHostName, "use-hostname", false, "use node hostname for cluster creation")
+	bootstrapCmd.Flags().BoolVar(&prometheusMonitoring, "monitoring", true, "Enable monitoring for this cluster")
+	bootstrapCmd.Flags().BoolVar(&etcdBackup, "etcd-backup", true, "Enable automated etcd backups on this cluster")
+	bootstrapCmd.Flags().BoolVar(&networkPluginOperator, "network-plugin-operator", false, "will deploy Platform9 CRDs to enable multiple CNIs and features such as SR-IOV")
+	bootstrapCmd.Flags().BoolVar(&enableKubVirt, "enable-kubeVirt", false, "enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads")
+	bootstrapCmd.Flags().BoolVar(&enableProfileEngine, "enable-profile-engine", true, "Simplfy cluster governance using the Platform9 Profile Engine")
 	bootstrapCmd.Flags().StringVar(&metallbIPRange, "metallb-ip-range", "", "Ip range for MetalLB")
 	bootstrapCmd.Flags().StringVar(&containersCIDR, "containers-cidr", "10.20.0.0/16", "CIDR for container overlay")
 	bootstrapCmd.Flags().StringVar(&servicesCIDR, "services-cidr", "10.21.0.0/16", "CIDR for services overlay")
@@ -52,9 +73,9 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&privileged, "privileged", true, "Enable privileged mode for K8s API. Default: true")
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allow-workloads-on-master", true, "Taint master nodes ( to enable workloads )")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "network-plugin", "calico", "Specify network plugin ( Possible values: flannel or calico )")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.User, "user", "u", "", "ssh username for the nodes")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.User, "user", "u", "", "ssh username for the node")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "ssh password for the node (use 'single quotes' to pass password)")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the node")
 	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	bootstrapCmd.Flags().StringVar(&bootConfig.MFA, "mfa", "", "MFA token")
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
@@ -62,15 +83,35 @@ func init() {
 }
 
 var (
-	masterVIP              string
-	masterVIPIf            string
-	metallbIPRange         string
-	containersCIDR         string
-	servicesCIDR           string
-	externalDNSName        string
-	privileged             bool
-	allowWorkloadsOnMaster bool
-	networkPlugin          string
+	useHostName              bool
+	networkPluginOperator    bool
+	enableKubVirt            bool
+	prometheusMonitoring     bool
+	etcdBackup               bool
+	enableProfileEngine      bool
+	networkStack             int
+	apiServerFlags           []string
+	controllerManagerFlags   []string
+	schedulerFlags           []string
+	tag                      string
+	topologyManagerPolicy    string
+	reservedCPUs             string
+	containerRuntime         string
+	mtuSize                  string
+	blockSize                string
+	pmkVersion               string
+	ipEncapsulation          string
+	interfaceDetection       string
+	advancedAPIconfiguration string
+	masterVIP                string
+	masterVIPIf              string
+	metallbIPRange           string
+	containersCIDR           string
+	servicesCIDR             string
+	externalDNSName          string
+	privileged               bool
+	allowWorkloadsOnMaster   bool
+	networkPlugin            string
 )
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
@@ -78,6 +119,62 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
 	isRemote := cmdexec.CheckRemote(bootConfig)
+
+	isEtcdBackupDisabled := cmd.Flags().Changed("etcd-backup")
+	qbert.IsMonitoringDisabled = cmd.Flags().Changed("monitoring")
+	enabledKubVirt := cmd.Flags().Changed("enable-kubeVirt")
+	if enabledKubVirt {
+		networkPluginOperator = true
+	}
+	isIPv6enabled := cmd.Flags().Changed("network-stack")
+	if isIPv6enabled {
+		useHostName = false
+		networkPlugin = "calico"
+	}
+
+	qbert.IsPMKversionDefined = cmd.Flags().Changed("pmk-version")
+	if qbert.IsPMKversionDefined {
+		//Profile Engine support check
+		qbert.SplitPMKversion = strings.Split(pmkVersion, "-")
+		if qbert.SplitPMKversion[0] < "1.20.11" {
+			containerRuntime = "docker"
+			enableProfileEngine = false
+		}
+		//if splitPMKversion[0] <= "1.20.11" then monitoring and tag are combined
+	}
+
+	qbert.IStag = cmd.Flags().Changed("tag")
+	if qbert.IStag {
+		qbert.SplitKeyValue = strings.Split(tag, "=")
+	}
+
+	//var t *bytes.Buffer
+	//var t *strings.Reader
+	/*if isTag {
+		splitKeyValue := strings.Split(tag, "=")
+		//append this to payload string
+		isMonitoringDisabled := cmd.Flags().Changed("monitoring")
+		if splitPMKversion[0] <= "1.20.11" && !isMonitoringDisabled {
+			qbert.Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}}`, splitKeyValue[0], splitKeyValue[1])
+		} else {
+			qbert.Tag = fmt.Sprintf(`,"tags":{"%s":"%s","pf9-system:monitoring":"true"}}`, splitKeyValue[0], splitKeyValue[1])
+		}
+		//qbert.Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}}`, splitKeyValue[0], splitKeyValue[1])
+		//clusterTag := make(map[string]string)
+		//clusterTag[splitKeyValue[0]] = splitKeyValue[1]
+		//,tag:{"key":"value"}
+		//j, err2 = json.Marshal(clusterTag)
+		test, _ := json.Marshal(clusterTag)
+		//t = bytes.NewBuffer(test)
+		t = strings.NewReader(string(test))
+		fmt.Println("printing t : ", t)
+		if err2 != nil {
+			zap.S().Debugf("Unable to unmarshal tag info into json")
+		} else {
+			tagInfo = string(j)
+		}
+
+	}*/
 
 	if isRemote {
 		if !config.ValidateNodeConfig(&bootConfig, !detachedMode) {
@@ -198,6 +295,28 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 	defer c.Segment.Close()
 
+	etcdBackupPath := qbert.Storageproperties{
+		LocalPath: "/etc/pf9/etcd-backup",
+	}
+
+	etcdDefaults := qbert.EtcdBackup{
+		StorageType:         "local",
+		IsEtcdBackupEnabled: 1,
+		StorageProperties:   etcdBackupPath,
+		IntervalInMins:      1440,
+	}
+	if isEtcdBackupDisabled {
+		etcdDefaults = qbert.EtcdBackup{}
+	}
+
+	/*retentionTime := qbert.Monitoring{
+		RetentionTime: "7d",
+	}
+
+	if isPrometheusMonitoringDisabled {
+		retentionTime = qbert.Monitoring{}
+	}*/
+
 	payload := qbert.ClusterCreateRequest{
 		Name:                  clusterName,
 		ContainerCIDR:         containersCIDR,
@@ -209,6 +328,25 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		MetalLBAddressPool:    metallbIPRange,
 		AllowWorkloadOnMaster: allowWorkloadsOnMaster,
 		Privileged:            privileged,
+		//PrometheusMonitoring:   retentionTime,
+		EtcdBackup:             etcdDefaults,
+		NetworkPluginOperator:  networkPluginOperator,
+		EnableKubVirt:          enableKubVirt,
+		EnableProfileAgent:     enableProfileEngine,
+		PmkVersion:             pmkVersion,
+		IPEncapsulation:        ipEncapsulation,
+		InterfaceDetection:     interfaceDetection,
+		UseHostName:            useHostName,
+		MtuSize:                mtuSize,
+		BlockSize:              blockSize,
+		ContainerRuntime:       containerRuntime,
+		NetworkStack:           networkStack,
+		TopologyManagerPolicy:  topologyManagerPolicy,
+		ReservedCPUs:           reservedCPUs,
+		ApiServerFlags:         apiServerFlags,
+		ControllerManagerFlags: controllerManagerFlags,
+		SchedulerFlags:         schedulerFlags,
+		RuntimeConfig:          advancedAPIconfiguration,
 	}
 
 	if err != nil {
