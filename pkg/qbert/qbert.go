@@ -21,25 +21,6 @@ type CloudProviderType string
 // CNIBackend specifies the networking solution used for the k8s cluster
 type CNIBackend string
 
-/*Tag + Monitoring older pmk versions
-type tagInfoOldPMK struct {
-	//pf9-system:monitoring: "true",
-	//key-pf9: "pf9-value"
-}
-
-/*type Monitoring struct {
-	RetentionTime string `json:"retentionTime"`
-}
-
-//monitoring have seperate field
-type tagInfoLatestPMK struct {
-	//key-pf9: "pf9-value"
-}*/
-
-type TagInfo struct {
-	Key string
-}
-
 type Storageproperties struct {
 	LocalPath string `json:"localPath"`
 }
@@ -112,13 +93,6 @@ type ClusterCreateRequest struct {
 	ControllerManagerFlags []string   `json:"controllerManagerFlags"`
 	SchedulerFlags         []string   `json:"schedulerFlags"`
 	RuntimeConfig          string     `json:"runtimeConfig"`
-	//Tag                    *strings.Reader `json:"tag"`
-	/*if latest pmk
-	PrometheusMonitoring   Monitoring `json:"monitoring"`
-	Tag                    tagInfoLatestPMK*/
-
-	/*if oldest pmk (monitoring and tag is combined)
-	Tag                  tagInfoOldPMK   `json:"tag"`*/
 }
 
 func (c QbertImpl) CreateCluster(
@@ -168,7 +142,7 @@ func (c QbertImpl) CreateCluster(
 	if resp.StatusCode != 200 {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			zap.S().Debugf("unable to read resp body")
+			return "", fmt.Errorf("error creating cluster, unable to read resp body")
 		}
 		return "", fmt.Errorf(string(bodyBytes))
 	}
@@ -481,23 +455,15 @@ func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Respo
 }
 
 func updatePayload(p string) string {
-	// IsPMKversionDefined then check which version is and update payload accordingly
-	// if not IsPMKversionDefined then prepare payload for latest version
-	//first condition if version is not given create payload with defaults (monitoring and tag will be separate)
-	//if version is given then check version and create payload with defaults
 	var monitoringDetails string
 	var tagDetails string
 	if IsPMKversionDefined {
 		if SplitPMKversion[0] <= "1.20.11" {
 			tagDetails = getTagDetails()
 		} else {
-			//latest pmk version
-			//append monitoring and check if tag is also enabled
 			monitoringDetails = getMonitoringDetails()
 		}
 	} else {
-		//latest pmk version
-		//append monitoring and check if tag is also enabled
 		monitoringDetails = getMonitoringDetails()
 	}
 	p = p[:len(p)-1]
@@ -512,7 +478,7 @@ func getMonitoringDetails() string {
 		Monitoring = ""
 	}
 	if IStag {
-		Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}`, SplitKeyValue[0], SplitKeyValue[1])
+		Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}`, strings.TrimSpace(SplitKeyValue[0]), strings.TrimSpace(SplitKeyValue[1]))
 	} else {
 		Tag = ""
 	}
@@ -522,13 +488,13 @@ func getMonitoringDetails() string {
 func getTagDetails() string {
 	if !IsMonitoringDisabled {
 		if IStag {
-			Tag = fmt.Sprintf(`,"tags":{"%s":"%s","pf9-system:monitoring":"true"}`, SplitKeyValue[0], SplitKeyValue[1])
+			Tag = fmt.Sprintf(`,"tags":{"%s":"%s","pf9-system:monitoring":"true"}`, strings.TrimSpace(SplitKeyValue[0]), strings.TrimSpace(SplitKeyValue[1]))
 		} else {
 			Tag = fmt.Sprintf(`,"tags":{"pf9-system:monitoring":"true"}`)
 		}
 	} else {
 		if IStag {
-			Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}`, SplitKeyValue[0], SplitKeyValue[1])
+			Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}`, strings.TrimSpace(SplitKeyValue[0]), strings.TrimSpace(SplitKeyValue[1]))
 		} else {
 			Tag = ""
 		}

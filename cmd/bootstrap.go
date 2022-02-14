@@ -54,7 +54,7 @@ func init() {
 	bootstrapCmd.Flags().StringSliceVarP(&schedulerFlags, "scheduler-flags", "", []string{}, "comma separated list of supported kube-scheduler flags, e.g: --kube-api-burst=120,--log_file_max_size=3000")
 	bootstrapCmd.Flags().StringVar(&advancedAPIconfiguration, "advanced-api-configuration", "", "Make sure you are familiar with the Kubernetes API configuration documentation before enabling this option")
 	bootstrapCmd.Flags().StringVar(&pmkVersion, "pmk-version", "", "Kubernetes pmk version")
-	//bootstrapCmd.MarkFlagRequired("pmk-version")
+	bootstrapCmd.MarkFlagRequired("pmk-version")
 	bootstrapCmd.Flags().StringVar(&tag, "tag", "", "Add tag metadata to this cluster (key=value)")
 	bootstrapCmd.Flags().StringVar(&interfaceDetection, "interface-detction-method", "first-found", "")
 	bootstrapCmd.Flags().StringVar(&ipEncapsulation, "ip-encapsulation", "Always", "Encapsulates POD traffic in IP-in-IP between nodes.")
@@ -140,41 +140,12 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			containerRuntime = "docker"
 			enableProfileEngine = false
 		}
-		//if splitPMKversion[0] <= "1.20.11" then monitoring and tag are combined
 	}
 
 	qbert.IStag = cmd.Flags().Changed("tag")
 	if qbert.IStag {
 		qbert.SplitKeyValue = strings.Split(tag, "=")
 	}
-
-	//var t *bytes.Buffer
-	//var t *strings.Reader
-	/*if isTag {
-		splitKeyValue := strings.Split(tag, "=")
-		//append this to payload string
-		isMonitoringDisabled := cmd.Flags().Changed("monitoring")
-		if splitPMKversion[0] <= "1.20.11" && !isMonitoringDisabled {
-			qbert.Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}}`, splitKeyValue[0], splitKeyValue[1])
-		} else {
-			qbert.Tag = fmt.Sprintf(`,"tags":{"%s":"%s","pf9-system:monitoring":"true"}}`, splitKeyValue[0], splitKeyValue[1])
-		}
-		//qbert.Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}}`, splitKeyValue[0], splitKeyValue[1])
-		//clusterTag := make(map[string]string)
-		//clusterTag[splitKeyValue[0]] = splitKeyValue[1]
-		//,tag:{"key":"value"}
-		//j, err2 = json.Marshal(clusterTag)
-		test, _ := json.Marshal(clusterTag)
-		//t = bytes.NewBuffer(test)
-		t = strings.NewReader(string(test))
-		fmt.Println("printing t : ", t)
-		if err2 != nil {
-			zap.S().Debugf("Unable to unmarshal tag info into json")
-		} else {
-			tagInfo = string(j)
-		}
-
-	}*/
 
 	if isRemote {
 		if !config.ValidateNodeConfig(&bootConfig, !detachedMode) {
@@ -309,26 +280,17 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		etcdDefaults = qbert.EtcdBackup{}
 	}
 
-	/*retentionTime := qbert.Monitoring{
-		RetentionTime: "7d",
-	}
-
-	if isPrometheusMonitoringDisabled {
-		retentionTime = qbert.Monitoring{}
-	}*/
-
 	payload := qbert.ClusterCreateRequest{
-		Name:                  clusterName,
-		ContainerCIDR:         containersCIDR,
-		ServiceCIDR:           servicesCIDR,
-		MasterVirtualIP:       masterVIP,
-		MasterVirtualIPIface:  masterVIPIf,
-		ExternalDNSName:       externalDNSName,
-		NetworkPlugin:         qbert.CNIBackend(networkPlugin),
-		MetalLBAddressPool:    metallbIPRange,
-		AllowWorkloadOnMaster: allowWorkloadsOnMaster,
-		Privileged:            privileged,
-		//PrometheusMonitoring:   retentionTime,
+		Name:                   clusterName,
+		ContainerCIDR:          containersCIDR,
+		ServiceCIDR:            servicesCIDR,
+		MasterVirtualIP:        masterVIP,
+		MasterVirtualIPIface:   masterVIPIf,
+		ExternalDNSName:        externalDNSName,
+		NetworkPlugin:          qbert.CNIBackend(networkPlugin),
+		MetalLBAddressPool:     metallbIPRange,
+		AllowWorkloadOnMaster:  allowWorkloadsOnMaster,
+		Privileged:             privileged,
 		EtcdBackup:             etcdDefaults,
 		NetworkPluginOperator:  networkPluginOperator,
 		EnableKubVirt:          enableKubVirt,
