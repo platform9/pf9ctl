@@ -93,6 +93,7 @@ type ClusterCreateRequest struct {
 	ControllerManagerFlags []string   `json:"controllerManagerFlags"`
 	SchedulerFlags         []string   `json:"schedulerFlags"`
 	RuntimeConfig          string     `json:"runtimeConfig"`
+	CalicoNatOutgoing      int        `json:"calicoNatOutgoing"`
 }
 
 func (c QbertImpl) CreateCluster(

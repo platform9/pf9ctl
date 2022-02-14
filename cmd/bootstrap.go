@@ -45,8 +45,9 @@ var bootConfig objects.NodeConfig
 func init() {
 	bootstrapCmd.Flags().IntVar(&networkStack, "network-stack", 0, "0 for ipv4 and 1 for ipv6")
 	bootstrapCmd.Flags().StringVar(&containerRuntime, "container-runtime", "docker", "The container runtime for the cluster")
-	bootstrapCmd.Flags().StringVar(&mtuSize, "mtu-size", "1440", "NAT outgoing custome mtu size")
-	bootstrapCmd.Flags().StringVar(&blockSize, "block-size", "26", "NAT outgoing custome block size")
+	bootstrapCmd.Flags().IntVar(&calicoNatOutgoing, "nat", 1, "Packets destined outside the POD network will be SNAT'd using the node's IP")
+	bootstrapCmd.Flags().StringVar(&mtuSize, "mtu-size", "1440", "Maximum Transmission Unit (MTU) for the interface")
+	bootstrapCmd.Flags().StringVar(&blockSize, "block-size", "26", "Block size determines how many Pod's can run per node vs total number of nodes per cluster")
 	bootstrapCmd.Flags().StringVar(&topologyManagerPolicy, "topology-manager-policy", "none", "topology manager policy")
 	bootstrapCmd.Flags().StringVar(&reservedCPUs, "reserved-cpu", "", "comma separated list of CPUs to be reserved for the system, e.g: 4-8,9-12")
 	bootstrapCmd.Flags().StringSliceVarP(&apiServerFlags, "api-server-flags", "", []string{}, "comma separated list of supported kube-apiserver flags, e.g: --request-timeout=2m0s,--kubelet-timeout=20s")
@@ -112,6 +113,7 @@ var (
 	privileged               bool
 	allowWorkloadsOnMaster   bool
 	networkPlugin            string
+	calicoNatOutgoing        int
 )
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
@@ -309,6 +311,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		ControllerManagerFlags: controllerManagerFlags,
 		SchedulerFlags:         schedulerFlags,
 		RuntimeConfig:          advancedAPIconfiguration,
+		CalicoNatOutgoing:      calicoNatOutgoing,
 	}
 
 	if err != nil {
