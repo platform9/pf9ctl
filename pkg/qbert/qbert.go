@@ -411,6 +411,7 @@ func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (st
 
 	var payload map[string]interface{}
 
+
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
 	if err != nil {

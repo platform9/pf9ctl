@@ -29,6 +29,7 @@ var (
 		Short: "Attaches a node to the Kubernetes cluster",
 		Long:  "Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached",
 		Args: func(attachNodeCmd *cobra.Command, args []string) error {
+			// even if '-u' option is specified use some dummy cluster name
 			if len(args) > 1 {
 				return errors.New("only cluster name is accepted as a parameter")
 			} else if len(args) < 1 {
