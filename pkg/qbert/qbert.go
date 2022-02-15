@@ -390,10 +390,6 @@ func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, stri
 
 func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error) {
 	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters/%s", c.fqdn, projectID, uuid)
-<<<<<<< HEAD
-
-=======
->>>>>>> ae2653c (remove the need of dummy cluster name)
 	client := http.Client{}
 	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
 
@@ -415,30 +411,19 @@ func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (st
 
 	var payload map[string]interface{}
 
-
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
 	if err != nil {
 		return "", err
 	}
 
-<<<<<<< HEAD
 	if payload["uuid"] == uuid {
 		cluster_name := payload["name"].(string)
 		return cluster_name, nil
 	}
 
 	return fmt.Sprintf("error finding cluster with uuid %s", uuid), nil
-=======
-	for _, val := range payload {
-		if val["uuid"] == uuid {
-			cluster_name := val["name"].(string)
-			return cluster_name, nil
-		}
-	}
 
-	return "", nil
->>>>>>> ae2653c (remove the need of dummy cluster name)
 }
 
 //Function to Check status of attach-node API

@@ -5,7 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f78cfd6e-edaa-4c63-b3a4-3d9c9bcf0e5b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/cmd/attachNode.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/attachNode.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pkg/qbert/qbert.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/qbert/qbert.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
