@@ -408,22 +408,21 @@ func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (st
 	} else if resp.StatusCode != 200 {
 		return "", fmt.Errorf("could not query the qbert Endpoint: %d", resp.StatusCode)
 	}
-	var payload []map[string]interface{}
-
+	var payload map[string]interface{}
+	
+	fmt.Println(resp.Body)
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
 	if err != nil {
 		return "", err
 	}
 
-	for _, val := range payload {
-		if val["uuid"] == uuid {
-			cluster_name := val["name"].(string)
-			return cluster_name, nil
-		}
+	if payload["uuid"] == uuid {
+		cluster_name := payload["name"].(string)
+		return cluster_name, nil
 	}
 
-	return "", nil
+	return fmt.Sprintf("error finding cluster with uuid %s", uuid), nil
 }
 
 //Function to Check status of attach-node API
