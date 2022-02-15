@@ -29,6 +29,7 @@ type Qbert interface {
 	AuthoriseNode(nodeUuid, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
 	CheckClusterExists(Name, projectID, token string) (bool, string, error)
+	CheckClusterExistsWithUuid(uuid, projectID, token string) (bool, string, error)
 }
 
 func NewQbert(fqdn string) Qbert {
@@ -381,6 +382,42 @@ func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, stri
 		if val["name"] == name {
 			cluster_uuid := val["uuid"].(string)
 			return true, cluster_uuid, nil
+		}
+	}
+
+	return false, "", nil
+}
+
+func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (bool, string, error) {
+	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
+	client := http.Client{}
+	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
+
+	if err != nil {
+		return false, "", fmt.Errorf("Unable to create request to check cluster name: %w", err)
+	}
+
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return false, "", err
+	}
+	if resp.StatusCode != 200 {
+		return false, "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
+	}
+	var payload []map[string]interface{}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&payload)
+	if err != nil {
+		return false, "", err
+	}
+
+	for _, val := range payload {
+		if val["uuid"] == uuid {
+			cluster_name := val["name"].(string)
+			return true, cluster_name, nil
 		}
 	}
 
