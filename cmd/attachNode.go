@@ -26,7 +26,7 @@ var (
 var (
 	attachNodeCmd = &cobra.Command{
 		Use:   "attach-node [flags] cluster-name",
-		Short: "Attaches node to kubernetes cluster",
+		Short: "Attaches a node to the Kubernetes cluster",
 		Long:  "Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached",
 		Args: func(attachNodeCmd *cobra.Command, args []string) error {
 			if len(args) > 1 {

@@ -20,21 +20,21 @@ var (
 
 var checkGoogleProviderCmd = &cobra.Command{
 	Use:   "check-google-provider",
-	Short: "Checks if user has google cloud permissions",
+	Short: "Checks if the user has Google cloud permissions",
 	Long:  "Checks if service account has the correct roles to use the google cloud provider",
 	Run:   checkGoogleProviderRun,
 }
 
 var checkAmazonProviderCmd = &cobra.Command{
 	Use:   "check-amazon-provider",
-	Short: "Checks if user has amazon cloud permissions",
+	Short: "Checks if the user has Amazon cloud permissions",
 	Long:  "Checks if user has the correct permissions to use the amazon cloud provider",
 	Run:   checkAmazonProviderRun,
 }
 
 var checkAzureProviderCmd = &cobra.Command{
 	Use:   "check-azure-provider",
-	Short: "Checks if user has azure cloud permissions",
+	Short: "Checks if the user has Azure cloud permissions",
 	Long:  "Checks if service principal has the correct permissions to use the azure cloud provider",
 	Run:   checkAzureProviderRun,
 }

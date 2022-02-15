@@ -28,7 +28,7 @@ import (
 // prepNodeCmd represents the prepNode command
 var prepNodeCmd = &cobra.Command{
 	Use:   "prep-node",
-	Short: "Set up prerequisites & prep the node for k8s",
+	Short: "Sets up prerequisites & prepares a node to use with PMK",
 	Long: `Prepare a node to be ready to be added to a Kubernetes cluster. Read more
 	at http://pf9.io/cli_clprep.`,
 	Run: prepNodeRun,

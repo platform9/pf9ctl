@@ -30,7 +30,7 @@ var (
 
 var detachNodeCmd = &cobra.Command{
 	Use:   "detach-node [flags]",
-	Short: "Detaches a node from a kubernetes cluster",
+	Short: "Detaches a node from a Kubernetes cluster",
 	Long:  "Detach nodes from their clusters. If no nodes are passed it will detach the node on which the command was run.",
 	Args: func(detachNodeCmd *cobra.Command, args []string) error {
 		return nil

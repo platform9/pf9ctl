@@ -18,7 +18,7 @@ import (
 
 var deauthNodeCmd = &cobra.Command{
 	Use:   "deauthorize-node",
-	Short: "Deauthorizes this node from the Platform9 control plane",
+	Short: "Deauthorizes this node from the PMK control plane",
 	Long:  "Deauthorizes this node. It will warn the user if the node was a master node or a part of a single node cluster.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {

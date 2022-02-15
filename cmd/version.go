@@ -26,7 +26,7 @@ var skipCheck bool
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Current version of CLI being used",
+	Short: "Prints current version of CLI being used",
 	Long:  "Gives the current pf9ctl version",
 	Run: func(cmd *cobra.Command, args []string) {
 		zap.S().Debug("Version called")

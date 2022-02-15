@@ -17,7 +17,7 @@ import (
 
 var authNodeCmd = &cobra.Command{
 	Use:   "authorize-node",
-	Short: "Authorizes this node.",
+	Short: "Authorizes this node with PMK control plane",
 	Long:  "Authorizes this node.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
