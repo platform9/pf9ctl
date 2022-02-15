@@ -410,8 +410,6 @@ func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (st
 	}
 
 	var payload map[string]interface{}
-
-
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
 	if err != nil {
@@ -424,7 +422,6 @@ func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (st
 	}
 
 	return fmt.Sprintf("error finding cluster with uuid %s", uuid), nil
-
 }
 
 //Function to Check status of attach-node API
