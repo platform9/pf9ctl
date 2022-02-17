@@ -52,7 +52,7 @@ func StoreConfig(cfg *objects.Config, loc string) error {
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
-	fmt.Println(color.Green("✓ ") + "Stored configuration details Successfully")
+	fmt.Println(color.Green("✓ ") + "Stored configuration details successfully")
 	return encoder.Encode(cfgCopy)
 }
 
