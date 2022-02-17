@@ -44,7 +44,7 @@ var bootConfig objects.NodeConfig
 
 func init() {
 	bootstrapCmd.Flags().IntVar(&networkStack, "network-stack", 0, "0 for ipv4 and 1 for ipv6")
-	bootstrapCmd.Flags().StringVar(&containerRuntime, "container-runtime", "docker", "The container runtime for the cluster")
+	bootstrapCmd.Flags().StringVar(&containerRuntime, "container-runtime", "containerd", "The container runtime for the cluster")
 	bootstrapCmd.Flags().IntVar(&calicoNatOutgoing, "nat", 1, "Packets destined outside the POD network will be SNAT'd using the node's IP")
 	bootstrapCmd.Flags().StringVar(&mtuSize, "mtu-size", "1440", "Maximum Transmission Unit (MTU) for the interface")
 	bootstrapCmd.Flags().StringVar(&blockSize, "block-size", "26", "Block size determines how many Pod's can run per node vs total number of nodes per cluster")
