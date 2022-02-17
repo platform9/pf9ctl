@@ -27,9 +27,11 @@ var authNodeCmd = &cobra.Command{
 	},
 	Run: authNodeRun,
 }
+var ipAdd string
 
 func init() {
 	rootCmd.AddCommand(authNodeCmd)
+	authNodeCmd.Flags().StringVarP(&ipAdd, "ip", "i", "", "Ip address of the host to be authorized")
 	authNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 }
 
@@ -71,8 +73,11 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	var nodeIPs []string
-	nodeIPs = append(nodeIPs, getIp().String())
-
+	if ipAdd != "" {
+		nodeIPs = append(nodeIPs, ipAdd)
+	} else {
+		nodeIPs = append(nodeIPs, getIp().String())
+	}
 	token := auth.Token
 	nodeUuids := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
 
