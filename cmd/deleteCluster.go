@@ -22,7 +22,7 @@ var (
 
 var deleteClusterCmd = &cobra.Command{
 	Use:   "delete-cluster",
-	Short: "Deletes the cluster.",
+	Short: "Deletes the cluster",
 	Long:  "Deletes the cluster with the specified name. Additionally the user can pass the cluster UID instead of the name.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {

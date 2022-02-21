@@ -25,7 +25,7 @@ var (
 
 	checkNodeCmd = &cobra.Command{
 		Use:   "check-node",
-		Short: "Check prerequisites for k8s",
+		Short: "Checks prerequisites on a node to use with PMK",
 		Long: `Check if a node satisfies prerequisites to be ready to be added to a Kubernetes cluster. Read more
 	at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/`,
 		Run: checkNodeRun,
