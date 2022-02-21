@@ -40,6 +40,7 @@ func init() {
 	checkNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	checkNodeCmd.Flags().StringVar(&nc.MFA, "mfa", "", "MFA token")
 	checkNodeCmd.Flags().StringVarP(&nc.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+	checkNodeCmd.Flags().BoolVarP(&removeExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
@@ -109,7 +110,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	result, err := pmk.CheckNode(*cfg, c, auth, nc)
+	result, err := pmk.CheckNode(*cfg, c, auth, nc, removeExistingPkgs)
 	if err != nil {
 		// Uploads pf9cli log bundle if checknode fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
@@ -126,7 +127,6 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	} else if result == pmk.CleanInstallFail {
 		fmt.Println("\nPrevious Installation Removed")
-		return
 	}
 	zap.S().Debug("==========Finished running check-node==========")
 }

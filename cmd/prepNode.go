@@ -41,12 +41,13 @@ var prepNodeCmd = &cobra.Command{
 }
 
 var (
-	user           string
-	password       string
-	sshKey         string
-	ips            []string
-	skipChecks     bool
-	disableSwapOff bool
+	user               string
+	password           string
+	sshKey             string
+	ips                []string
+	skipChecks         bool
+	disableSwapOff     bool
+	removeExistingPkgs bool
 )
 
 var nodeConfig objects.NodeConfig
@@ -61,6 +62,7 @@ func init() {
 	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
 	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+	prepNodeCmd.Flags().BoolVarP(&removeExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 
 	rootCmd.AddCommand(prepNodeCmd)
 }
@@ -131,7 +133,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	result, err := pmk.CheckNode(*cfg, c, auth, nodeConfig)
+	result, err := pmk.CheckNode(*cfg, c, auth, nodeConfig, removeExistingPkgs)
 	if err != nil {
 		// Uploads pf9cli log bundle if pre-requisite checks fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
@@ -145,7 +147,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
 	} else if result == pmk.CleanInstallFail {
 		fmt.Println("\nPrevious Installation Removed")
-		return
 	}
 
 	if result == pmk.OptionalFail {

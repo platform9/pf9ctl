@@ -17,7 +17,7 @@ import (
 
 var decommissionNodeCmd = &cobra.Command{
 	Use:   "decommission-node",
-	Short: "Decommissions this node from the Platform9 control plane",
+	Short: "Decommissions this node from the PMK control plane",
 	Long:  "Removes the host agent package and decommissions this node from the Platform9 control plane.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {

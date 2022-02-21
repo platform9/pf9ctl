@@ -19,7 +19,7 @@ import (
 
 var deauthNodeCmd = &cobra.Command{
 	Use:   "deauthorize-node",
-	Short: "Deauthorizes this node from the Platform9 control plane",
+	Short: "Deauthorizes this node from the PMK control plane",
 	Long:  "Deauthorizes this node. It will warn the user if the node was a master node or a part of a single node cluster.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
@@ -32,6 +32,7 @@ var deauthNodeCmd = &cobra.Command{
 
 func init() {
 	deauthNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
+	deauthNodeCmd.Flags().StringVarP(&ipAdd, "ip", "i", "", "IP address of the host to be deauthorized")
 	rootCmd.AddCommand(deauthNodeCmd)
 }
 
@@ -73,7 +74,11 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	var nodeIPs []string
-	nodeIPs = append(nodeIPs, pmk.GetIp().String())
+	if ipAdd != "" {
+		nodeIPs = append(nodeIPs, ipAdd)
+	} else {
+		nodeIPs = append(nodeIPs, pmk.GetIp().String())
+	}
 	projectId := auth.ProjectID
 	token := auth.Token
 	nodeUuids := pmk.HostId(c.Executor, cfg.Fqdn, token, nodeIPs)

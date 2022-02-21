@@ -18,7 +18,7 @@ import (
 
 var authNodeCmd = &cobra.Command{
 	Use:   "authorize-node",
-	Short: "Authorizes this node.",
+	Short: "Authorizes this node with PMK control plane",
 	Long:  "Authorizes this node.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
@@ -28,9 +28,11 @@ var authNodeCmd = &cobra.Command{
 	},
 	Run: authNodeRun,
 }
+var ipAdd string
 
 func init() {
 	rootCmd.AddCommand(authNodeCmd)
+	authNodeCmd.Flags().StringVarP(&ipAdd, "ip", "i", "", "IP address of the host to be authorized")
 	authNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 }
 
@@ -72,8 +74,11 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	var nodeIPs []string
-	nodeIPs = append(nodeIPs, pmk.GetIp().String())
-
+	if ipAdd != "" {
+		nodeIPs = append(nodeIPs, ipAdd)
+	} else {
+		nodeIPs = append(nodeIPs, pmk.GetIp().String())
+	}
 	token := auth.Token
 	nodeUuids := pmk.HostId(c.Executor, cfg.Fqdn, token, nodeIPs)
 

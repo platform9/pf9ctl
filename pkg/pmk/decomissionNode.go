@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
@@ -24,7 +25,7 @@ func RunCommandWait(command string) {
 	}
 }
 
-func removePf9() {
+func removePf9Instation() {
 	fmt.Println("Removing /etc/pf9 logs")
 	RunCommandWait("sudo rm -rf /etc/pf9")
 	fmt.Println("Removing /opt/pf9 logs")
@@ -34,7 +35,7 @@ func removePf9() {
 
 }
 
-func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removeAll bool) {
+func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool) {
 
 	var executor cmdexec.Executor
 	var err error
@@ -64,22 +65,22 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removeAll bool
 		zap.S().Fatalf("Error getting OS version")
 	}
 
+	fmt.Println("Removing packages...")
 	if strings.Contains(string(version), util.Ubuntu) {
-		fmt.Println("Removing packages")
 		RunCommandWait("sudo dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
 		fmt.Println("Purging packages")
 		RunCommandWait("sudo dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
 
 	} else {
-		fmt.Println("Removing packages")
+
 		RunCommandWait("sudo yum erase -y pf9-comms")
 		RunCommandWait("sudo yum erase -y pf9-kube")
 		RunCommandWait("sudo yum erase -y pf9-hostagent")
 		RunCommandWait("sudo yum erase -y pf9-muster")
 	}
 
-	if removeAll {
-		removePf9()
+	if removePf9 {
+		removePf9Instation()
 	}
 
 	RunCommandWait("sudo pkill kubelet")
@@ -103,5 +104,8 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removeAll bool
 	fmt.Println("Removed the node from the UI")
 
 	fmt.Println("Node decommissioning started....This may take a few minutes....Check the latest status in UI")
+	// Wating for ports to close
+	// Some ports taking time to close even after killing the process
+	time.Sleep(50 * time.Second)
 
 }
