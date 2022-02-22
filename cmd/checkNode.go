@@ -40,7 +40,7 @@ func init() {
 	checkNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	checkNodeCmd.Flags().StringVar(&nc.MFA, "mfa", "", "MFA token")
 	checkNodeCmd.Flags().StringVarP(&nc.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
-	checkNodeCmd.Flags().BoolVarP(&removeExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	checkNodeCmd.Flags().BoolVarP(&nc.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
@@ -110,7 +110,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	result, err := pmk.CheckNode(*cfg, c, auth, nc, removeExistingPkgs)
+	result, err := pmk.CheckNode(*cfg, c, auth, nc)
 	if err != nil {
 		// Uploads pf9cli log bundle if checknode fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)

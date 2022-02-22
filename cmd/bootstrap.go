@@ -58,7 +58,7 @@ func init() {
 	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	bootstrapCmd.Flags().StringVar(&bootConfig.MFA, "mfa", "", "MFA token")
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
-	bootstrapCmd.Flags().BoolVarP(&removeExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 	rootCmd.AddCommand(bootstrapCmd)
 }
 
@@ -152,7 +152,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	if !util.SkipPrepNode {
 		zap.S().Debug("========== Running check-node as a part of bootstrap ==========")
 
-		result, err := pmk.CheckNode(*cfg, c, auth, bootConfig, removeExistingPkgs)
+		result, err := pmk.CheckNode(*cfg, c, auth, bootConfig)
 		if err != nil {
 			// Uploads pf9cli log bundle if checknode fails
 			errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)

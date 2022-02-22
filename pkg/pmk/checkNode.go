@@ -38,7 +38,7 @@ when user passes --skip-checks and optional checks fails.
 var WarningOptionalChecks bool
 
 // CheckNode checks the prerequisites for k8s stack
-func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth, nc objects.NodeConfig, removeExistingPkgs bool) (CheckNodeResult, error) {
+func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth, nc objects.NodeConfig) (CheckNodeResult, error) {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
@@ -130,12 +130,12 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	removeCurrentInstallation := ""
 	if !cleanInstallCheck {
 		fmt.Println(color.Yellow("\nPrevious installation found"))
-		if !removeExistingPkgs {
+		if !nc.RemoveExistingPkgs {
 			fmt.Println(color.Yellow("Reinstall Required..."))
 			fmt.Print("Remove Current Installation Type ('yes'/'no'):")
 			fmt.Scanf("%s", &removeCurrentInstallation)
 		}
-		if removeExistingPkgs || strings.ToLower(removeCurrentInstallation) == "yes" {
+		if nc.RemoveExistingPkgs || strings.ToLower(removeCurrentInstallation) == "yes" {
 			DecommissionNode(&ctx, nc, false)
 			return CleanInstallFail, nil
 		}
