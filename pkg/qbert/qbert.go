@@ -406,7 +406,7 @@ func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (st
 	if resp.StatusCode == 400 {
 		return "", fmt.Errorf("cluster with given uuid does not exist: %d", resp.StatusCode)
 	} else if resp.StatusCode != 200 {
-		return "", fmt.Errorf("could not query the qbert Endpoint: %d", resp.StatusCode)
+		return "", fmt.Errorf("could not query the qbert endpoint: %d", resp.StatusCode)
 	}
 
 	var payload map[string]interface{}
