@@ -80,7 +80,7 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 		nodeIPs = append(nodeIPs, pmk.GetIp().String())
 	}
 	token := auth.Token
-	nodeUuids := pmk.HostId(c.Executor, cfg.Fqdn, token, nodeIPs)
+	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
 
 	if len(nodeUuids) == 0 {
 		zap.S().Fatalf("Could not find the node. Check if the node associated with this account")

@@ -2,7 +2,9 @@
 package resmgr
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	"crypto/tls"
 	"net/http"
@@ -15,6 +17,8 @@ import (
 
 type Resmgr interface {
 	AuthorizeHost(hostID, token string) error
+	GetHostId(token string, hostIP []string) []string
+	HostSatus(token string, hostID string) bool
 }
 
 type ResmgrImpl struct {
@@ -23,6 +27,15 @@ type ResmgrImpl struct {
 	maxWait       time.Duration
 	maxHttpRetry  int
 	allowInsecure bool
+}
+
+type hostInfo []struct {
+	Extensions struct {
+		IPAddress struct {
+			Data []string `json:"data"`
+		} `json:"ip_address,omitempty"`
+	} `json:"extensions,omitempty"`
+	ID string `json:"id,omitempty"`
 }
 
 func NewResmgr(fqdn string, maxHttpRetry int, minWait, maxWait time.Duration, allowInsecure bool) Resmgr {
@@ -63,4 +76,78 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string) error {
 	}
 
 	return nil
+}
+
+func (c *ResmgrImpl) GetHostId(token string, hostIPs []string) []string {
+	url := fmt.Sprintf("%s/resmgr/v1/hosts", c.fqdn)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		zap.S().Infof("Unable to create a new request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.S().Infof("Unable to send request to the client: %w", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		zap.S().Infof("Unable to read resp body: %w", err)
+	}
+
+	nodeData := hostInfo{}
+	err = json.Unmarshal(body, &nodeData)
+	if err != nil {
+		zap.S().Infof("Unable to unmarshal resp body to struct: %w", err)
+	}
+	var hostUUIDs []string
+
+	for _, hostip := range hostIPs {
+		hostNotFound := true
+		for _, node := range nodeData {
+			for _, ip := range node.Extensions.IPAddress.Data {
+				if ip == hostip {
+					hostUUIDs = append(hostUUIDs, node.ID)
+					hostNotFound = false
+				}
+			}
+		}
+		if hostNotFound {
+			zap.S().Infof("Unable to find host with IP %v please try again or run prep-node first", hostip)
+		}
+	}
+
+	return hostUUIDs
+}
+
+func (c *ResmgrImpl) HostSatus(token string, hostID string) bool {
+	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s", c.fqdn, hostID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		zap.S().Infof("Unable to create a new request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.S().Infof("Unable to send request to the client: %w", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		zap.S().Infof("Unable to read resp body: %w", err)
+	}
+
+	type hostInfo struct {
+		Info struct {
+			Responding bool `json:"responding"`
+		} `json:"info"`
+	}
+	host := hostInfo{}
+	err = json.Unmarshal(body, &host)
+	if err != nil {
+		zap.S().Infof("Unable to unmarshal resp body to struct: %w", err)
+	}
+	return host.Info.Responding
 }

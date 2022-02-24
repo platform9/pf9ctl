@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -11,17 +10,11 @@ import (
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
+	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 )
-
-type Node struct {
-	Uuid        string `json:"uuid"`
-	ClusterUuid string `json:"clusterUuid"`
-	PrimaryIp   string `json:"primaryIp"`
-	IsMaster    string `json:"isMaster"`
-}
 
 var (
 	nodeIPs []string
@@ -88,10 +81,8 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 	projectId := auth.ProjectID
 	token := auth.Token
 
-	projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
-
-	nodeUuids := pmk.HostId(c.Executor, cfg.Fqdn, token, nodeIPs)
-
+	projectNodes := c.Qbert.GetAllNodes(token, projectId)
+	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
 	if err != nil {
 		zap.S().Fatalf("%v", err)
 		return
@@ -111,11 +102,11 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 	for i := range detachNodes {
 
-		isMaster := getNode(c.Executor, cfg.Fqdn, token, projectId, nodeUuids[0])
+		isMaster := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
 		clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
 
-		if len(clusterNodes) == 1 || isMaster.IsMaster == "1" {
-			fmt.Printf("Node %v is is either the master node or the last node in the cluster\n", isMaster.Uuid)
+		if len(clusterNodes) == 1 || isMaster.IsMaster == 1 {
+			fmt.Printf("Node %v is either the master node or the last node in the cluster\n", isMaster.Uuid)
 		}
 
 		err1 := c.Qbert.DetachNode(detachNodes[i].ClusterUuid, projectId, token, detachNodes[i].Uuid)
@@ -135,24 +126,10 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 }
 
-func getAllProjectNodes(exec cmdexec.Executor, fqdn string, token string, projectID string) []Node {
-	zap.S().Debug("Getting cluster status")
-	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
-	cmd := fmt.Sprintf("curl -sH %v -X GET %v/qbert/v3/%v/nodes", tkn, fqdn, projectID)
-	status, err := exec.RunWithStdout("bash", "-c", cmd)
-	if err != nil {
-		zap.S().Fatalf("Unable to get project nodes: ", err)
-	}
-	var nodes []Node
-	json.Unmarshal([]byte(status), &nodes)
-
-	return nodes
-}
-
 //returns the nodes whos ip's were passed in the flag (or the node installed on the machine if no ip was passed)
-func getNodesFromUuids(nodeUuids []string, allNodes []Node) ([]Node, error) {
+func getNodesFromUuids(nodeUuids []string, allNodes []qbert.Node) ([]qbert.Node, error) {
 
-	var nodesUuid []Node
+	var nodesUuid []qbert.Node
 	for i := range allNodes {
 		for j := range nodeUuids {
 
@@ -171,7 +148,7 @@ func getNodesFromUuids(nodeUuids []string, allNodes []Node) ([]Node, error) {
 }
 
 //returns a list of all clusters the nodes are attached to
-func getClusters(allNodes []Node) []string {
+func getClusters(allNodes []qbert.Node) []string {
 
 	var clusters []string
 
@@ -194,9 +171,9 @@ func getClusters(allNodes []Node) []string {
 }
 
 //returns all nodes attached to a specific clusters, used to detach all nodes from clusters
-func getAllClusterNodes(allNodes []Node, clusters []string) []Node {
+func getAllClusterNodes(allNodes []qbert.Node, clusters []string) []qbert.Node {
 
-	var clusterNodes []Node
+	var clusterNodes []qbert.Node
 
 	for i := range allNodes {
 

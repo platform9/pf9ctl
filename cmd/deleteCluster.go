@@ -85,7 +85,7 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 	token := auth.Token
 
 	if !cmd.Flags().Changed("uuid") {
-		_, clusterUuid, err = c.Qbert.CheckClusterExists(clusterName, projectId, token)
+		_, clusterUuid, _, err = c.Qbert.CheckClusterExists(clusterName, projectId, token)
 
 		if err != nil {
 			zap.S().Fatalf("Could not delete the cluster")
@@ -95,10 +95,8 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 
 	nodeIPs = append(nodeIPs, pmk.GetIp().String())
 
-	projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
-
-	nodeUuids := pmk.HostId(c.Executor, cfg.Fqdn, token, nodeIPs)
-
+	projectNodes := c.Qbert.GetAllNodes(token, projectId)
+	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
 	localNode, err := getNodesFromUuids(nodeUuids, projectNodes)
 
 	if len(localNode) == 1 && localNode[0].ClusterUuid == clusterUuid {
