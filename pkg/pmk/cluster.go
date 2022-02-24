@@ -71,8 +71,8 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 
 	LoopVariable := 1
 	for LoopVariable <= util.MaxLoopValue {
-		hostStatus := Host_Status(c.Executor, ctx.Fqdn, token, nodeID, bootConfig)
-		if hostStatus != "true" {
+		hostStatus := c.Resmgr.HostSatus(token, nodeID)
+		if !hostStatus {
 			zap.S().Debugf("Host is Down...Trying again")
 		} else {
 			util.HostDown = false
@@ -144,30 +144,6 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	fmt.Println(color.Green("✓") + " Bootstrap successfully finished")
 	fmt.Println("Cluster creation started....This may take a few minutes....Check the latest status in UI")
 	return nil
-}
-
-//To check the host status before attaching the node to a cluster
-func Host_Status(exec cmdexec.Executor, fqdn string, token string, hostID string, bootConfig objects.NodeConfig) string {
-	zap.S().Debug("Getting host status")
-	isRemote := cmdexec.CheckRemote(bootConfig)
-
-	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
-	cmd := fmt.Sprintf(`curl -sH %v -X GET %v/resmgr/v1/hosts/%v | jq .info.responding`, tkn, fqdn, hostID)
-	var status string
-	var err1 error
-
-	if isRemote {
-		cmnd := fmt.Sprintf(`%s`, cmd)
-		status, err1 = exec.RunWithStdout(cmnd)
-	} else {
-		status, err1 = exec.RunWithStdout("bash", "-c", cmd)
-	}
-	if err1 != nil {
-		zap.S().Fatalf("Unable to get host status : ", err1)
-	}
-	status = strings.TrimSpace(strings.Trim(status, "\n\""))
-	zap.S().Debug("Host status is : ", status)
-	return status
 }
 
 //Checks Prerequisites for Bootstrap Command

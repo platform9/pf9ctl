@@ -88,8 +88,7 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 	var nodeIPs []string
 	nodeIPs = append(nodeIPs, getIp().String())
 	token := auth.Token
-	nodeUuid := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
-
+	nodeUuid := c.Resmgr.GetHostId(token, nodeIPs)
 	if len(nodeUuid) == 0 {
 		zap.S().Fatalf("Could not remove the node from the UI, check if the host agent is installed.")
 	}
