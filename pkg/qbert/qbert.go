@@ -28,8 +28,14 @@ type Qbert interface {
 	DeauthoriseNode(nodeUuid, token string) error
 	AuthoriseNode(nodeUuid, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
+<<<<<<< HEAD
 	CheckClusterExists(Name, projectID, token string) (bool, string, error)
 	CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error)
+=======
+	CheckClusterExists(Name, projectID, token string) (bool, string, string, error)
+	GetNodeInfo(token, projectID, hostUUID string) Node
+	GetAllNodes(token, projectID string) []Node
+>>>>>>> 5b241f8 (used http client to parse the API resp (#284))
 }
 
 func NewQbert(fqdn string) Qbert {
@@ -38,6 +44,14 @@ func NewQbert(fqdn string) Qbert {
 
 type QbertImpl struct {
 	fqdn string
+}
+
+type Node struct {
+	Uuid        string `json:"uuid"`
+	ClusterUuid string `json:"clusterUuid"`
+	PrimaryIp   string `json:"primaryIp"`
+	IsMaster    int    `json:"isMaster"`
+	ClusterName string `json:"clusterName"`
 }
 
 type ClusterCreateRequest struct {
@@ -60,7 +74,7 @@ func (c QbertImpl) CreateCluster(
 	r ClusterCreateRequest,
 	projectID, token string) (string, error) {
 
-	exists, _, err := c.CheckClusterExists(r.Name, projectID, token)
+	exists, _, _, err := c.CheckClusterExists(r.Name, projectID, token)
 
 	if err != nil {
 		return "", fmt.Errorf("Unable to check existing cluster: %s", err.Error())
@@ -352,40 +366,41 @@ func (c QbertImpl) GetNodePoolID(projectID, token string) (string, error) {
 	return "", errors.New("Unable to locate local Node Pool")
 }
 
-func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, string, error) {
+func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, string, string, error) {
 	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID) // Context should return projectID,make changes to keystoneAuth.
 	client := http.Client{}
 	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
 
 	if err != nil {
-		return false, "", fmt.Errorf("Unable to create request to check cluster name: %w", err)
+		return false, "", "", fmt.Errorf("Unable to create request to check cluster name: %w", err)
 	}
 
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 	if resp.StatusCode != 200 {
-		return false, "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
+		return false, "", "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
 	}
 	var payload []map[string]interface{}
 
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
 	if err != nil {
-		return false, "", err
+		return false, "", "", err
 	}
 
 	for _, val := range payload {
 		if val["name"] == name {
 			cluster_uuid := val["uuid"].(string)
-			return true, cluster_uuid, nil
+			cluster_status := val["status"].(string)
+			return true, cluster_uuid, cluster_status, nil
 		}
 	}
 
-	return false, "", nil
+	return false, "", "", nil
 }
 
 func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error) {
@@ -445,4 +460,56 @@ func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Respo
 
 	defer resp.Body.Close()
 	return resp, nil
+}
+
+func (c QbertImpl) GetNodeInfo(token, projectID, hostUUID string) Node {
+	url := fmt.Sprintf("%s/qbert/v3/%s/nodes/%s", c.fqdn, projectID, hostUUID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		zap.S().Infof("Unable to create request to check if node is connected to any cluster: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.S().Infof("Unable to send request to qbert: %w", err)
+	}
+
+	node := Node{}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		zap.S().Infof("Unable to read resp body of node info: %w", err)
+	}
+	err = json.Unmarshal(body, &node)
+	if err != nil {
+		zap.S().Infof("Unable to unmarshal node info: %w", err)
+	}
+	return node
+}
+
+func (c QbertImpl) GetAllNodes(token, projectID string) []Node {
+	url := fmt.Sprintf("%s/qbert/v3/%s/nodes", c.fqdn, projectID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		zap.S().Infof("Unable to create request to check if node is connected to any cluster: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.S().Infof("Unable to send request to qbert: %w", err)
+	}
+
+	var nodes []Node
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		zap.S().Infof("Unable to read resp body of node info: %w", err)
+	}
+	err = json.Unmarshal(body, &nodes)
+	if err != nil {
+		zap.S().Infof("Unable to unmarshal node info: %w", err)
+	}
+	return nodes
 }
