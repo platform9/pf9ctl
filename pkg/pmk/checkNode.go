@@ -4,6 +4,7 @@ package pmk
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/briandowns/spinner"
@@ -25,9 +26,10 @@ const (
 type CheckNodeResult string
 
 const (
-	PASS         CheckNodeResult = "pass"
-	RequiredFail CheckNodeResult = "requiredFail"
-	OptionalFail CheckNodeResult = "optionalFail"
+	PASS             CheckNodeResult = "pass"
+	RequiredFail     CheckNodeResult = "requiredFail"
+	OptionalFail     CheckNodeResult = "optionalFail"
+	CleanInstallFail CheckNodeResult = "cleanInstallFail"
 )
 
 /* This flag is set true, to have warning "!" message,
@@ -36,7 +38,7 @@ when user passes --skip-checks and optional checks fails.
 var WarningOptionalChecks bool
 
 // CheckNode checks the prerequisites for k8s stack
-func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth) (CheckNodeResult, error) {
+func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth, nc objects.NodeConfig) (CheckNodeResult, error) {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
@@ -79,6 +81,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 
 	mandatoryCheck := true
 	optionalCheck := true
+	cleanInstallCheck := true
 
 	for _, check := range checks {
 		if check.Result {
@@ -110,6 +113,10 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 		if check.Err != nil {
 			zap.S().Debugf("Error in %s : %s", check.Name, check.Err)
 		}
+
+		if check.Name == "Existing Platform9 Packages Check" && !check.Result {
+			cleanInstallCheck = false
+		}
 	}
 
 	if err = allClients.Segment.SendEvent("CheckNode complete", auth, checkPass, ""); err != nil {
@@ -118,6 +125,23 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	fmt.Printf("\n")
 	if mandatoryCheck {
 		fmt.Println(color.Green("✓ ") + "Completed Pre-Requisite Checks successfully\n")
+	}
+
+	removeCurrentInstallation := ""
+	if !cleanInstallCheck {
+		fmt.Println(color.Yellow("\nPrevious installation found"))
+		if !nc.RemoveExistingPkgs {
+			fmt.Println(color.Yellow("Reinstall Required..."))
+			fmt.Print("Remove Current Installation Type ('yes'/'no'):")
+			fmt.Scanf("%s", &removeCurrentInstallation)
+		}
+		if nc.RemoveExistingPkgs || strings.ToLower(removeCurrentInstallation) == "yes" {
+			DecommissionNode(&ctx, nc, false)
+			return CleanInstallFail, nil
+		}
+
+		return RequiredFail, nil
+
 	}
 
 	if !mandatoryCheck {

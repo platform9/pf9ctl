@@ -10,6 +10,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -92,16 +93,16 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 
 	}
 
-	nodeIPs = append(nodeIPs, getIp().String())
+	nodeIPs = append(nodeIPs, pmk.GetIp().String())
 
 	projectNodes := c.Qbert.GetAllNodes(token, projectId)
 	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
 	localNode, err := getNodesFromUuids(nodeUuids, projectNodes)
 
 	if len(localNode) == 1 && localNode[0].ClusterUuid == clusterUuid {
-		RunCommandWait("sudo pkill -9 `pidof kubelet`")
-		RunCommandWait("sudo pkill -9 `pidof etcd`")
-		RunCommandWait("sudo pkill -9 `pidof kube-proxy`")
+		pmk.RunCommandWait("sudo pkill -9 `pidof kubelet`")
+		pmk.RunCommandWait("sudo pkill -9 `pidof etcd`")
+		pmk.RunCommandWait("sudo pkill -9 `pidof kube-proxy`")
 	}
 
 	err = c.Qbert.DeleteCluster(clusterUuid, projectId, token)

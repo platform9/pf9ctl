@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
-	"net"
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/client"
@@ -11,6 +9,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -37,21 +36,10 @@ func init() {
 	rootCmd.AddCommand(detachNodeCmd)
 }
 
-func getIp() net.IP {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
-
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP
-}
-
 func detachNodeRun(cmd *cobra.Command, args []string) {
 
 	if len(nodeIPs) == 0 {
-		nodeIPs = append(nodeIPs, getIp().String())
+		nodeIPs = append(nodeIPs, pmk.GetIp().String())
 	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
