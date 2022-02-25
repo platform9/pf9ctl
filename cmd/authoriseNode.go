@@ -10,6 +10,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -76,7 +77,7 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 	if ipAdd != "" {
 		nodeIPs = append(nodeIPs, ipAdd)
 	} else {
-		nodeIPs = append(nodeIPs, getIp().String())
+		nodeIPs = append(nodeIPs, pmk.GetIp().String())
 	}
 	token := auth.Token
 	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
