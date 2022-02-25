@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -11,6 +10,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -18,7 +18,7 @@ import (
 
 var deauthNodeCmd = &cobra.Command{
 	Use:   "deauthorize-node",
-	Short: "Deauthorizes this node from the Platform9 control plane",
+	Short: "Deauthorizes this node from the PMK control plane",
 	Long:  "Deauthorizes this node. It will warn the user if the node was a master node or a part of a single node cluster.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
@@ -31,6 +31,7 @@ var deauthNodeCmd = &cobra.Command{
 
 func init() {
 	deauthNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
+	deauthNodeCmd.Flags().StringVarP(&ipAdd, "ip", "i", "", "IP address of the host to be deauthorized")
 	rootCmd.AddCommand(deauthNodeCmd)
 }
 
@@ -72,24 +73,26 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	var nodeIPs []string
-	nodeIPs = append(nodeIPs, getIp().String())
+	if ipAdd != "" {
+		nodeIPs = append(nodeIPs, ipAdd)
+	} else {
+		nodeIPs = append(nodeIPs, pmk.GetIp().String())
+	}
 	projectId := auth.ProjectID
 	token := auth.Token
-	nodeUuids := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
-
+	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
 	if len(nodeUuids) == 0 {
 		zap.S().Fatalf("Could not find the node. Check if the node associated with this account")
 	}
 
-	isMaster := getNode(c.Executor, cfg.Fqdn, token, projectId, nodeUuids[0])
+	isMaster := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
 
 	if !detachedMode && isMaster.ClusterUuid != "" {
 
-		projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
-
+		projectNodes := c.Qbert.GetAllNodes(token, projectId)
 		clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
 
-		if len(clusterNodes) == 1 || isMaster.IsMaster == "1" {
+		if len(clusterNodes) == 1 || isMaster.IsMaster == 1 {
 			fmt.Println("Warning: The node is either the master node or the last node in the cluster.")
 			fmt.Print("Do you still want to deauthorize it?")
 			answer, err := util.AskBool("")
@@ -113,19 +116,4 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 
 	fmt.Println("Node deauthorization started....This may take a few minutes....Check the latest status in UI")
 
-}
-
-func getNode(exec cmdexec.Executor, fqdn string, token string, projectID string, nodeUuid string) Node {
-	zap.S().Debug("Checking if node is master")
-	tkn := fmt.Sprintf(`"X-Auth-Token: %v"`, token)
-	cmd := fmt.Sprintf(`curl -sH %v -X GET %v/qbert/v3/%v/nodes | jq -r '.[] | select(.uuid=="`+nodeUuid+`")' `, tkn, fqdn, projectID)
-	isMaster, err := exec.RunWithStdout("bash", "-c", cmd)
-	if err != nil {
-		zap.S().Fatalf("Unable to get node status: ", err)
-	}
-
-	var nodes Node
-	json.Unmarshal([]byte(isMaster), &nodes)
-
-	return nodes
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -17,7 +18,7 @@ import (
 
 var authNodeCmd = &cobra.Command{
 	Use:   "authorize-node",
-	Short: "Authorizes this node.",
+	Short: "Authorizes this node with PMK control plane",
 	Long:  "Authorizes this node.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
@@ -27,9 +28,11 @@ var authNodeCmd = &cobra.Command{
 	},
 	Run: authNodeRun,
 }
+var ipAdd string
 
 func init() {
 	rootCmd.AddCommand(authNodeCmd)
+	authNodeCmd.Flags().StringVarP(&ipAdd, "ip", "i", "", "IP address of the host to be authorized")
 	authNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 }
 
@@ -71,10 +74,13 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	var nodeIPs []string
-	nodeIPs = append(nodeIPs, getIp().String())
-
+	if ipAdd != "" {
+		nodeIPs = append(nodeIPs, ipAdd)
+	} else {
+		nodeIPs = append(nodeIPs, pmk.GetIp().String())
+	}
 	token := auth.Token
-	nodeUuids := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
+	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
 
 	if len(nodeUuids) == 0 {
 		zap.S().Fatalf("Could not find the node. Check if the node associated with this account")
