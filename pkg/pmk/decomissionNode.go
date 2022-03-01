@@ -2,8 +2,6 @@ package pmk
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -14,25 +12,17 @@ import (
 	"go.uber.org/zap"
 )
 
-func RunCommandWait(command string) {
-	output := exec.Command("/bin/sh", "-c", command)
-	output.Stdout = os.Stdout
-	output.Stdin = os.Stdin
-	err := output.Start()
-	output.Wait()
-	if err != nil {
-		fmt.Println(err.Error())
+func removePf9Instation(c client.Client) {
+	commands := map[string]string{
+		"Removing /etc/pf9 logs": "rm -rf /etc/pf9",
+		"Removing /opt/pf9 logs": "rm -rf /opt/pf9",
+		"Removing pf9 HOME dir":  "rm -rf $HOME/pf9",
 	}
-}
 
-func removePf9Instation() {
-	fmt.Println("Removing /etc/pf9 logs")
-	RunCommandWait("sudo rm -rf /etc/pf9")
-	fmt.Println("Removing /opt/pf9 logs")
-	RunCommandWait("sudo rm -rf /opt/pf9")
-	fmt.Println("Removing pf9 HOME dir")
-	RunCommandWait("sudo rm -rf $HOME/pf9")
-
+	for msg, cmd := range commands {
+		fmt.Println(msg)
+		c.Executor.RunCommandWait(cmd)
+	}
 }
 
 func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool) {
@@ -50,11 +40,15 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 	if err != nil {
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
+	ip, err := c.Executor.RunWithStdout("/bin/sh", "-c", "hostname -I")
+	ip = strings.TrimSpace(ip)
+	if err != nil {
+		zap.S().Debugf("unable to get host ip")
+	}
 	var nodeIPs []string
-	nodeIPs = append(nodeIPs, GetIp().String())
+	nodeIPs = append(nodeIPs, ip)
 	token := auth.Token
-	nodeUuid := HostId(c.Executor, cfg.Fqdn, token, nodeIPs)
-
+	nodeUuid := c.Resmgr.GetHostId(token, nodeIPs)
 	if len(nodeUuid) == 0 {
 		zap.S().Fatalf("Could not remove the node from the UI, check if the host agent is installed.")
 	}
@@ -67,34 +61,43 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 
 	fmt.Println("Removing packages...")
 	if strings.Contains(string(version), util.Ubuntu) {
-		RunCommandWait("sudo dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
+		c.Executor.RunCommandWait("dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
 		fmt.Println("Purging packages")
-		RunCommandWait("sudo dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
+		c.Executor.RunCommandWait("dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
 
 	} else {
 
-		RunCommandWait("sudo yum erase -y pf9-comms")
-		RunCommandWait("sudo yum erase -y pf9-kube")
-		RunCommandWait("sudo yum erase -y pf9-hostagent")
-		RunCommandWait("sudo yum erase -y pf9-muster")
+		commands := []string{
+			"yum erase -y pf9-comms",
+			"yum erase -y pf9-kube",
+			"yum erase -y pf9-hostagent",
+			"yum erase -y pf9-muster",
+		}
+		for _, cmd := range commands {
+			c.Executor.RunCommandWait(cmd)
+		}
 	}
 
 	if removePf9 {
-		removePf9Instation()
+		removePf9Instation(c)
 	}
 
-	RunCommandWait("sudo pkill kubelet")
-	RunCommandWait("sudo pkill etcd")
-	RunCommandWait("sudo pkill kube-proxy")
-	RunCommandWait("sudo pkill kube-apiserve")
-	RunCommandWait("sudo pkill kube-schedule")
-	RunCommandWait("sudo pkill kube-controll")
+	commands := []string{
+		"pkill kubelet",
+		"pkill etcd",
+		"pkill kube-proxy",
+		"pkill kube-apiserve",
+		"pkill kube-schedule",
+		"pkill kube-controll",
+		"rm -rf /opt/cni",
+		"rm -rf /opt/containerd",
+		"rm -rf /var/lib/containerd",
+		"rm -rf /var/opt/pf9",
+	}
 
-	RunCommandWait("sudo rm -rf /opt/cni")
-	RunCommandWait("sudo rm -rf /opt/containerd")
-	RunCommandWait("sudo rm -rf /var/lib/containerd")
-	RunCommandWait("sudo rm -rf /var/opt/pf9")
-	RunCommandWait("sudo rm -rf /var/log/pf9")
+	for _, cmd := range commands {
+		c.Executor.RunCommandWait(cmd)
+	}
 
 	err = c.Qbert.DeauthoriseNode(nodeUuid[0], token)
 
