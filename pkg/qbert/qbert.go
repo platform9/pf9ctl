@@ -43,6 +43,7 @@ type Qbert interface {
 	CheckClusterExists(Name, projectID, token string) (bool, string, string, error)
 	GetNodeInfo(token, projectID, hostUUID string) Node
 	GetAllNodes(token, projectID string) []Node
+	GetPMKVersions(token, projectID string) PMKVersions
 }
 
 func NewQbert(fqdn string) Qbert {
@@ -51,6 +52,12 @@ func NewQbert(fqdn string) Qbert {
 
 type QbertImpl struct {
 	fqdn string
+}
+
+type PMKVersions struct {
+	Roles []struct {
+		RoleVersion string `json:"roleVersion"`
+	} `json:"roles"`
 }
 
 var (
@@ -564,4 +571,31 @@ func (c QbertImpl) GetAllNodes(token, projectID string) []Node {
 		zap.S().Infof("Unable to unmarshal node info: %w", err)
 	}
 	return nodes
+}
+
+func (c QbertImpl) GetPMKVersions(token, projectID string) PMKVersions {
+	url := fmt.Sprintf("%s/qbert/v4/%s/clusters/supportedRoleVersions", c.fqdn, projectID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		zap.S().Infof("Unable to create request to get pmk versions: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.S().Infof("Unable to send request to qbert: %w", err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		zap.S().Infof("Unable to read resp body: %w", err)
+	}
+
+	pmkVersions := PMKVersions{}
+	err = json.Unmarshal(body, &pmkVersions)
+	if err != nil {
+		zap.S().Infof("Unable to unmarshal resp body: %w", err)
+	}
+	return pmkVersions
 }

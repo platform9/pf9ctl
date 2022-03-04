@@ -198,6 +198,15 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		cfg.MfaToken,
 	)
 
+	pmkRoles := c.Qbert.GetPMKVersions(auth.Token, auth.ProjectID)
+
+	for _, v := range pmkRoles.Roles {
+		if v.RoleVersion != pmkVersion {
+			fmt.Printf("supported pmk versions are :%v \n \n", pmkRoles.Roles)
+			zap.S().Fatalf("%s pmk-version is not supported", pmkVersion)
+		}
+	}
+
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
 	s.Start()
