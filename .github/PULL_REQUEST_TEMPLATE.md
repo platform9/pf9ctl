@@ -29,10 +29,10 @@
 
 ## TESTING DONE
 #### Automated
-<!--- Please give link to teamcity build if there are any automated tests>
-<!--- that gets executed as a part of build.>
+<!--- Please give link to teamcity build if there are any automated tests -->
+<!--- that gets executed as a part of build.-->
 #### Manual
-<!--- Please list down various use case which were part of manual testing.>
+<!--- Please list down various use case which were part of manual testing. -->
 
 #### Reviewers
 <!--- Add reviewers by appending their github usernames after "/cc" -->
