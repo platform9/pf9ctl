@@ -13,16 +13,15 @@ import (
 )
 
 func removePf9Instation(c client.Client) {
-	commands := map[string]string{
-		"Removing /etc/pf9 logs": "rm -rf /etc/pf9",
-		"Removing /opt/pf9 logs": "rm -rf /opt/pf9",
-		"Removing pf9 HOME dir":  "rm -rf $HOME/pf9",
-	}
-
-	for msg, cmd := range commands {
-		fmt.Println(msg)
-		c.Executor.RunCommandWait(cmd)
-	}
+	fmt.Println("Removing /etc/pf9 logs")
+	cmd := fmt.Sprintf("rm -rf %s", util.EtcDir)
+	c.Executor.RunCommandWait(cmd)
+	fmt.Println("Removing /var/opt/pf9 logs")
+	cmd = fmt.Sprintf("rm -rf %s", util.OptDir)
+	c.Executor.RunCommandWait(cmd)
+	fmt.Println("Removing pf9 HOME dir")
+	cmd = fmt.Sprintf("rm -rf $HOME/pf9")
+	c.Executor.RunCommandWait(cmd)
 }
 
 func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool) {
@@ -43,7 +42,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 	ip, err := c.Executor.RunWithStdout("/bin/sh", "-c", "hostname -I")
 	ip = strings.TrimSpace(ip)
 	if err != nil {
-		zap.S().Debugf("unable to get host ip")
+		zap.S().Fatalf("ERROR : unable to get host ip")
 	}
 	var nodeIPs []string
 	nodeIPs = append(nodeIPs, ip)
@@ -61,20 +60,17 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 
 	fmt.Println("Removing packages...")
 	if strings.Contains(string(version), util.Ubuntu) {
-		c.Executor.RunCommandWait("dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
+		out := c.Executor.RunCommandWait("dpkg --remove pf9-comms pf9-kube pf9-hostagent pf9-muster")
+		fmt.Println(out)
 		fmt.Println("Purging packages")
-		c.Executor.RunCommandWait("dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
+		out = c.Executor.RunCommandWait("dpkg --purge pf9-comms pf9-kube pf9-hostagent pf9-muster")
+		fmt.Println(out)
 
 	} else {
-
-		commands := []string{
-			"yum erase -y pf9-comms",
-			"yum erase -y pf9-kube",
-			"yum erase -y pf9-hostagent",
-			"yum erase -y pf9-muster",
-		}
-		for _, cmd := range commands {
-			c.Executor.RunCommandWait(cmd)
+		for _, p := range util.Pf9Packages {
+			cmd := fmt.Sprintf("yum erase -y %s", p)
+			out := c.Executor.RunCommandWait(cmd)
+			fmt.Println(out)
 		}
 	}
 
@@ -82,20 +78,13 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 		removePf9Instation(c)
 	}
 
-	commands := []string{
-		"pkill kubelet",
-		"pkill etcd",
-		"pkill kube-proxy",
-		"pkill kube-apiserve",
-		"pkill kube-schedule",
-		"pkill kube-controll",
-		"rm -rf /opt/cni",
-		"rm -rf /opt/containerd",
-		"rm -rf /var/lib/containerd",
-		"rm -rf /var/opt/pf9",
+	for _, service := range util.ProcessesList {
+		cmd := fmt.Sprintf("pkill %s", service)
+		c.Executor.RunCommandWait(cmd)
 	}
 
-	for _, cmd := range commands {
+	for _, file := range util.Files {
+		cmd := fmt.Sprintf("rm -rf %s", file)
 		c.Executor.RunCommandWait(cmd)
 	}
 
