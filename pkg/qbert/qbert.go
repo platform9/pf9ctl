@@ -473,13 +473,16 @@ func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Respo
 	return resp, nil
 }
 
+//There are two different payload structures based on pmk version
 func updatePayload(p string) string {
 	var monitoringDetails string
 	var tagDetails string
 	if IsPMKversionDefined {
-		if SplitPMKversion[0] <= "1.20.11" {
+		if SplitPMKversion[0] <= util.PmkVersion {
+			//for pmk version 1.20.11 and below tag and monitoring info is combined in tag field of payload
 			tagDetails = getTagDetails()
 		} else {
+			//for latest pmk (1.21.3-pmk.72) there are two separate fields for tag and monitoring
 			monitoringDetails = getMonitoringDetails()
 		}
 	} else {
@@ -492,6 +495,7 @@ func updatePayload(p string) string {
 
 func getMonitoringDetails() string {
 	if !IsMonitoringDisabled {
+		//if monitoring is enabled then 7 days is default retention time
 		Monitoring = fmt.Sprintf(`,"monitoring":"{\"retentionTime\":\"7d\"}"`)
 	} else {
 		Monitoring = ""

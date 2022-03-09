@@ -46,6 +46,10 @@ const (
 	Invalid         = "Invalid"
 	Valid           = "Valid"
 	InvalidPassword = "Sorry, try again."
+
+	PmkVersion = "1.20.11"
+	Docker     = "docker"
+	Calico     = "calico"
 )
 
 var (

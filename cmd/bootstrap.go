@@ -86,36 +86,36 @@ func init() {
 }
 
 var (
-	useHostName              bool
-	networkPluginOperator    bool
-	enableKubVirt            bool
-	prometheusMonitoring     bool
-	etcdBackup               bool
-	enableProfileEngine      bool
-	networkStack             int
-	apiServerFlags           []string
-	controllerManagerFlags   []string
-	schedulerFlags           []string
-	tag                      string
-	topologyManagerPolicy    string
-	reservedCPUs             string
-	containerRuntime         string
-	mtuSize                  string
-	blockSize                string
-	pmkVersion               string
-	ipEncapsulation          string
-	interfaceDetection       string
-	advancedAPIconfiguration string
-	masterVIP                string
-	masterVIPIf              string
-	metallbIPRange           string
-	containersCIDR           string
-	servicesCIDR             string
-	externalDNSName          string
-	privileged               bool
-	allowWorkloadsOnMaster   bool
-	networkPlugin            string
-	calicoNatOutgoing        int
+	useHostName              bool     //if set then hostname will be used for cluster creation
+	networkPluginOperator    bool     //if set then network plugin operator (add-on) will be enabled on cluster
+	enableKubVirt            bool     //if set then kubeVirt (add-on) will be enabled on cluster
+	prometheusMonitoring     bool     //if set then monitoring (add-on) will be enabled on cluster
+	etcdBackup               bool     //if set then etcd back-up will be enabled with default values
+	enableProfileEngine      bool     //if set then profile engine will be enabled on cluster
+	networkStack             int      //if set then IPv6 network stack will be used
+	apiServerFlags           []string //takes list of api server flags for cluster creation
+	controllerManagerFlags   []string //takes list of controller manager flags for cluster creation
+	schedulerFlags           []string //takes list of scheduler flags for cluster creation
+	tag                      string   //add tag metadata to this cluster creaton
+	topologyManagerPolicy    string   //to topology manager support
+	reservedCPUs             string   //CPUs to be reserved for the system
+	containerRuntime         string   //the container runtime for the cluster
+	mtuSize                  string   //determines how many Pod's can run per node vs total number of nodes per cluster
+	blockSize                string   //maximum transmission unit (MTU) for the interface (in bytes)
+	pmkVersion               string   //pmk role version
+	ipEncapsulation          string   //ip encapsulation mode
+	interfaceDetection       string   //interface detection method
+	advancedAPIconfiguration string   //Kubernetes API configuration
+	masterVIP                string   //Virtual IP address for cluster
+	masterVIPIf              string   //Physical interface for virtual IP association
+	metallbIPRange           string   //Ip range for MetalLB
+	containersCIDR           string   //containersCIDR ip
+	servicesCIDR             string   //servicesCIDR ip
+	externalDNSName          string   //External DNS for master VIP
+	privileged               bool     //if set then this allows this cluster to run privileged containers
+	allowWorkloadsOnMaster   bool     //if set then workloads on master nodes is allowed
+	networkPlugin            string   //cluster CNI network backend
+	calicoNatOutgoing        int      //if set then packets destined outside the POD network will be SNAT'd using the node's IP.
 )
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
@@ -131,17 +131,18 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		networkPluginOperator = true
 	}
 	isIPv6enabled := cmd.Flags().Changed("network-stack")
+	//IPv6 only supports calico
 	if isIPv6enabled {
 		useHostName = false
-		networkPlugin = "calico"
+		networkPlugin = util.Calico
 	}
 
 	qbert.IsPMKversionDefined = cmd.Flags().Changed("pmk-version")
 	if qbert.IsPMKversionDefined {
 		//Profile Engine support check
 		qbert.SplitPMKversion = strings.Split(pmkVersion, "-")
-		if qbert.SplitPMKversion[0] < "1.20.11" {
-			containerRuntime = "docker"
+		if qbert.SplitPMKversion[0] < util.PmkVersion {
+			containerRuntime = util.Docker
 			enableProfileEngine = false
 		}
 	}
@@ -199,12 +200,19 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	)
 
 	pmkRoles := c.Qbert.GetPMKVersions(auth.Token, auth.ProjectID)
-
+	var versionNotFound bool
 	for _, v := range pmkRoles.Roles {
 		if v.RoleVersion != pmkVersion {
-			fmt.Printf("supported pmk versions are :%v \n \n", pmkRoles.Roles)
-			zap.S().Fatalf("%s pmk-version is not supported", pmkVersion)
+			versionNotFound = true
+		} else {
+			versionNotFound = false
+			break
 		}
+	}
+
+	if versionNotFound {
+		fmt.Printf("supported pmk versions are :%v \n \n", pmkRoles.Roles)
+		zap.S().Fatalf("%s pmk-version is not supported", pmkVersion)
 	}
 
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
