@@ -39,8 +39,10 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 	if err != nil {
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
-	cmd := fmt.Sprintf(`hostname -I | awk '{print $1}'`)
-	ip, err := c.Executor.RunWithStdout("bash", "-c", cmd)
+
+	ip, err := c.Executor.RunWithStdout("bash", "-c", "hostname -I")
+	//Handling case where host can have multiple IPs
+	ip = strings.Split(ip, " ")[0]
 	ip = strings.TrimSpace(ip)
 	if err != nil {
 		zap.S().Fatalf("ERROR : unable to get host ip")
