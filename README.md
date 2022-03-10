@@ -602,6 +602,7 @@ Flags:
       --etcd-backup                         Enable automated etcd backups on this cluster (default true)
       --external-dns-name string            External DNS for master VIP
   -h, --help                                help for bootstrap
+      --http-proxy string                   Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.
       --interface-detction-method string    Interface detection method for Calico CNI (default "first-found")
   -i, --ip strings                          IP address of the host to be prepared
       --ip-encapsulation string             Encapsulates POD traffic in IP-in-IP between nodes (default "Always")

@@ -81,7 +81,7 @@ func init() {
 	bootstrapCmd.Flags().StringVar(&bootConfig.MFA, "mfa", "", "MFA token")
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
 	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
-
+	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
 	rootCmd.AddCommand(bootstrapCmd)
 }
 
@@ -116,6 +116,7 @@ var (
 	allowWorkloadsOnMaster   bool     //if set then workloads on master nodes is allowed
 	networkPlugin            string   //cluster CNI network backend
 	calicoNatOutgoing        int      //if set then packets destined outside the POD network will be SNAT'd using the node's IP.
+	httpProxy                string   //the HTTP proxy for this cluster.
 )
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
@@ -126,12 +127,13 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	isEtcdBackupDisabled := cmd.Flags().Changed("etcd-backup")
 	qbert.IsMonitoringDisabled = cmd.Flags().Changed("monitoring")
+	//if set then network plugin operator is enabled
 	enabledKubVirt := cmd.Flags().Changed("enable-kubeVirt")
 	if enabledKubVirt {
 		networkPluginOperator = true
 	}
 	isIPv6enabled := cmd.Flags().Changed("network-stack")
-	//IPv6 only supports calico
+	//IPv6 only supports calico, and by default node ip will be used for cluster creaton
 	if isIPv6enabled {
 		useHostName = false
 		networkPlugin = util.Calico
@@ -139,11 +141,14 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	qbert.IsPMKversionDefined = cmd.Flags().Changed("pmk-version")
 	if qbert.IsPMKversionDefined {
-		//Profile Engine support check
+		//Profile Engine support check, Profile engine is supported for 1.20.11 and above versions
 		qbert.SplitPMKversion = strings.Split(pmkVersion, "-")
 		if qbert.SplitPMKversion[0] < util.PmkVersion {
-			containerRuntime = util.Docker
 			enableProfileEngine = false
+		}
+		//Selected Docker as default container runtime for pmk version 1.20.11 and below versions
+		if qbert.SplitPMKversion[0] <= util.PmkVersion {
+			containerRuntime = util.Docker
 		}
 	}
 
@@ -199,6 +204,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		cfg.MfaToken,
 	)
 
+	//Getting all pmk versions
 	pmkRoles := c.Qbert.GetPMKVersions(auth.Token, auth.ProjectID)
 	var versionNotFound bool
 	for _, v := range pmkRoles.Roles {
@@ -333,6 +339,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		SchedulerFlags:         schedulerFlags,
 		RuntimeConfig:          advancedAPIconfiguration,
 		CalicoNatOutgoing:      calicoNatOutgoing,
+		HttpProxy:              httpProxy,
 	}
 
 	if err != nil {

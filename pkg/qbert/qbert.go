@@ -111,6 +111,7 @@ type ClusterCreateRequest struct {
 	SchedulerFlags         []string   `json:"schedulerFlags"`
 	RuntimeConfig          string     `json:"runtimeConfig"`
 	CalicoNatOutgoing      int        `json:"calicoNatOutgoing"`
+	HttpProxy              string     `json:"httpProxy"`
 }
 
 func (c QbertImpl) CreateCluster(
