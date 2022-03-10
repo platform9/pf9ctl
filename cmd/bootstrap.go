@@ -55,7 +55,6 @@ func init() {
 	bootstrapCmd.Flags().StringSliceVarP(&schedulerFlags, "scheduler-flags", "", []string{}, "Comma separated list of supported Kube-scheduler flags, e.g: --kube-api-burst=120,--log_file_max_size=3000")
 	bootstrapCmd.Flags().StringVar(&advancedAPIconfiguration, "advanced-api-configuration", "", "Allowed API groups and version. Option: default, all & custom")
 	bootstrapCmd.Flags().StringVar(&pmkVersion, "pmk-version", "", "Kubernetes pmk version")
-	bootstrapCmd.MarkFlagRequired("pmk-version")
 	bootstrapCmd.Flags().StringVar(&tag, "tag", "", "Add tag metadata to this cluster (key=value)")
 	bootstrapCmd.Flags().StringVar(&interfaceDetection, "interface-detction-method", "first-found", "Interface detection method for Calico CNI")
 	bootstrapCmd.Flags().StringVar(&ipEncapsulation, "ip-encapsulation", "Always", "Encapsulates POD traffic in IP-in-IP between nodes")
@@ -139,19 +138,6 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		networkPlugin = util.Calico
 	}
 
-	qbert.IsPMKversionDefined = cmd.Flags().Changed("pmk-version")
-	if qbert.IsPMKversionDefined {
-		//Profile Engine support check, Profile engine is supported for 1.20.11 and above versions
-		qbert.SplitPMKversion = strings.Split(pmkVersion, "-")
-		if qbert.SplitPMKversion[0] < util.PmkVersion {
-			enableProfileEngine = false
-		}
-		//Selected Docker as default container runtime for pmk version 1.20.11 and below versions
-		if qbert.SplitPMKversion[0] <= util.PmkVersion {
-			containerRuntime = util.Docker
-		}
-	}
-
 	qbert.IStag = cmd.Flags().Changed("tag")
 	if qbert.IStag {
 		qbert.SplitKeyValue = strings.Split(tag, "=")
@@ -206,6 +192,26 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	//Getting all pmk versions
 	pmkRoles := c.Qbert.GetPMKVersions(auth.Token, auth.ProjectID)
+
+	qbert.IsPMKversionDefined = cmd.Flags().Changed("pmk-version")
+	if qbert.IsPMKversionDefined {
+		//Profile Engine support check, Profile engine is supported for 1.20.11 and above versions
+		qbert.SplitPMKversion = strings.Split(pmkVersion, "-")
+		if qbert.SplitPMKversion[0] < util.PmkVersion {
+			enableProfileEngine = false
+		}
+		//Selected Docker as default container runtime for pmk version 1.20.11 and below versions
+		if qbert.SplitPMKversion[0] <= util.PmkVersion {
+			containerRuntime = util.Docker
+		}
+	} else {
+		fmt.Printf("supported pmk versions are\n")
+		for _, v := range pmkRoles.Roles {
+			fmt.Println(v.RoleVersion)
+		}
+		zap.S().Fatalf("pmk-version is mandatory, please specify pmk version")
+	}
+
 	var versionNotFound bool
 	for _, v := range pmkRoles.Roles {
 		if v.RoleVersion != pmkVersion {
@@ -217,7 +223,10 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 
 	if versionNotFound {
-		fmt.Printf("supported pmk versions are :%v \n \n", pmkRoles.Roles)
+		fmt.Printf("supported pmk versions are\n")
+		for _, v := range pmkRoles.Roles {
+			fmt.Println(v.RoleVersion)
+		}
 		zap.S().Fatalf("%s pmk-version is not supported", pmkVersion)
 	}
 
