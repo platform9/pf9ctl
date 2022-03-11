@@ -53,7 +53,6 @@ func (r *RemoteExecutor) RunCommandWait(command string) string {
 		zap.S().Debugf("Error :", err.Error())
 	}
 	return o
-	//fmt.Println(strings.TrimSpace(o))
 }
 
 // Run runs a command locally returning just success or failure
