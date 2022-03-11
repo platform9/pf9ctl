@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -43,8 +44,13 @@ func (k KeystoneImpl) GetAuth(
 
 	var body string
 
+	//parsing the id or name passed in the tenant[] field
+	_, matcherr := uuid.Parse(tenant)
+
 	if mfa != "" {
-		body = fmt.Sprintf(`{
+		// if err is nil, then it may be the correct ID
+		if matcherr == nil {
+			body = fmt.Sprintf(`{
                 	"auth": {
                         	"identity": {
                                 	"methods": ["password", "totp"],
@@ -67,35 +73,88 @@ func (k KeystoneImpl) GetAuth(
                         	},
                         	"scope": {
                                 	"project": {
-                                        	"name": "%s",
+                                        	"id": "%s",
                                         	"domain": {"id": "default"}
                                 	}
                         	}
                   	}
         	}`, username, password, username, mfa, tenant)
+		} else { // if there is an error, then name is passed and we are accepting name field then
+			body = fmt.Sprintf(`{
+				"auth": {
+						"identity": {
+								"methods": ["password", "totp"],
+								"password": {
+										"user": {
+												"name": "%s",
+												"domain": {"id": "default"},
+												"password": "%s"
+										}
+								},
+				"totp": {
+					"user": {
+										  "name": "%s",
+										  "domain": {
+												  "id": "default"
+										  },
+									  "passcode": "%s"
+								  }
+				}
+						},
+						"scope": {
+								"project": {
+										"name": "%s",
+										"domain": {"id": "default"}
+								}
+						}
+				  }
+			}`, username, password, username, mfa, tenant)
+		}
 	} else {
-		body = fmt.Sprintf(`{
-			"auth": {
-				"identity": {
-					"methods": ["password"],
-					"password": {
-						"user": {
-							"name": "%s",
-							"domain": {"id": "default"},
-							"password": "%s"
+		if matcherr == nil {
+			body = fmt.Sprintf(`{
+				"auth": {
+					"identity": {
+						"methods": ["password"],
+						"password": {
+							"user": {
+								"name": "%s",
+								"domain": {"id": "default"},
+								"password": "%s"
+							}
+						}
+					},
+					"scope": {
+						"project": {
+							"id": "%s",
+							"domain": {"id": "default"}
 						}
 					}
-				},
-				"scope": {
-					"project": {
-						"name": "%s",
-						"domain": {"id": "default"}
+				}
+			}`, username, password, tenant)
+		} else {
+			body = fmt.Sprintf(`{
+				"auth": {
+					"identity": {
+						"methods": ["password"],
+						"password": {
+							"user": {
+								"name": "%s",
+								"domain": {"id": "default"},
+								"password": "%s"
+							}
+						}
+					},
+					"scope": {
+						"project": {
+							"name": "%s",
+							"domain": {"id": "default"}
+						}
 					}
 				}
-			}
-		}`, username, password, tenant)
+			}`, username, password, tenant)
+		}
 	}
-
 	resp, err := http.Post(url, "application/json", strings.NewReader(body))
 	if err != nil {
 		zap.S().Debugf("Error calling keystone API:%s\n", err.Error())

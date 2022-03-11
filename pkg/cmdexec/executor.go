@@ -26,11 +26,33 @@ const (
 type Executor interface {
 	Run(name string, args ...string) error
 	RunWithStdout(name string, args ...string) (string, error)
+	RunCommandWait(command string) string
 }
 
 // LocalExecutor as the name implies executes commands locally
 type LocalExecutor struct {
 	ProxyUrl string
+}
+
+func (c LocalExecutor) RunCommandWait(command string) string {
+	command = "sudo " + command
+	output := exec.Command("/bin/sh", "-c", command)
+	output.Stdout = os.Stdout
+	output.Stdin = os.Stdin
+	err := output.Start()
+	output.Wait()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return ""
+}
+
+func (r *RemoteExecutor) RunCommandWait(command string) string {
+	o, err := r.RunWithStdout(command)
+	if err != nil {
+		zap.S().Debugf("Error :", err.Error())
+	}
+	return o
 }
 
 // Run runs a command locally returning just success or failure

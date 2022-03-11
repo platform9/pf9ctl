@@ -19,7 +19,7 @@ import (
 var (
 	configCmdCreate = &cobra.Command{
 		Use:   "config",
-		Short: "Create or get config",
+		Short: "Creates or get the config",
 		Long:  `Create or get PF9 controller config used by this CLI`,
 	}
 

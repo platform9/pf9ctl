@@ -10,6 +10,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -21,7 +22,7 @@ var (
 
 var deleteClusterCmd = &cobra.Command{
 	Use:   "delete-cluster",
-	Short: "Deletes the cluster.",
+	Short: "Deletes the cluster",
 	Long:  "Deletes the cluster with the specified name. Additionally the user can pass the cluster UID instead of the name.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
@@ -84,7 +85,7 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 	token := auth.Token
 
 	if !cmd.Flags().Changed("uuid") {
-		_, clusterUuid, err = c.Qbert.CheckClusterExists(clusterName, projectId, token)
+		_, clusterUuid, _, err = c.Qbert.CheckClusterExists(clusterName, projectId, token)
 
 		if err != nil {
 			zap.S().Fatalf("Could not delete the cluster")
@@ -92,18 +93,16 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 
 	}
 
-	nodeIPs = append(nodeIPs, getIp().String())
+	nodeIPs = append(nodeIPs, pmk.GetIp().String())
 
-	projectNodes := getAllProjectNodes(c.Executor, cfg.Fqdn, token, projectId)
-
-	nodeUuids := hostId(c.Executor, cfg.Fqdn, token, nodeIPs)
-
+	projectNodes := c.Qbert.GetAllNodes(token, projectId)
+	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
 	localNode, err := getNodesFromUuids(nodeUuids, projectNodes)
 
 	if len(localNode) == 1 && localNode[0].ClusterUuid == clusterUuid {
-		RunCommandWait("sudo pkill -9 `pidof kubelet`")
-		RunCommandWait("sudo pkill -9 `pidof etcd`")
-		RunCommandWait("sudo pkill -9 `pidof kube-proxy`")
+		c.Executor.RunCommandWait("sudo pkill -9 `pidof kubelet`")
+		c.Executor.RunCommandWait("sudo pkill -9 `pidof etcd`")
+		c.Executor.RunCommandWait("sudo pkill -9 `pidof kube-proxy`")
 	}
 
 	err = c.Qbert.DeleteCluster(clusterUuid, projectId, token)

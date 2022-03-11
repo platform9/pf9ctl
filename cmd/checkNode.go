@@ -25,7 +25,7 @@ var (
 
 	checkNodeCmd = &cobra.Command{
 		Use:   "check-node",
-		Short: "Check prerequisites for k8s",
+		Short: "Checks prerequisites on a node to use with PMK",
 		Long: `Check if a node satisfies prerequisites to be ready to be added to a Kubernetes cluster. Read more
 	at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/`,
 		Run: checkNodeRun,
@@ -40,6 +40,7 @@ func init() {
 	checkNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	checkNodeCmd.Flags().StringVar(&nc.MFA, "mfa", "", "MFA token")
 	checkNodeCmd.Flags().StringVarP(&nc.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+	checkNodeCmd.Flags().BoolVarP(&nc.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
@@ -109,7 +110,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	result, err := pmk.CheckNode(*cfg, c, auth)
+	result, err := pmk.CheckNode(*cfg, c, auth, nc)
 	if err != nil {
 		// Uploads pf9cli log bundle if checknode fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
@@ -124,6 +125,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		//this is so the exit flag is set to 1
 	} else if result == pmk.OptionalFail {
 		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+	} else if result == pmk.CleanInstallFail {
+		fmt.Println("\nPrevious Installation Removed")
 	}
 	zap.S().Debug("==========Finished running check-node==========")
 }

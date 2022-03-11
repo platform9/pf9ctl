@@ -13,6 +13,7 @@ require (
 	github.com/briandowns/spinner v1.13.0
 	github.com/fatih/color v1.10.0
 	github.com/google/go-cmp v0.5.6
+	github.com/google/uuid v1.3.0
 	github.com/hashicorp/go-retryablehttp v0.6.7
 	github.com/jinzhu/copier v0.3.2
 	github.com/pkg/sftp v1.12.0

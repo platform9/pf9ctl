@@ -3,3 +3,4 @@ build
 .vscode
 .env
 pf9ctl
+.DS_Store
