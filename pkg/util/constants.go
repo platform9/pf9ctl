@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+var Files []string
 var Pf9Packages []string
 var RequiredPorts []string
 var PortErr string
@@ -105,8 +106,9 @@ var (
 
 func init() {
 	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "3306", "8158", "5672", "5673", "8023", "9080", "6264", "5395", "8558"}
-	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "kube-controller"}
+	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "kube-controller", "etcd"}
 	Pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
+	Files = []string{"/opt/cni", "/opt/containerd", "/var/lib/containerd", "/var/opt/pf9"}
 
 	AzureContributorID = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 
