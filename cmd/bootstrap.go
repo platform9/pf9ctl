@@ -23,9 +23,63 @@ import (
 	"go.uber.org/zap"
 )
 
+const boostrapHelpTemplate = `
+Bootstrap a single node Kubernetes cluster with current node as the master node.
+
+Usage:
+  pf9ctl bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version 1.21.3-pmk.72
+
+Required Flags:
+      --pmk-version string                  Kubernetes pmk version
+Optional Flags:
+      --advanced-api-configuration string   Allowed API groups and version. Option: default, all & custom
+      --allow-workloads-on-master           Taint master nodes ( to enable workloads ) (default true)
+      --api-server-flags strings            Comma separated list of supported kube-apiserver flags, e.g: --request-timeout=2m0s,--kubelet-timeout=20s
+      --block-size string                   Block size determines how many Pod's can run per node vs total number of nodes per cluster (default "26")
+      --container-runtime string            The container runtime for the cluster (default "containerd")
+      --containers-cidr string              CIDR for container overlay (default "10.20.0.0/16")
+      --controller-manager-flags strings    Comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10
+      --enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads
+      --enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine (default true)
+      --etcd-backup                         Enable automated etcd backups on this cluster (default true)
+      --external-dns-name string            External DNS for master VIP
+  -h, --help                                help for bootstrap
+      --http-proxy string                   Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.
+      --interface-detction-method string    Interface detection method for Calico CNI (default "first-found")
+  -i, --ip strings                          IP address of the host to be prepared
+      --ip-encapsulation string             Encapsulates POD traffic in IP-in-IP between nodes (default "Always")
+      --master-virtual-interface string     Physical interface for virtual IP association
+      --master-virtual-ip string            Virtual IP address for cluster
+      --metallb-ip-range string             Ip range for MetalLB
+      --mfa string                          MFA token
+      --monitoring                          Enable monitoring for this cluster (default true)
+      --mtu-size string                     Maximum Transmission Unit (MTU) for the interface (default "1440")
+      --nat int                             Packets destined outside the POD network will be SNAT'd using the node's IP (default 1)
+      --network-plugin string               Specify network plugin ( Possible values: flannel or calico ) (default "calico")
+      --network-plugin-operator             Will deploy Platform9 CRDs to enable multiple CNIs and features such as SR-IOV
+      --network-stack int                   0 for ipv4 and 1 for ipv6
+  -p, --password string                     Ssh password for the node (use 'single quotes' to pass password)
+      --privileged                          Enable privileged mode for K8s API. Default: true (default true)
+  -r, --remove-existing-pkgs                Will remove previous installation if found (default false)
+      --reserved-cpu string                 Comma separated list of CPUs to be reserved for the system, e.g: 4-8,9-12
+      --scheduler-flags strings             Comma separated list of supported Kube-scheduler flags, e.g: --kube-api-burst=120,--log_file_max_size=3000
+      --services-cidr string                CIDR for services overlay (default "10.21.0.0/16")
+  -s, --ssh-key string                      Ssh key file for connecting to the node
+  -e, --sudo-pass string                    Sudo password for user on remote host
+      --tag string                          Add tag metadata to this cluster (key=value)
+      --topology-manager-policy string      Topology manager policy (default "none")
+      --use-hostname                        Use node hostname for cluster creation
+  -u, --user string                         Ssh username for the node
+
+Global Flags:
+      --no-prompt   disable all user prompts
+      --verbose     print verbose logs
+
+`
+
 // bootstrapCmd represents the bootstrap command
 var bootstrapCmd = &cobra.Command{
-	Use:   "bootstrap [flags] cluster-name",
+	Use:   "bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version 1.21.3-pmk.72",
 	Short: "Creates a single-node Kubernetes cluster using the current node",
 	Long:  `Bootstrap a single node Kubernetes cluster with current node as the master node.`,
 	Args: func(attachNodeCmd *cobra.Command, args []string) error {
@@ -81,6 +135,7 @@ func init() {
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
 	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
+	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
 	rootCmd.AddCommand(bootstrapCmd)
 }
 

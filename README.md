@@ -587,9 +587,11 @@ Node decommissioning started....This may take a few minutes....Check the latest 
 Bootstrap a single node Kubernetes cluster with current node as the master node.
 
 Usage:
-  pf9ctl bootstrap [flags] cluster-name
+  pf9ctl bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version 1.21.3-pmk.72
 
-Flags:
+Required Flags:
+      --pmk-version string                  Kubernetes pmk version
+Optional Flags:
       --advanced-api-configuration string   Allowed API groups and version. Option: default, all & custom
       --allow-workloads-on-master           Taint master nodes ( to enable workloads ) (default true)
       --api-server-flags strings            Comma separated list of supported kube-apiserver flags, e.g: --request-timeout=2m0s,--kubelet-timeout=20s
@@ -617,7 +619,6 @@ Flags:
       --network-plugin-operator             Will deploy Platform9 CRDs to enable multiple CNIs and features such as SR-IOV
       --network-stack int                   0 for ipv4 and 1 for ipv6
   -p, --password string                     Ssh password for the node (use 'single quotes' to pass password)
-      --pmk-version string                  Kubernetes pmk version
       --privileged                          Enable privileged mode for K8s API. Default: true (default true)
   -r, --remove-existing-pkgs                Will remove previous installation if found (default false)
       --reserved-cpu string                 Comma separated list of CPUs to be reserved for the system, e.g: 4-8,9-12
