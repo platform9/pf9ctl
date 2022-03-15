@@ -23,9 +23,63 @@ import (
 	"go.uber.org/zap"
 )
 
+const boostrapHelpTemplate = `
+Bootstrap a single node Kubernetes cluster with current node as the master node.
+
+Usage:
+  pf9ctl bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version <version>
+
+Required Flags:
+      --pmk-version string                  Kubernetes pmk version
+Optional Flags:
+      --advanced-api-configuration string   Allowed API groups and version. Option: default, all & custom
+      --allow-workloads-on-master           Taint master nodes ( to enable workloads ) (default true)
+      --api-server-flags strings            Comma separated list of supported kube-apiserver flags, e.g: --request-timeout=2m0s,--kubelet-timeout=20s
+      --block-size string                   Block size determines how many Pod's can run per node vs total number of nodes per cluster (default "26")
+      --container-runtime string            The container runtime for the cluster (default "containerd")
+      --containers-cidr string              CIDR for container overlay (default "10.20.0.0/16")
+      --controller-manager-flags strings    Comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10
+      --enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads
+      --enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine (default true)
+      --etcd-backup                         Enable automated etcd backups on this cluster (default true)
+      --external-dns-name string            External DNS for master VIP
+  -h, --help                                help for bootstrap
+      --http-proxy string                   Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.
+      --interface-detction-method string    Interface detection method for Calico CNI (default "first-found")
+  -i, --ip strings                          IP address of the host to be prepared
+      --ip-encapsulation string             Encapsulates POD traffic in IP-in-IP between nodes (default "Always")
+      --master-virtual-interface string     Physical interface for virtual IP association
+      --master-virtual-ip string            Virtual IP address for cluster
+      --metallb-ip-range string             Ip range for MetalLB
+      --mfa string                          MFA token
+      --monitoring                          Enable monitoring for this cluster (default true)
+      --mtu-size string                     Maximum Transmission Unit (MTU) for the interface (default "1440")
+      --nat int                             Packets destined outside the POD network will be SNAT'd using the node's IP (default 1)
+      --network-plugin string               Specify network plugin ( Possible values: flannel or calico ) (default "calico")
+      --network-plugin-operator             Will deploy Platform9 CRDs to enable multiple CNIs and features such as SR-IOV
+      --network-stack int                   0 for ipv4 and 1 for ipv6
+  -p, --password string                     Ssh password for the node (use 'single quotes' to pass password)
+      --privileged                          Enable privileged mode for K8s API. Default: true (default true)
+  -r, --remove-existing-pkgs                Will remove previous installation if found (default false)
+      --reserved-cpu string                 Comma separated list of CPUs to be reserved for the system, e.g: 4-8,9-12
+      --scheduler-flags strings             Comma separated list of supported Kube-scheduler flags, e.g: --kube-api-burst=120,--log_file_max_size=3000
+      --services-cidr string                CIDR for services overlay (default "10.21.0.0/16")
+  -s, --ssh-key string                      Ssh key file for connecting to the node
+  -e, --sudo-pass string                    Sudo password for user on remote host
+      --tag string                          Add tag metadata to this cluster (key=value)
+      --topology-manager-policy string      Topology manager policy (default "none")
+      --use-hostname                        Use node hostname for cluster creation
+  -u, --user string                         Ssh username for the node
+
+Global Flags:
+      --no-prompt   disable all user prompts
+      --verbose     print verbose logs
+
+`
+
 // bootstrapCmd represents the bootstrap command
 var bootstrapCmd = &cobra.Command{
-	Use:   "bootstrap [flags] cluster-name",
+	Use:   "bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version <version>",
 	Short: "Creates a single-node Kubernetes cluster using the current node",
 	Long:  `Bootstrap a single node Kubernetes cluster with current node as the master node.`,
 	Args: func(attachNodeCmd *cobra.Command, args []string) error {
@@ -43,8 +97,29 @@ var bootstrapCmd = &cobra.Command{
 var bootConfig objects.NodeConfig
 
 func init() {
-	bootstrapCmd.Flags().StringVar(&masterVIP, "master-vip", "", "IP Address for VIP for master nodes")
-	bootstrapCmd.Flags().StringVar(&masterVIPIf, "master-vip-if", "", "Interface name for master / worker nodes")
+	bootstrapCmd.Flags().IntVar(&networkStack, "network-stack", 0, "0 for ipv4 and 1 for ipv6")
+	bootstrapCmd.Flags().StringVar(&containerRuntime, "container-runtime", "containerd", "The container runtime for the cluster")
+	bootstrapCmd.Flags().IntVar(&calicoNatOutgoing, "nat", 1, "Packets destined outside the POD network will be SNAT'd using the node's IP")
+	bootstrapCmd.Flags().StringVar(&mtuSize, "mtu-size", "1440", "Maximum Transmission Unit (MTU) for the interface")
+	bootstrapCmd.Flags().StringVar(&blockSize, "block-size", "26", "Block size determines how many Pod's can run per node vs total number of nodes per cluster")
+	bootstrapCmd.Flags().StringVar(&topologyManagerPolicy, "topology-manager-policy", "none", "Topology manager policy")
+	bootstrapCmd.Flags().StringVar(&reservedCPUs, "reserved-cpu", "", "Comma separated list of CPUs to be reserved for the system, e.g: 4-8,9-12")
+	bootstrapCmd.Flags().StringSliceVarP(&apiServerFlags, "api-server-flags", "", []string{}, "Comma separated list of supported kube-apiserver flags, e.g: --request-timeout=2m0s,--kubelet-timeout=20s")
+	bootstrapCmd.Flags().StringSliceVarP(&controllerManagerFlags, "controller-manager-flags", "", []string{}, "Comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10")
+	bootstrapCmd.Flags().StringSliceVarP(&schedulerFlags, "scheduler-flags", "", []string{}, "Comma separated list of supported Kube-scheduler flags, e.g: --kube-api-burst=120,--log_file_max_size=3000")
+	bootstrapCmd.Flags().StringVar(&advancedAPIconfiguration, "advanced-api-configuration", "", "Allowed API groups and version. Option: default, all & custom")
+	bootstrapCmd.Flags().StringVar(&pmkVersion, "pmk-version", "", "Kubernetes pmk version")
+	bootstrapCmd.Flags().StringVar(&tag, "tag", "", "Add tag metadata to this cluster (key=value)")
+	bootstrapCmd.Flags().StringVar(&interfaceDetection, "interface-detction-method", "first-found", "Interface detection method for Calico CNI")
+	bootstrapCmd.Flags().StringVar(&ipEncapsulation, "ip-encapsulation", "Always", "Encapsulates POD traffic in IP-in-IP between nodes")
+	bootstrapCmd.Flags().StringVar(&masterVIP, "master-virtual-ip", "", "Virtual IP address for cluster")
+	bootstrapCmd.Flags().StringVar(&masterVIPIf, "master-virtual-interface", "", "Physical interface for virtual IP association")
+	bootstrapCmd.Flags().BoolVar(&useHostName, "use-hostname", false, "Use node hostname for cluster creation")
+	bootstrapCmd.Flags().BoolVar(&prometheusMonitoring, "monitoring", true, "Enable monitoring for this cluster")
+	bootstrapCmd.Flags().BoolVar(&etcdBackup, "etcd-backup", true, "Enable automated etcd backups on this cluster")
+	bootstrapCmd.Flags().BoolVar(&networkPluginOperator, "network-plugin-operator", false, "Will deploy Platform9 CRDs to enable multiple CNIs and features such as SR-IOV")
+	bootstrapCmd.Flags().BoolVar(&enableKubVirt, "enable-kubeVirt", false, "Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads")
+	bootstrapCmd.Flags().BoolVar(&enableProfileEngine, "enable-profile-engine", true, "Simplfy cluster governance using the Platform9 Profile Engine")
 	bootstrapCmd.Flags().StringVar(&metallbIPRange, "metallb-ip-range", "", "Ip range for MetalLB")
 	bootstrapCmd.Flags().StringVar(&containersCIDR, "containers-cidr", "10.20.0.0/16", "CIDR for container overlay")
 	bootstrapCmd.Flags().StringVar(&servicesCIDR, "services-cidr", "10.21.0.0/16", "CIDR for services overlay")
@@ -52,26 +127,50 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&privileged, "privileged", true, "Enable privileged mode for K8s API. Default: true")
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allow-workloads-on-master", true, "Taint master nodes ( to enable workloads )")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "network-plugin", "calico", "Specify network plugin ( Possible values: flannel or calico )")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.User, "user", "u", "", "ssh username for the nodes")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.User, "user", "u", "", "Ssh username for the node")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "Ssh password for the node (use 'single quotes' to pass password)")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "Ssh key file for connecting to the node")
+	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of the host to be prepared")
 	bootstrapCmd.Flags().StringVar(&bootConfig.MFA, "mfa", "", "MFA token")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
 	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
+	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
 	rootCmd.AddCommand(bootstrapCmd)
 }
 
 var (
-	masterVIP              string
-	masterVIPIf            string
-	metallbIPRange         string
-	containersCIDR         string
-	servicesCIDR           string
-	externalDNSName        string
-	privileged             bool
-	allowWorkloadsOnMaster bool
-	networkPlugin          string
+	useHostName              bool     //if set then hostname will be used for cluster creation
+	networkPluginOperator    bool     //if set then network plugin operator (add-on) will be enabled on cluster
+	enableKubVirt            bool     //if set then kubeVirt (add-on) will be enabled on cluster
+	prometheusMonitoring     bool     //if set then monitoring (add-on) will be enabled on cluster
+	etcdBackup               bool     //if set then etcd back-up will be enabled with default values
+	enableProfileEngine      bool     //if set then profile engine will be enabled on cluster
+	networkStack             int      //if set then IPv6 network stack will be used
+	apiServerFlags           []string //takes list of api server flags for cluster creation
+	controllerManagerFlags   []string //takes list of controller manager flags for cluster creation
+	schedulerFlags           []string //takes list of scheduler flags for cluster creation
+	tag                      string   //add tag metadata to this cluster creaton
+	topologyManagerPolicy    string   //to topology manager support
+	reservedCPUs             string   //CPUs to be reserved for the system
+	containerRuntime         string   //the container runtime for the cluster
+	mtuSize                  string   //determines how many Pod's can run per node vs total number of nodes per cluster
+	blockSize                string   //maximum transmission unit (MTU) for the interface (in bytes)
+	pmkVersion               string   //pmk role version
+	ipEncapsulation          string   //ip encapsulation mode
+	interfaceDetection       string   //interface detection method
+	advancedAPIconfiguration string   //Kubernetes API configuration
+	masterVIP                string   //Virtual IP address for cluster
+	masterVIPIf              string   //Physical interface for virtual IP association
+	metallbIPRange           string   //Ip range for MetalLB
+	containersCIDR           string   //containersCIDR ip
+	servicesCIDR             string   //servicesCIDR ip
+	externalDNSName          string   //External DNS for master VIP
+	privileged               bool     //if set then this allows this cluster to run privileged containers
+	allowWorkloadsOnMaster   bool     //if set then workloads on master nodes is allowed
+	networkPlugin            string   //cluster CNI network backend
+	calicoNatOutgoing        int      //if set then packets destined outside the POD network will be SNAT'd using the node's IP.
+	httpProxy                string   //the HTTP proxy for this cluster.
 )
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
@@ -79,6 +178,25 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
 	isRemote := cmdexec.CheckRemote(bootConfig)
+
+	isEtcdBackupDisabled := cmd.Flags().Changed("etcd-backup")
+	qbert.IsMonitoringDisabled = cmd.Flags().Changed("monitoring")
+	//if set then network plugin operator is enabled
+	enabledKubVirt := cmd.Flags().Changed("enable-kubeVirt")
+	if enabledKubVirt {
+		networkPluginOperator = true
+	}
+	isIPv6enabled := cmd.Flags().Changed("network-stack")
+	//IPv6 only supports calico, and by default node ip will be used for cluster creaton
+	if isIPv6enabled {
+		useHostName = false
+		networkPlugin = util.Calico
+	}
+
+	qbert.IStag = cmd.Flags().Changed("tag")
+	if qbert.IStag {
+		qbert.SplitKeyValue = strings.Split(tag, "=")
+	}
 
 	if isRemote {
 		if !config.ValidateNodeConfig(&bootConfig, !detachedMode) {
@@ -126,6 +244,46 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		cfg.Tenant,
 		cfg.MfaToken,
 	)
+
+	//Getting all pmk versions
+	pmkRoles := c.Qbert.GetPMKVersions(auth.Token, auth.ProjectID)
+
+	qbert.IsPMKversionDefined = cmd.Flags().Changed("pmk-version")
+	if qbert.IsPMKversionDefined {
+		//Profile Engine support check, Profile engine is supported for 1.20.11 and above versions
+		qbert.SplitPMKversion = strings.Split(pmkVersion, "-")
+		if qbert.SplitPMKversion[0] < util.PmkVersion {
+			enableProfileEngine = false
+		}
+		//Selected Docker as default container runtime for pmk version 1.20.11 and below versions
+		if qbert.SplitPMKversion[0] <= util.PmkVersion {
+			containerRuntime = util.Docker
+		}
+	} else {
+		fmt.Printf("supported pmk versions are\n")
+		for _, v := range pmkRoles.Roles {
+			fmt.Println(v.RoleVersion)
+		}
+		zap.S().Fatalf("pmk-version is mandatory, please specify pmk version")
+	}
+
+	var versionNotFound bool
+	for _, v := range pmkRoles.Roles {
+		if v.RoleVersion != pmkVersion {
+			versionNotFound = true
+		} else {
+			versionNotFound = false
+			break
+		}
+	}
+
+	if versionNotFound {
+		fmt.Printf("supported pmk versions are\n")
+		for _, v := range pmkRoles.Roles {
+			fmt.Println(v.RoleVersion)
+		}
+		zap.S().Fatalf("%s pmk-version is not supported", pmkVersion)
+	}
 
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
@@ -201,17 +359,51 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 	defer c.Segment.Close()
 
+	etcdBackupPath := qbert.Storageproperties{
+		LocalPath: "/etc/pf9/etcd-backup",
+	}
+
+	etcdDefaults := qbert.EtcdBackup{
+		StorageType:         "local",
+		IsEtcdBackupEnabled: 1,
+		StorageProperties:   etcdBackupPath,
+		IntervalInMins:      1440,
+	}
+	if isEtcdBackupDisabled {
+		etcdDefaults = qbert.EtcdBackup{}
+	}
+
 	payload := qbert.ClusterCreateRequest{
-		Name:                  clusterName,
-		ContainerCIDR:         containersCIDR,
-		ServiceCIDR:           servicesCIDR,
-		MasterVirtualIP:       masterVIP,
-		MasterVirtualIPIface:  masterVIPIf,
-		ExternalDNSName:       externalDNSName,
-		NetworkPlugin:         qbert.CNIBackend(networkPlugin),
-		MetalLBAddressPool:    metallbIPRange,
-		AllowWorkloadOnMaster: allowWorkloadsOnMaster,
-		Privileged:            privileged,
+		Name:                   clusterName,
+		ContainerCIDR:          containersCIDR,
+		ServiceCIDR:            servicesCIDR,
+		MasterVirtualIP:        masterVIP,
+		MasterVirtualIPIface:   masterVIPIf,
+		ExternalDNSName:        externalDNSName,
+		NetworkPlugin:          qbert.CNIBackend(networkPlugin),
+		MetalLBAddressPool:     metallbIPRange,
+		AllowWorkloadOnMaster:  allowWorkloadsOnMaster,
+		Privileged:             privileged,
+		EtcdBackup:             etcdDefaults,
+		NetworkPluginOperator:  networkPluginOperator,
+		EnableKubVirt:          enableKubVirt,
+		EnableProfileAgent:     enableProfileEngine,
+		PmkVersion:             pmkVersion,
+		IPEncapsulation:        ipEncapsulation,
+		InterfaceDetection:     interfaceDetection,
+		UseHostName:            useHostName,
+		MtuSize:                mtuSize,
+		BlockSize:              blockSize,
+		ContainerRuntime:       containerRuntime,
+		NetworkStack:           networkStack,
+		TopologyManagerPolicy:  topologyManagerPolicy,
+		ReservedCPUs:           reservedCPUs,
+		ApiServerFlags:         apiServerFlags,
+		ControllerManagerFlags: controllerManagerFlags,
+		SchedulerFlags:         schedulerFlags,
+		RuntimeConfig:          advancedAPIconfiguration,
+		CalicoNatOutgoing:      calicoNatOutgoing,
+		HttpProxy:              httpProxy,
 	}
 
 	if err != nil {
