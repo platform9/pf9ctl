@@ -27,7 +27,7 @@ const boostrapHelpTemplate = `
 Bootstrap a single node Kubernetes cluster with current node as the master node.
 
 Usage:
-  pf9ctl bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version 1.21.3-pmk.72
+  pf9ctl bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version <version>
 
 Required Flags:
       --pmk-version string                  Kubernetes pmk version
@@ -79,7 +79,7 @@ Global Flags:
 
 // bootstrapCmd represents the bootstrap command
 var bootstrapCmd = &cobra.Command{
-	Use:   "bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version 1.21.3-pmk.72",
+	Use:   "bootstrap [flags] cluster-name, e.g: pf9ctl bootstrap testCluster --pmk-version <version>",
 	Short: "Creates a single-node Kubernetes cluster using the current node",
 	Long:  `Bootstrap a single node Kubernetes cluster with current node as the master node.`,
 	Args: func(attachNodeCmd *cobra.Command, args []string) error {
