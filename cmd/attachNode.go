@@ -33,7 +33,7 @@ var (
 			} else if len(args) < 1 {
 				if clusterUuid == "" {
 					return errors.New("either cluster name or cluster uuid is required for attach-node")
-				} else 	{
+				} else {
 					return nil
 				}
 			} else if clusterUuid != "" {
