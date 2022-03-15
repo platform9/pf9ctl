@@ -54,8 +54,6 @@ func init() {
 	attachNodeCmd.Flags().StringVarP(&clusterUuid, "uuid", "u", "", "uuid of the cluster to attach the node to")
 	attachNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(attachNodeCmd)
-	// '-u' option for inetrnal use only for now
-	attachNodeCmd.Flags().MarkHidden("uuid")
 }
 
 func attachNodeRun(cmd *cobra.Command, args []string) {
