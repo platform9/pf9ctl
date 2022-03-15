@@ -434,7 +434,6 @@ func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (st
 	}
 
 	return fmt.Sprintf("error finding cluster with uuid %s", uuid), nil
-
 }
 
 //Function to Check status of attach-node API
