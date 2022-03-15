@@ -28,14 +28,10 @@ type Qbert interface {
 	DeauthoriseNode(nodeUuid, token string) error
 	AuthoriseNode(nodeUuid, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
-<<<<<<< HEAD
-	CheckClusterExists(Name, projectID, token string) (bool, string, error)
-	CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error)
-=======
 	CheckClusterExists(Name, projectID, token string) (bool, string, string, error)
+	CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error)
 	GetNodeInfo(token, projectID, hostUUID string) Node
 	GetAllNodes(token, projectID string) []Node
->>>>>>> 5b241f8 (used http client to parse the API resp (#284))
 }
 
 func NewQbert(fqdn string) Qbert {

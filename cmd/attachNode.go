@@ -110,10 +110,9 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("cluster with given uuid does not exist")
 		}
 	} else {
-		_, clusterUuid, _ = c.Qbert.CheckClusterExists(clusterName, projectId, token)
+		_, clusterUuid, _, _ = c.Qbert.CheckClusterExists(clusterName, projectId, token)
 	}
-
-	clusterStatus := fetchClusterStatus(c.Executor, cfg.Fqdn, token, projectId, clusterUuid)
+	_, _, clusterStatus, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
 
 	if clusterStatus == "ok" {
 
