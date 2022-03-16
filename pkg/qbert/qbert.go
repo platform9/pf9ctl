@@ -41,6 +41,7 @@ type Qbert interface {
 	AuthoriseNode(nodeUuid, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
 	CheckClusterExists(Name, projectID, token string) (bool, string, string, error)
+	CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error)
 	GetNodeInfo(token, projectID, hostUUID string) Node
 	GetAllNodes(token, projectID string) []Node
 	GetPMKVersions(token, projectID string) PMKVersions
@@ -451,6 +452,43 @@ func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, stri
 	}
 
 	return false, "", "", nil
+}
+
+func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error) {
+	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters/%s", c.fqdn, projectID, uuid)
+	client := http.Client{}
+	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
+
+	if err != nil {
+		return "", fmt.Errorf("Unable to create request to check cluster name: %w", err)
+	}
+
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode == 400 {
+		return "", fmt.Errorf("cluster with given uuid does not exist: %d", resp.StatusCode)
+	} else if resp.StatusCode != 200 {
+		return "", fmt.Errorf("could not query the qbert endpoint: %d", resp.StatusCode)
+	}
+
+	var payload map[string]interface{}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&payload)
+	if err != nil {
+		return "", err
+	}
+
+	if payload["uuid"] == uuid {
+		cluster_name := payload["name"].(string)
+		return cluster_name, nil
+	}
+
+	return "", fmt.Errorf("error finding cluster with uuid %s", uuid)
 }
 
 //Function to Check status of attach-node API

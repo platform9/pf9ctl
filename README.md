@@ -371,6 +371,7 @@ Flags:
   -h, --help                help for attach-node
   -m, --master-ip strings   master node ip address
       --mfa string          MFA token
+  -u, --uuid string         uuid of the cluster to attach the node to
   -w, --worker-ip strings   worker node ip address
 
 Global Flags:
