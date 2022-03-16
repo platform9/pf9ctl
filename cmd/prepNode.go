@@ -85,6 +85,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nodeConfig.MFA}
 	var err error
 	if detachedMode {
+		nodeConfig.RemoveExistingPkgs = true
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nodeConfig)
 	} else {
 		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nodeConfig)
