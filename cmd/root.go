@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	//homedir "github.com/mitchellh/go-homedir"
 	"github.com/platform9/pf9ctl/pkg/log"
@@ -17,6 +18,8 @@ import (
 var cfgFile string
 var verbosity bool
 var detach bool
+var logLevel string
+var logDirPath string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -26,7 +29,7 @@ var rootCmd = &cobra.Command{
 	http://pf9.io/cli_clhelp.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Initializing zap log with console and file logging support
-		if err := log.ConfigureGlobalLog(verbosity, util.Pf9Log); err != nil {
+		if err := log.ConfigureGlobalLog(verbosity, logDirPath); err != nil {
 			return fmt.Errorf("log initialization failed: %s", err)
 		}
 		return nil
@@ -62,7 +65,9 @@ func initializeBaseDirs() (err error) {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().BoolVar(&verbosity, "verbose", false, "print verbose logs")
+	//rootCmd.PersistentFlags().BoolVar(&verbosity, "verbose", false, "print verbose logs")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "logging level of a logger, use 'debug' for more verbose logs")
+	rootCmd.PersistentFlags().StringVar(&logDirPath, "log-dir", "", "path to save logs")
 	rootCmd.PersistentFlags().BoolVar(&detach, "no-prompt", false, "disable all user prompts")
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pf9ctl.yaml)")
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
@@ -81,6 +86,18 @@ func initConfig() {
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".pf9ctl")
 	}*/
+
+	if rootCmd.Flags().Changed("log-level") {
+		if logLevel == "debug" {
+			verbosity = true
+		}
+	}
+
+	if !rootCmd.Flags().Changed("log-dir") {
+		logDirPath = util.Pf9Log
+	} else {
+		logDirPath = filepath.Join(logDirPath, "pf9ctl.log")
+	}
 
 	// Read in environment variables that match
 	viper.AutomaticEnv()

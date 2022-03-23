@@ -5,9 +5,7 @@ package pmk
 import (
 	"fmt"
 	"strings"
-	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/keystone"
@@ -40,8 +38,8 @@ var WarningOptionalChecks bool
 // CheckNode checks the prerequisites for k8s stack
 func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth, nc objects.NodeConfig) (CheckNodeResult, error) {
 	// Building our new spinner
-	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Color("red")
+	//s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	//s.Color("red")
 
 	zap.S().Debug("Received a call to check node.")
 
@@ -68,15 +66,18 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 		zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 	}
 
-	s.Start() // Start the spinner
-	defer s.Stop()
-	s.Suffix = " Running pre-requisite checks and installing any missing OS packages"
+	//s.Start() // Start the spinner
+	//defer s.Stop()
+	zap.S().Debug("Running pre-requisite checks and installing any missing OS packages")
+	zap.L().Info("  Running pre-requisite checks and installing any missing OS packages")
+	//s.Suffix = " Running pre-requisite checks and installing any missing OS packages"
 	checks := platform.Check()
-	s.Stop()
+	//s.Stop()
 
 	//We will print console if any missing os packages installed
 	if debian.MissingPkgsInstalledDebian || centos.MissingPkgsInstalledCentos {
-		fmt.Printf(color.Green("✓ ") + "Missing package(s) installed successfully\n")
+		//fmt.Printf(color.Green("✓ ") + "Missing package(s) installed successfully\n")
+		zap.L().Info(color.Green("✓ ") + "Missing package(s) installed successfully\n")
 	}
 
 	mandatoryCheck := true
@@ -89,7 +90,9 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 			if err := allClients.Segment.SendEvent(segment_str, auth, checkPass, ""); err != nil {
 				zap.S().Debugf("Unable to send Segment event for check node. Error: %s", err.Error())
 			}
-			fmt.Printf(color.Green("✓ ")+"%s\n", check.Name)
+			//fmt.Printf(color.Green("✓ ")+"%s\n", check.Name)
+			c := fmt.Sprintf("%s", check.Name)
+			zap.L().Info(color.Green("✓ ") + c)
 
 		} else {
 			segment_str := "CheckNode: " + check.Name
@@ -98,9 +101,15 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 			}
 			// To print warning "!", if --skipchecks flag passed and optional checks failed.
 			if WarningOptionalChecks && !check.Mandatory {
-				fmt.Printf(color.Yellow("! ")+"%s - %s\n", check.Name, check.UserErr)
+				//fmt.Printf(color.Yellow("! ")+"%s - %s\n", check.Name, check.UserErr)
+				c := fmt.Sprintf("%s", check.Name)
+				e := fmt.Sprintf("%s", check.UserErr)
+				zap.L().Info(color.Yellow("! ") + c + " - " + e)
 			} else {
-				fmt.Printf(color.Red("x ")+"%s - %s\n", check.Name, check.UserErr)
+				//fmt.Printf(color.Red("x ")+"%s - %s\n", check.Name, check.UserErr)
+				c := fmt.Sprintf("%s", check.Name)
+				e := fmt.Sprintf("%s", check.UserErr)
+				zap.L().Info(color.Red("x ") + c + " - " + e)
 			}
 
 			if check.Mandatory {
@@ -124,7 +133,8 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	}
 	fmt.Printf("\n")
 	if mandatoryCheck {
-		fmt.Println(color.Green("✓ ") + "Completed Pre-Requisite Checks successfully\n")
+		//fmt.Println(color.Green("✓ ") + "Completed Pre-Requisite Checks successfully\n")
+		zap.L().Info(color.Green("✓ ") + "Completed Pre-Requisite Checks successfully\n")
 	}
 
 	removeCurrentInstallation := ""

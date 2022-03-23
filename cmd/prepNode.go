@@ -144,7 +144,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --log-level debug for logs \n", log.GetLogLocation(logDirPath))
 	} else if result == pmk.CleanInstallFail {
 		fmt.Println("\nPrevious Installation Removed")
 	}
@@ -176,7 +176,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		}
 
 		zap.S().Debugf("Unable to prep node: %s\n", err.Error())
-		zap.S().Fatalf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
+		zap.S().Fatalf("\nFailed to prepare node. See %s or use --log-level debug for logs\n", log.GetLogLocation(logDirPath))
 	}
 
 	zap.S().Debug("==========Finished running prep-node==========")

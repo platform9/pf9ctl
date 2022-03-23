@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
@@ -59,15 +58,15 @@ func sendSegmentEvent(allClients client.Client, eventStr string, auth keystone.K
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth) error {
 	// Building our new spinner
-	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Color("red")
+	//s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	//s.Color("red")
 
 	zap.S().Debug("Received a call to start preparing node(s).")
-	s.Start() // Start the spinner
-	defer s.Stop()
+	//s.Start() // Start the spinner
+	//defer s.Stop()
 	sendSegmentEvent(allClients, "Starting prep-node", auth, false)
-	s.Suffix = " Starting prep-node"
-
+	//s.Suffix = " Starting prep-node"
+	zap.L().Info("  Starting prep-node")
 	hostOS, err := ValidatePlatform(allClients.Executor)
 	if err != nil {
 		errStr := "Error: Invalid host OS. " + err.Error()
@@ -91,28 +90,32 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	}
 
 	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
-	s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
+	//s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
+	zap.L().Info("  Downloading the Hostagent (this might take a few minutes...)")
 	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
 		errStr := "Error: Unable to install hostagent. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
 	}
 
-	s.Suffix = " Platform9 packages installed successfully"
+	//s.Suffix = " Platform9 packages installed successfully"
 
 	if HostAgent == HostAgentCertless {
-		s.Suffix = " Platform9 packages installed successfully"
-		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
+		//s.Suffix = " Platform9 packages installed successfully"
+		//s.Stop()
+		//fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
+		zap.L().Info(color.Green("✓ ") + "Platform9 packages installed successfully")
 	} else if HostAgent == HostAgentLegacy {
-		s.Suffix = " Hostagent installed successfully"
-		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
+		//s.Suffix = " Hostagent installed successfully"
+		//s.Stop()
+		//fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
+		zap.L().Info(color.Green("✓ ") + "Hostagent installed successfully")
 	}
-	s.Restart()
+	//s.Restart()
 
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
-	s.Suffix = " Initialising host"
+	//s.Suffix = " Initialising host"
+	zap.L().Info("  Initialising host...")
 	zap.S().Debug("Initialising host")
 	zap.S().Debug("Identifying the hostID from conf")
 	cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
@@ -124,10 +127,12 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf(errStr)
 	}
 
-	s.Stop()
-	fmt.Println(color.Green("✓ ") + "Initialised host successfully")
-	s.Restart()
-	s.Suffix = " Authorising host"
+	//s.Stop()
+	//fmt.Println(color.Green("✓ ") + "Initialised host successfully")
+	zap.L().Info(color.Green("✓ ") + "Initialised host successfully")
+	//s.Restart()
+	//s.Suffix = " Authorising host"
+	zap.L().Info("  Authorising host (this might take a few minutes...)")
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
@@ -139,12 +144,12 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	}
 
 	zap.S().Debug("Host successfully attached to the Platform9 control-plane")
-	s.Suffix = " Host successfully attached to the Platform9 control-plane"
+	//s.Suffix = " Host successfully attached to the Platform9 control-plane"
 	sendSegmentEvent(allClients, "Successful", auth, false)
-	s.Stop()
+	//s.Stop()
 
-	fmt.Println(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
-
+	//fmt.Println(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
+	zap.L().Info(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
 	return nil
 }
 

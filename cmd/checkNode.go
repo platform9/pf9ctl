@@ -122,10 +122,10 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if result == pmk.RequiredFail {
-		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --log-level debug for logs \n", log.GetLogLocation(logDirPath))
 		//this is so the exit flag is set to 1
 	} else if result == pmk.OptionalFail {
-		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+		fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --log-level debug for logs \n", log.GetLogLocation(logDirPath))
 	} else if result == pmk.CleanInstallFail {
 		fmt.Println("\nPrevious Installation Removed")
 	}

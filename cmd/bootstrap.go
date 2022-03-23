@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/briandowns/spinner"
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
@@ -285,25 +284,28 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("%s pmk-version is not supported", pmkVersion)
 	}
 
-	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	s.Color("red")
-	s.Start()
-	defer s.Stop()
-	s.Suffix = " Running pre-requisite checks for Bootstrap command"
+	//s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
+	//s.Color("red")
+	//s.Start()
+	//defer s.Stop()
+	//s.Suffix = " Running pre-requisite checks for Bootstrap command"
+	zap.L().Info("  Running pre-requisite checks for Bootstrap command")
 
 	val, val1, err := pmk.PreReqBootstrap(executor)
 	if err != nil {
 		zap.S().Fatalf("Error running Prerequisite Checks for Bootstrap Command")
 	}
-	s.Stop()
+	//s.Stop()
 	if !val1 && !val { //Both node and cluster are already present
 		zap.S().Fatalf(color.Red("x ") + " Cannot run this command as this node is already attached to a cluster")
 
 	} else if !val && val1 { //Only node is present but not attached to a cluster
 		util.SkipPrepNode = true
-		fmt.Println(color.Green("✓") + " Node is already Onboarded....Skipping Prep-Node")
+		//fmt.Println(color.Green("✓") + " Node is already Onboarded....Skipping Prep-Node")
+		zap.L().Info(color.Green("✓") + " Node is already Onboarded....Skipping Prep-Node")
 	} else { //Both node and cluster are not present
-		fmt.Println(color.Green("✓") + " Node is not onboarded and not attached to any cluster")
+		//fmt.Println(color.Green("✓") + " Node is not onboarded and not attached to any cluster")
+		zap.L().Info(color.Green("✓") + " Node is not onboarded and not attached to any cluster")
 		util.SkipPrepNode = false
 	}
 
@@ -321,12 +323,14 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		}
 
 		if result == pmk.RequiredFail {
-			zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+			zap.S().Fatalf(color.Red("x ")+"Required pre-requisite check(s) failed. See %s or use --log-level debug for logs \n", log.GetLogLocation(logDirPath))
 			//this is so the exit flag is set to 1
 		} else if result == pmk.OptionalFail {
-			fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+			//fmt.Printf("\nOptional pre-requisite check(s) failed. See %s or use --verbose for logs \n", log.GetLogLocation(util.Pf9Log))
+			zap.S().Info("Optional pre-requisite check(s) failed. See %s or use --log-level debug for logs \n", log.GetLogLocation(logDirPath))
 		} else if result == pmk.CleanInstallFail {
-			fmt.Println("\nPrevious Installation Removed")
+			//fmt.Println("\nPrevious Installation Removed")
+			zap.L().Info("Previous Installation Removed")
 		}
 
 		zap.S().Debug("==========Finished running check-node==========")
@@ -339,7 +343,8 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 				zap.S().Fatalf(" Declined to proceed with creating a Kubernetes cluster with the current node as the master node ")
 			}
 		} else {
-			fmt.Println(" Proceeding to create a Kubernetes cluster with current node as master node")
+			//fmt.Println(" Proceeding to create a Kubernetes cluster with current node as master node")
+			zap.L().Info(" Proceeding to create a Kubernetes cluster with current node as master node")
 		}
 
 		zap.S().Debug("========== Running prep-node as a part of bootstrap ==========")
@@ -352,7 +357,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			}
 
 			zap.S().Debugf("Unable to prep node: %s\n", err.Error())
-			zap.S().Fatalf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
+			zap.S().Fatalf("\nFailed to prepare node. See %s or use --log-level debug for logs\n", log.GetLogLocation(logDirPath))
 		}
 
 		zap.S().Debug("==========Finished running prep-node==========")
@@ -427,7 +432,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		}
 
 		zap.S().Debugf("Unable to bootstrap node: %s\n", err.Error())
-		zap.S().Fatalf("Failed to bootstrap node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
+		zap.S().Fatalf("Failed to bootstrap node. See %s or use --log-level debug for logs\n", log.GetLogLocation(logDirPath))
 	}
 	zap.S().Debug("==========Finished running bootstrap==========")
 }
