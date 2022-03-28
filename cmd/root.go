@@ -5,6 +5,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	//homedir "github.com/mitchellh/go-homedir"
 	"github.com/platform9/pf9ctl/pkg/log"
@@ -17,6 +18,7 @@ import (
 var cfgFile string
 var verbosity bool
 var detach bool
+var logDirPath string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -64,6 +66,7 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolVar(&verbosity, "verbose", false, "print verbose logs")
 	rootCmd.PersistentFlags().BoolVar(&detach, "no-prompt", false, "disable all user prompts")
+	rootCmd.PersistentFlags().StringVar(&logDirPath, "log-dir", "", "path to save logs")
 	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pf9ctl.yaml)")
 	//rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
@@ -81,6 +84,10 @@ func initConfig() {
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".pf9ctl")
 	}*/
+
+	if rootCmd.Flags().Changed("log-dir") {
+		util.Pf9Log = filepath.Join(logDirPath, "pf9ctl.log")
+	}
 
 	// Read in environment variables that match
 	viper.AutomaticEnv()

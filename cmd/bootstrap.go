@@ -216,7 +216,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
-
+	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
 	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, bootConfig); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
@@ -289,6 +289,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	s.Color("red")
 	s.Start()
 	defer s.Stop()
+	zap.S().Debug("Running pre-requisite checks for Bootstrap command")
 	s.Suffix = " Running pre-requisite checks for Bootstrap command"
 
 	val, val1, err := pmk.PreReqBootstrap(executor)

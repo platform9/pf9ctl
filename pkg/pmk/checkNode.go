@@ -70,6 +70,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 
 	s.Start() // Start the spinner
 	defer s.Stop()
+	zap.S().Debug("Running pre-requisite checks and installing any missing OS packages")
 	s.Suffix = " Running pre-requisite checks and installing any missing OS packages"
 	checks := platform.Check()
 	s.Stop()
@@ -125,6 +126,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	fmt.Printf("\n")
 	if mandatoryCheck {
 		fmt.Println(color.Green("✓ ") + "Completed Pre-Requisite Checks successfully\n")
+		zap.S().Debug("Completed Pre-Requisite Checks successfully")
 	}
 
 	removeCurrentInstallation := ""
