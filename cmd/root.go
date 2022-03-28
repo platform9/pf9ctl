@@ -87,6 +87,9 @@ func initConfig() {
 
 	if rootCmd.Flags().Changed("log-dir") {
 		util.Pf9Log = filepath.Join(logDirPath, "pf9ctl.log")
+		util.Pf9LogLoc = logDirPath
+	} else {
+		util.Pf9LogLoc = "pf9/log"
 	}
 
 	// Read in environment variables that match
