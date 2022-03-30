@@ -17,7 +17,7 @@ import (
 )
 
 var authNodeCmd = &cobra.Command{
-	Use:   "authorize-node",
+	Use:   "authorize",
 	Short: "Authorizes this node with PMK control plane",
 	Long:  "Authorizes this node.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
@@ -31,7 +31,7 @@ var authNodeCmd = &cobra.Command{
 var ipAdd string
 
 func init() {
-	rootCmd.AddCommand(authNodeCmd)
+	nodeCmd.AddCommand(authNodeCmd)
 	authNodeCmd.Flags().StringVarP(&ipAdd, "ip", "i", "", "IP address of the host to be authorized")
 	authNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 }

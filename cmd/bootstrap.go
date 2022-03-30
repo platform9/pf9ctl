@@ -136,7 +136,7 @@ func init() {
 	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
 	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
-	rootCmd.AddCommand(bootstrapCmd)
+	clusterCmd.AddCommand(bootstrapCmd)
 }
 
 var (

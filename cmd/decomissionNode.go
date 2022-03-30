@@ -16,7 +16,7 @@ import (
 )
 
 var decommissionNodeCmd = &cobra.Command{
-	Use:   "decommission-node",
+	Use:   "decommission",
 	Short: "Decommissions this node from the PMK control plane",
 	Long:  "Removes the host agent package and decommissions this node from the Platform9 control plane.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
@@ -34,7 +34,7 @@ func init() {
 	decommissionNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	decommissionNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	decommissionNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be decommissioned")
-	rootCmd.AddCommand(decommissionNodeCmd)
+	nodeCmd.AddCommand(decommissionNodeCmd)
 }
 
 func decommissionNodeRun(cmd *cobra.Command, args []string) {

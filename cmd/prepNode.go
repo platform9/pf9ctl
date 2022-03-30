@@ -27,7 +27,7 @@ import (
 
 // prepNodeCmd represents the prepNode command
 var prepNodeCmd = &cobra.Command{
-	Use:   "prep-node",
+	Use:   "prep",
 	Short: "Sets up prerequisites & prepares a node to use with PMK",
 	Long: `Prepare a node to be ready to be added to a Kubernetes cluster. Read more
 	at http://pf9.io/cli_clprep.`,
@@ -63,7 +63,7 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	prepNodeCmd.Flags().BoolVarP(&nodeConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 
-	rootCmd.AddCommand(prepNodeCmd)
+	nodeCmd.AddCommand(prepNodeCmd)
 }
 
 func prepNodeRun(cmd *cobra.Command, args []string) {

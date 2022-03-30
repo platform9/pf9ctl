@@ -20,7 +20,7 @@ import (
 // supportBundleCmd represents the supportBundle command
 var (
 	supportBundleCmd = &cobra.Command{
-		Use:   "bundle",
+		Use:   "gather-report",
 		Short: "Gathers the support bundle and uploads it to S3",
 		Long:  `Gathers support bundle that includes logs for pf9 services and pf9ctl, uploads to S3 `,
 		Run:   supportBundleUpload,
@@ -38,7 +38,7 @@ func init() {
 	supportBundleCmd.Flags().StringVar(&bundleConfig.MFA, "mfa", "", "MFA token")
 	supportBundleCmd.Flags().StringVarP(&bundleConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 
-	rootCmd.AddCommand(supportBundleCmd)
+	nodeCmd.AddCommand(supportBundleCmd)
 }
 
 func supportBundleUpload(cmd *cobra.Command, args []string) {
