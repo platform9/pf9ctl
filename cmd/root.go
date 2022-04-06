@@ -86,6 +86,14 @@ func initConfig() {
 	}*/
 
 	if rootCmd.Flags().Changed("log-dir") {
+		logDirPath = filepath.Join(logDirPath)
+		if _, err := os.Stat(logDirPath); os.IsNotExist(err) {
+			zap.S().Debugf("%s dir is not preset creating it", logDirPath)
+			err = os.MkdirAll(logDirPath, 0700)
+			if err != nil {
+				zap.S().Fatalf("error creating %s dir, please make sure dir is present")
+			}
+		}
 		util.Pf9Log = filepath.Join(logDirPath, "pf9ctl.log")
 		util.Pf9LogLoc = logDirPath
 	} else {
