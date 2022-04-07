@@ -92,11 +92,12 @@ var (
 	OptDir = "/var/opt/pf9"
 
 	//Location of ovf service file
-	OVFLoc    = "/etc/systemd/system/ovf.service"
-	VarDir    = "/var/log/pf9"
-	EtcDir    = "/etc/pf9"
-	Pf9LogLoc = "pf9/log"
-	Pf9DirLoc = filepath.Join(HomeDir, "/")
+	OVFLoc           = "/etc/systemd/system/ovf.service"
+	VarDir           = "/var/log/pf9"
+	EtcDir           = "/etc/pf9"
+	DefaultPf9LogLoc = "pf9/log"
+	Pf9LogLoc        string
+	Pf9DirLoc        = filepath.Join(HomeDir, "/")
 
 	//Auth,Dmesg,dpkg/yum files for Debian/Redhat
 	DmesgLog = "/var/log/dmesg"
