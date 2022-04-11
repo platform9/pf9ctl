@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func removePf9Instation(c client.Client) {
+func removePf9Installation(c client.Client) {
 	fmt.Println("Removing /etc/pf9 logs")
 	cmd := fmt.Sprintf("rm -rf %s", util.EtcDir)
 	c.Executor.RunCommandWait(cmd)
@@ -96,9 +96,9 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 	hostID := c.Resmgr.GetHostId(auth.Token, nodeIPs)
 	//check if hostagent is installed on host
 	if hostOS == "debian" {
-		_, err = c.Executor.RunWithStdout("bash", "-c", "dpkg -l | grep hostagent")
+		_, err = c.Executor.RunWithStdout("bash", "-c", "dpkg -s pf9-hostagent")
 	} else {
-		_, err = c.Executor.RunWithStdout("bash", "-c", "yum list installed | grep hostagent")
+		_, err = c.Executor.RunWithStdout("bash", "-c", "yum list installed pf9-hostagent")
 	}
 	if err == nil {
 		//check if node is connected to any cluster
@@ -125,7 +125,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 			}
 			//remove pf9 dir
 			if removePf9 {
-				removePf9Instation(c)
+				removePf9Installation(c)
 			}
 			fmt.Println("Node decommissioning started....This may take a few minutes....Check the latest status in UI")
 			time.Sleep(50 * time.Second)
@@ -152,7 +152,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 			removeHostagent(c, hostOS)
 			//remove pf9 dir
 			if removePf9 {
-				removePf9Instation(c)
+				removePf9Installation(c)
 			}
 			fmt.Println("Node decommissioning started....This may take a few minutes....Check the latest status in UI")
 			time.Sleep(50 * time.Second)
