@@ -111,6 +111,10 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 	err = c.Qbert.DeauthoriseNode(isMaster.Uuid, token)
 
 	if err != nil {
+		node := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
+		if node.Uuid == "" {
+			zap.S().Infof("Node might be already deauthorized, please check in UI")
+		}
 		zap.S().Fatalf("Error deauthorising node ", err.Error())
 	}
 
