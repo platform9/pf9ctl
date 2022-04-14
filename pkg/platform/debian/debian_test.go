@@ -654,7 +654,7 @@ func TestDpkgLockCheck(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			d := &Debian{exec: tc.exec}
-			result, err := d.checkIfdpkgISLock()
+			result, err := d.CheckIfdpkgISLock()
 			assert.Equal(t, tc.result, result)
 			assert.Equal(t, tc.err, err)
 		})

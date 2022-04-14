@@ -62,7 +62,7 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.CheckKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = d.checkIfdpkgISLock()
+	result, err = d.CheckIfdpkgISLock()
 	checks = append(checks, platform.Check{"Check lock on dpkg", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkIfaptISLock()
@@ -331,8 +331,7 @@ func (d *Debian) disableSwap() (bool, error) {
 	}
 }
 
-func (d *Debian) checkIfdpkgISLock() (bool, error) {
-
+func (d *Debian) CheckIfdpkgISLock() (bool, error) {
 	var f = []string{"lock", "lock-frontend"}
 	for _, file := range f {
 		_, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("lsof /var/lib/dpkg/%s", file))

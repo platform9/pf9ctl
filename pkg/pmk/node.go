@@ -75,9 +75,26 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf(errStr)
 	}
 
+	platform := debian.NewDebian(allClients.Executor)
+	result, _ := platform.CheckIfdpkgISLock()
+
 	if hostOS == "debian" {
-		DisableUnattendedUpdates(allClients)
-		defer EnableUnattendedUpdates(allClients)
+		if StatusUnattendedUpdates(allClients) {
+			// stop unattended-upgrades
+			// this do not stop them if they are already running
+			StopUnattendedUpdates(allClients)
+			defer StartUnattendedUpdates(allClients)
+
+			if IsEnabledUnattendedUpdates(allClients) {
+				DisableUnattendedUpdates(allClients)
+				defer EnableUnattendedUpdates(allClients)
+			}
+		}
+
+		if !result {
+			zap.S().Error("Dpkg lock is acquired by another process while prep-node was running")
+			return fmt.Errorf("Dpkg is under lock")
+		}
 	}
 
 	present := pf9PackagesPresent(hostOS, allClients.Executor)
@@ -148,11 +165,51 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	return nil
 }
 
-func DisableUnattendedUpdates(allClients client.Client) {
-	zap.S().Debug("Disabling unattended-upgrades")
+func StatusUnattendedUpdates(allClients client.Client) bool {
+	zap.S().Debug("Checking Status of unattended-upgrades")
+	output, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl status unattended-upgrades | grep -i Active")
+	if err != nil {
+		zap.S().Debugf("Failed to check unattended-upgrades : %s", err)
+	}
+	output = strings.TrimSpace(output)
+	return !strings.Contains(output, "inactive")
+}
+
+func StopUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Stopping unattended-upgrades")
 	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl stop unattended-upgrades")
 	if err != nil {
-		zap.S().Debugf("failed to disable unattended-upgrades : %s", err)
+		zap.S().Debugf("Failed to stop unattended-upgrades : %s", err)
+	} else {
+		zap.S().Debug("Stopped unattended-upgrades")
+	}
+}
+
+func StartUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Start unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl start unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("Failed to start unattended-upgrades : %s", err)
+	} else {
+		zap.S().Debug("Started unattended-upgrades")
+	}
+}
+
+func IsEnabledUnattendedUpdates(allClients client.Client) bool {
+	zap.S().Debug("Checking if unattended-upgrades is enabled")
+	output, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl is-enabled unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("Failed to check unattended-upgrades is enabled : %s", err)
+	}
+	output = strings.TrimSpace(output)
+	return strings.Contains(output, "enabled")
+}
+
+func DisableUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Disabling unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl disable unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("Failed to disable unattended-upgrades : %s", err)
 	} else {
 		zap.S().Debug("Disabled unattended-upgrades")
 	}
@@ -160,9 +217,9 @@ func DisableUnattendedUpdates(allClients client.Client) {
 
 func EnableUnattendedUpdates(allClients client.Client) {
 	zap.S().Debug("Enabling unattended-upgrades")
-	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl start unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl enable unattended-upgrades")
 	if err != nil {
-		zap.S().Debugf("failed to start unattended-upgrades : %s", err)
+		zap.S().Debugf("Failed to enable unattended-upgrades : %s", err)
 	} else {
 		zap.S().Debug("Enabled unattended-upgrades")
 	}
