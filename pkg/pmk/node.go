@@ -143,8 +143,10 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 
 	s.Stop()
 	fmt.Println(color.Green("✓ ") + "Initialised host successfully")
+	zap.S().Debug("Initialised host successfully")
 	s.Restart()
 	s.Suffix = " Authorising host"
+	zap.S().Debug("Authorising host")
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
@@ -226,7 +228,7 @@ func EnableUnattendedUpdates(allClients client.Client) {
 }
 
 func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	zap.S().Debug("Downloading Hostagent")
+	zap.S().Debug("Downloading the Hostagent (this might take a few minutes...)")
 
 	regionURL, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
 	if err != nil {
