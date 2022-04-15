@@ -141,11 +141,27 @@ func init() {
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
 	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found, use either --remove-existing-pkgs or --remove-existing-pkgs=true to change")
 	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
+	bootstrapCmd.Flags().StringVar(&storageType, "storage-type", "local", "Storage type of etcd-backup")
+	bootstrapCmd.Flags().BoolVar(&useIntervalBackups, "use-interval-backups", false, "Specify the etcd backup's time interval")
+	bootstrapCmd.Flags().IntVar(&intervalInHours, "interval-in-hours", 4, "time interval of etcd-backup in hours(should be between 4 to 23)")
+	bootstrapCmd.Flags().IntVar(&maxIntervalBackupCount, "max-interval-backup-count", 3, "maximum interval backup count for etcd backup")
+	bootstrapCmd.Flags().IntVar(&maxTimestampBackupCount, "max-timestamp-backup-count", 3, "maximum timestamp backup count for etcd backup")
+	bootstrapCmd.Flags().IntVar(&intervalInMins, "interval-in-mins", 0, "time interval of etcd-backup in minutes(should be between 30 to 60)")
+	bootstrapCmd.Flags().StringVar(&backupPath, "etcd-backup-path", "/etc/pf9/etcd-backup", "Backup path for etcd")
+	bootstrapCmd.Flags().StringVar(&dailyBackupTime, "daily-backup-time", "02:00", "daily backup time for etcd")
 	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
 	rootCmd.AddCommand(bootstrapCmd)
 }
 
 var (
+	storageType              string   //etcd backup's storage type
+	dailyBackupTime          string   //daily backup time fot etcd
+	maxIntervalBackupCount   int      //max backup count interval for etcd
+	maxTimestampBackupCount  int      //max timestamp backup count for etcd
+	intervalInHours          int      //etcd backup's time interval in hours
+	intervalInMins           int      //etcd backup's time interval in mins
+	backupPath               string   //etcd backup's storage path
+	useIntervalBackups       bool     //if set then allow as to set backup interval time
 	useHostName              bool     //if set then hostname will be used for cluster creation
 	networkPluginOperator    bool     //if set then network plugin operator (add-on) will be enabled on cluster
 	enableKubVirt            bool     //if set then kubeVirt (add-on) will be enabled on cluster
@@ -367,15 +383,42 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	defer c.Segment.Close()
 
 	etcdBackupPath := qbert.Storageproperties{
-		LocalPath: "/etc/pf9/etcd-backup",
+		LocalPath: backupPath,
 	}
 
-	etcdDefaults := qbert.EtcdBackup{
-		StorageType:         "local",
-		IsEtcdBackupEnabled: 1,
-		StorageProperties:   etcdBackupPath,
-		IntervalInMins:      1440,
+	var etcdDefaults qbert.EtcdBackup
+	if useIntervalBackups {
+		if cmd.Flags().Changed("interval-in-mins") {
+			etcdDefaults = qbert.EtcdBackup{
+				IsEtcdBackupEnabled:     1,
+				IntervalInMins:          intervalInMins,
+				DailyBackupTime:         dailyBackupTime,
+				MaxIntervalBackupCount:  maxIntervalBackupCount,
+				MaxTimestampBackupCount: maxTimestampBackupCount,
+				StorageType:             storageType,
+				StorageProperties:       etcdBackupPath,
+			}
+		} else {
+			etcdDefaults = qbert.EtcdBackup{
+				IsEtcdBackupEnabled:     1,
+				IntervalInHours:         intervalInHours,
+				DailyBackupTime:         dailyBackupTime,
+				MaxIntervalBackupCount:  maxIntervalBackupCount,
+				MaxTimestampBackupCount: maxTimestampBackupCount,
+				StorageType:             storageType,
+				StorageProperties:       etcdBackupPath,
+			}
+		}
+	} else {
+		etcdDefaults = qbert.EtcdBackup{
+			IsEtcdBackupEnabled:     1,
+			DailyBackupTime:         dailyBackupTime,
+			MaxTimestampBackupCount: maxTimestampBackupCount,
+			StorageType:             storageType,
+			StorageProperties:       etcdBackupPath,
+		}
 	}
+
 	if isEtcdBackupDisabled {
 		etcdDefaults = qbert.EtcdBackup{}
 	}

@@ -26,10 +26,14 @@ type Storageproperties struct {
 }
 
 type EtcdBackup struct {
-	StorageType         string            `json:"storageType"`
-	IsEtcdBackupEnabled int               `json:"isEtcdBackupEnabled"`
-	StorageProperties   Storageproperties `json:"storageProperties"`
-	IntervalInMins      int               `json:"intervalInMins"`
+	StorageType             string            `json:"storageType"`
+	IsEtcdBackupEnabled     int               `json:"isEtcdBackupEnabled"`
+	StorageProperties       Storageproperties `json:"storageProperties"`
+	IntervalInMins          int               `json:"intervalInMins,omitempty"`
+	IntervalInHours         int               `json:"intervalInHours,omitempty"`
+	DailyBackupTime         string            `json:"dailyBackupTime"`
+	MaxIntervalBackupCount  int               `json:"maxIntervalBackupCount"`
+	MaxTimestampBackupCount int               `json:"maxTimestampBackupCount"`
 }
 
 type Qbert interface {
