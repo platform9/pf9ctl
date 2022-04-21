@@ -118,7 +118,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 	output = strings.TrimSpace(output)
-	if err != nil {
+	if err != nil || output == "" {
 		errStr := "Error: Unable to fetch host ID. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
@@ -126,8 +126,10 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 
 	s.Stop()
 	fmt.Println(color.Green("✓ ") + "Initialised host successfully")
+	zap.S().Debug("Initialised host successfully")
 	s.Restart()
 	s.Suffix = " Authorising host"
+	zap.S().Debug("Authorising host")
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
@@ -169,7 +171,7 @@ func EnableUnattendedUpdates(allClients client.Client) {
 }
 
 func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	zap.S().Debug("Downloading Hostagent")
+	zap.S().Debug("Downloading the Hostagent (this might take a few minutes...)")
 
 	regionURL, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
 	if err != nil {

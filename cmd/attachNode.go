@@ -29,9 +29,15 @@ var (
 		Long:  "Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached",
 		Args: func(attachNodeCmd *cobra.Command, args []string) error {
 			if len(args) > 1 {
-				return errors.New("Only cluster name is accepted as a parameter")
+				return errors.New("only cluster name is accepted as a parameter")
 			} else if len(args) < 1 {
-				return errors.New("Cluster name is required for attach-node")
+				if clusterUuid == "" {
+					return errors.New("either cluster name or cluster uuid is required for attach-node")
+				} else {
+					return nil
+				}
+			} else if clusterUuid != "" {
+				return errors.New("only one of 'cluster name' or 'cluster uuid' can be specified in a single usage")
 			}
 			clusterName = args[0]
 			return nil
@@ -45,6 +51,7 @@ var (
 func init() {
 	attachNodeCmd.Flags().StringSliceVarP(&masterIPs, "master-ip", "m", []string{}, "master node ip address")
 	attachNodeCmd.Flags().StringSliceVarP(&workerIPs, "worker-ip", "w", []string{}, "worker node ip address")
+	attachNodeCmd.Flags().StringVarP(&clusterUuid, "uuid", "u", "", "uuid of the cluster to attach the node to")
 	attachNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(attachNodeCmd)
 }
@@ -71,7 +78,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
-
+	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
 	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
@@ -94,8 +101,16 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	}
 	projectId := auth.ProjectID
 	token := auth.Token
-
-	_, clusterUUID, clusterStatus, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
+	if clusterUuid != "" {
+		if clusterName, err = c.Qbert.CheckClusterExistsWithUuid(clusterUuid, projectId, token); err != nil {
+			zap.S().Fatalf("unable to verify cluster using uuid %s", err.Error())
+		} else if clusterName == "" {
+			zap.S().Fatalf("cluster with given uuid does not exist")
+		}
+	} else {
+		_, clusterUuid, _, _ = c.Qbert.CheckClusterExists(clusterName, projectId, token)
+	}
+	_, _, clusterStatus, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
 
 	if clusterStatus == "ok" {
 
@@ -126,7 +141,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 				}
 			}
 			if len(wokerids) > 0 {
-				err1 := c.Qbert.AttachNode(clusterUUID, projectId, token, wokerids, "worker")
+				err1 := c.Qbert.AttachNode(clusterUuid, projectId, token, wokerids, "worker")
 
 				if err1 != nil {
 					if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach worker node", ""); err != nil {
@@ -156,7 +171,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 				}
 			}
 			if len(masterids) > 0 {
-				err1 := c.Qbert.AttachNode(clusterUUID, projectId, token, masterids, "master")
+				err1 := c.Qbert.AttachNode(clusterUuid, projectId, token, masterids, "master")
 
 				if err1 != nil {
 					if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach master node", ""); err != nil {

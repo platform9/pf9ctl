@@ -62,6 +62,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nc.MFA}
 	var err error
 	if detachedMode {
+		nc.RemoveExistingPkgs = true
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
 	} else {
 		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
@@ -71,7 +72,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
-
+	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
 	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())

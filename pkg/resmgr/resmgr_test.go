@@ -1,19 +1,19 @@
 package resmgr
+
 import (
-	"testing"
+	"fmt"
 	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/util"
-	"fmt"
+	"testing"
 )
-
 
 func TestRetryHTTP(t *testing.T) {
 
 	client := rhttp.NewClient()
-	
+
 	client.Logger = &util.ZapWrapper{}
-	
-    req, err := rhttp.NewRequest("GET", "http://www.google.com", nil)
+
+	req, err := rhttp.NewRequest("GET", "http://www.google.com", nil)
 	if err != nil {
 		t.Errorf("Unable to create a new request: %s", err)
 	}

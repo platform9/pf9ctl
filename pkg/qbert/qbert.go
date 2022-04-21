@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -20,6 +21,17 @@ type CloudProviderType string
 // CNIBackend specifies the networking solution used for the k8s cluster
 type CNIBackend string
 
+type Storageproperties struct {
+	LocalPath string `json:"localPath"`
+}
+
+type EtcdBackup struct {
+	StorageType         string            `json:"storageType"`
+	IsEtcdBackupEnabled int               `json:"isEtcdBackupEnabled"`
+	StorageProperties   Storageproperties `json:"storageProperties"`
+	IntervalInMins      int               `json:"intervalInMins"`
+}
+
 type Qbert interface {
 	CreateCluster(r ClusterCreateRequest, projectID, token string) (string, error)
 	AttachNode(clusterID, projectID, token string, nodeIDs []string, nodetype string) error
@@ -29,8 +41,10 @@ type Qbert interface {
 	AuthoriseNode(nodeUuid, token string) error
 	GetNodePoolID(projectID, token string) (string, error)
 	CheckClusterExists(Name, projectID, token string) (bool, string, string, error)
+	CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error)
 	GetNodeInfo(token, projectID, hostUUID string) Node
 	GetAllNodes(token, projectID string) []Node
+	GetPMKVersions(token, projectID string) PMKVersions
 }
 
 func NewQbert(fqdn string) Qbert {
@@ -41,6 +55,22 @@ type QbertImpl struct {
 	fqdn string
 }
 
+type PMKVersions struct {
+	Roles []struct {
+		RoleVersion string `json:"roleVersion"`
+	} `json:"roles"`
+}
+
+var (
+	IStag                bool
+	IsPMKversionDefined  bool
+	Tag                  string
+	Monitoring           string
+	SplitPMKversion      []string
+	SplitKeyValue        []string
+	IsMonitoringDisabled bool
+)
+
 type Node struct {
 	Uuid        string `json:"uuid"`
 	ClusterUuid string `json:"clusterUuid"`
@@ -50,19 +80,39 @@ type Node struct {
 }
 
 type ClusterCreateRequest struct {
-	Name                  string     `json:"name"`
-	ContainerCIDR         string     `json:"containersCidr"`
-	ServiceCIDR           string     `json:"servicesCidr"`
-	MasterVirtualIP       string     `json:"masterVipIpv4"`
-	MasterVirtualIPIface  string     `json:"masterVipIface"`
-	AllowWorkloadOnMaster bool       `json:"allowWorkloadsOnMaster"`
-	Privileged            bool       `json:"privileged"`
-	ExternalDNSName       string     `json:"externalDnsName"`
-	NetworkPlugin         CNIBackend `json:"networkPlugin"`
-	MetalLBAddressPool    string     `json:"metallbCidr"`
-	NodePoolUUID          string     `json:"nodePoolUuid"`
-	EnableMetalLb         bool       `json:"enableMetallb"`
-	Masterless            bool       `json:"masterless"`
+	Name                   string     `json:"name"`
+	ContainerCIDR          string     `json:"containersCidr"`
+	ServiceCIDR            string     `json:"servicesCidr"`
+	MasterVirtualIP        string     `json:"masterVipIpv4"`
+	MasterVirtualIPIface   string     `json:"masterVipIface"`
+	AllowWorkloadOnMaster  bool       `json:"allowWorkloadsOnMaster"`
+	Privileged             bool       `json:"privileged"`
+	ExternalDNSName        string     `json:"externalDnsName"`
+	NetworkPlugin          CNIBackend `json:"networkPlugin"`
+	MetalLBAddressPool     string     `json:"metallbCidr"`
+	NodePoolUUID           string     `json:"nodePoolUuid"`
+	EnableMetalLb          bool       `json:"enableMetallb"`
+	Masterless             bool       `json:"masterless"`
+	EtcdBackup             EtcdBackup `json:"etcdBackup"`
+	NetworkPluginOperator  bool       `json:"deployLuigiOperator"`
+	EnableKubVirt          bool       `json:"deployKubevirt"`
+	EnableProfileAgent     bool       `json:"enableProfileAgent"`
+	PmkVersion             string     `json:"kubeRoleVersion"`
+	IPEncapsulation        string     `json:"calicoIpIpMode"`
+	InterfaceDetection     string     `json:"calicoIPv4DetectionMethod"`
+	UseHostName            bool       `json:"useHostname"`
+	MtuSize                string     `json:"mtuSize"`
+	BlockSize              string     `json:"calicoV4BlockSize"`
+	ContainerRuntime       string     `json:"containerRuntime"`
+	NetworkStack           int        `json:"ipv6"`
+	TopologyManagerPolicy  string     `json:"topologyManagerPolicy"`
+	ReservedCPUs           string     `json:"reservedCPUs"`
+	ApiServerFlags         []string   `json:"apiServerFlags"`
+	ControllerManagerFlags []string   `json:"controllerManagerFlags"`
+	SchedulerFlags         []string   `json:"schedulerFlags"`
+	RuntimeConfig          string     `json:"runtimeConfig"`
+	CalicoNatOutgoing      int        `json:"calicoNatOutgoing"`
+	HttpProxy              string     `json:"httpProxy"`
 }
 
 func (c QbertImpl) CreateCluster(
@@ -90,10 +140,12 @@ func (c QbertImpl) CreateCluster(
 		return "", fmt.Errorf("Unable to marshal payload: %s", err.Error())
 	}
 
-	url := fmt.Sprintf("%s/qbert/v3/%s/clusters", c.fqdn, projectID)
+	payLoad := updatePayload(string(byt))
+
+	url := fmt.Sprintf("%s/qbert/v4/%s/clusters", c.fqdn, projectID)
 
 	client := http.Client{}
-	req, err := http.NewRequest("POST", url, strings.NewReader(string(byt)))
+	req, err := http.NewRequest("POST", url, strings.NewReader(payLoad))
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -108,7 +160,11 @@ func (c QbertImpl) CreateCluster(
 	}
 
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("Couldn't query the qbert Endpoint: %d", resp.StatusCode)
+		bodyBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", fmt.Errorf("error creating cluster, unable to read resp body")
+		}
+		return "", fmt.Errorf(string(bodyBytes))
 	}
 
 	var payload map[string]string
@@ -398,6 +454,43 @@ func (c QbertImpl) CheckClusterExists(name, projectID, token string) (bool, stri
 	return false, "", "", nil
 }
 
+func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (string, error) {
+	qbertApiClustersEndpoint := fmt.Sprintf("%s/qbert/v3/%s/clusters/%s", c.fqdn, projectID, uuid)
+	client := http.Client{}
+	req, err := http.NewRequest("GET", qbertApiClustersEndpoint, nil)
+
+	if err != nil {
+		return "", fmt.Errorf("Unable to create request to check cluster name: %w", err)
+	}
+
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	if resp.StatusCode == 400 {
+		return "", fmt.Errorf("cluster with given uuid does not exist: %d", resp.StatusCode)
+	} else if resp.StatusCode != 200 {
+		return "", fmt.Errorf("could not query the qbert endpoint: %d", resp.StatusCode)
+	}
+
+	var payload map[string]interface{}
+
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&payload)
+	if err != nil {
+		return "", err
+	}
+
+	if payload["uuid"] == uuid {
+		cluster_name := payload["name"].(string)
+		return cluster_name, nil
+	}
+
+	return "", fmt.Errorf("error finding cluster with uuid %s", uuid)
+}
+
 //Function to Check status of attach-node API
 func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Response, error) {
 	client := http.Client{}
@@ -417,6 +510,58 @@ func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Respo
 
 	defer resp.Body.Close()
 	return resp, nil
+}
+
+//There are two different payload structures based on pmk version
+func updatePayload(p string) string {
+	var monitoringDetails string
+	var tagDetails string
+	if IsPMKversionDefined {
+		if SplitPMKversion[0] <= util.PmkVersion {
+			//for pmk version 1.20.11 and below tag and monitoring info is combined in tag field of payload
+			tagDetails = getTagDetails()
+		} else {
+			//for latest pmk (1.21.3-pmk.72) there are two separate fields for tag and monitoring
+			monitoringDetails = getMonitoringDetails()
+		}
+	} else {
+		monitoringDetails = getMonitoringDetails()
+	}
+	p = p[:len(p)-1]
+	p = p + tagDetails + monitoringDetails + "}"
+	return p
+}
+
+func getMonitoringDetails() string {
+	if !IsMonitoringDisabled {
+		//if monitoring is enabled then 7 days is default retention time
+		Monitoring = fmt.Sprintf(`,"monitoring":"{\"retentionTime\":\"7d\"}"`)
+	} else {
+		Monitoring = ""
+	}
+	if IStag {
+		Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}`, strings.TrimSpace(SplitKeyValue[0]), strings.TrimSpace(SplitKeyValue[1]))
+	} else {
+		Tag = ""
+	}
+	return Monitoring + Tag
+}
+
+func getTagDetails() string {
+	if !IsMonitoringDisabled {
+		if IStag {
+			Tag = fmt.Sprintf(`,"tags":{"%s":"%s","pf9-system:monitoring":"true"}`, strings.TrimSpace(SplitKeyValue[0]), strings.TrimSpace(SplitKeyValue[1]))
+		} else {
+			Tag = fmt.Sprintf(`,"tags":{"pf9-system:monitoring":"true"}`)
+		}
+	} else {
+		if IStag {
+			Tag = fmt.Sprintf(`,"tags":{"%s":"%s"}`, strings.TrimSpace(SplitKeyValue[0]), strings.TrimSpace(SplitKeyValue[1]))
+		} else {
+			Tag = ""
+		}
+	}
+	return Tag
 }
 
 func (c QbertImpl) GetNodeInfo(token, projectID, hostUUID string) Node {
@@ -469,4 +614,31 @@ func (c QbertImpl) GetAllNodes(token, projectID string) []Node {
 		zap.S().Infof("Unable to unmarshal node info: %w", err)
 	}
 	return nodes
+}
+
+func (c QbertImpl) GetPMKVersions(token, projectID string) PMKVersions {
+	url := fmt.Sprintf("%s/qbert/v4/%s/clusters/supportedRoleVersions", c.fqdn, projectID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		zap.S().Infof("Unable to create request to get pmk versions: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	req.Header.Set("Content-Type", "application/json")
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.S().Infof("Unable to send request to qbert: %w", err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		zap.S().Infof("Unable to read resp body: %w", err)
+	}
+
+	pmkVersions := PMKVersions{}
+	err = json.Unmarshal(body, &pmkVersions)
+	if err != nil {
+		zap.S().Infof("Unable to unmarshal resp body: %w", err)
+	}
+	return pmkVersions
 }

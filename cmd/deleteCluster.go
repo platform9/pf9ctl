@@ -65,7 +65,7 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
-
+	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
 	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
@@ -110,5 +110,5 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Error deleting cluster ", err.Error())
 	}
 	fmt.Println("Cluster deletion started....This may take a few minutes.")
-
+	zap.S().Debug("Cluster deletion started....This may take a few minutes.")
 }

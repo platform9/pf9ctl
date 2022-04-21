@@ -28,7 +28,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 
 	token := keystoneAuth.Token
 	clustername := fmt.Sprintf(" Creating a cluster %s", req.Name)
-
+	zap.S().Debug(clustername)
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
 	s.Start() // Start the spinner
@@ -51,8 +51,8 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		return fmt.Errorf("Unable to create cluster " + req.Name)
 	}
 
-	fmt.Println(color.Green("✓") + " Cluster creation started")
-
+	fmt.Println(color.Green("✓") + " Cluster creation completed")
+	zap.S().Debug("Cluster creation completed")
 	if err = c.Segment.SendEvent("Cluster creation(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
 		zap.S().Debugf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 	}
@@ -61,7 +61,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	s.Start() // Start the spinner
 	defer s.Stop()
 	s.Suffix = " Checking Host Status"
-
+	zap.S().Debug("Checking Host Status")
 	cmd := `grep ^host_id /etc/pf9/host_id.conf | cut -d = -f2 | cut -d ' ' -f2`
 	output, err := c.Executor.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
@@ -89,7 +89,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 
 	if !util.HostDown {
 
-		zap.S().Debugf("Host is Connected...Proceeding to connect node to cluster " + req.Name)
+		zap.S().Debugf("Host is connected")
 		fmt.Println(color.Green("✓") + " Host is connected")
 		if err = c.Segment.SendEvent("Host Connected(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
 			zap.S().Debugf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
@@ -110,7 +110,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	s.Start() // Start the spinner
 	defer s.Stop()
 	s.Suffix = attachname
-
+	zap.S().Debug(attachname)
 	time.Sleep(30 * time.Second)
 	var nodeIDs []string
 	nodeIDs = append(nodeIDs, nodeID)
@@ -130,10 +130,12 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 
 		//Deleting the cluster if the node is not attached to the cluster
 		DeleteClusterBootstrap(clusterID, c, keystoneAuth, token)
+		zap.S().Debug("Unable to attach node to cluster " + req.Name + "Run bootstrap again")
 		return fmt.Errorf("Unable to attach node to cluster " + req.Name + "Run bootstrap again")
 	}
 
 	fmt.Println(color.Green("✓") + " Attached node to the cluster")
+	zap.S().Debug("Attached node to the cluster")
 	if err = c.Segment.SendEvent("Attach-Node(Bootstrap)", keystoneAuth, checkPass, ""); err != nil {
 		zap.S().Debugf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 	}
@@ -142,6 +144,8 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 		zap.S().Debugf("Unable to send Segment event for bootstrap node. Error: %s", err.Error())
 	}
 	fmt.Println(color.Green("✓") + " Bootstrap successfully finished")
+	zap.S().Debug("Bootstrap successfully finished")
+	zap.S().Debug("Cluster creation started....This may take a few minutes....Check the latest status in UI")
 	fmt.Println("Cluster creation started....This may take a few minutes....Check the latest status in UI")
 	return nil
 }

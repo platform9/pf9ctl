@@ -47,6 +47,10 @@ const (
 	Invalid         = "Invalid"
 	Valid           = "Valid"
 	InvalidPassword = "Sorry, try again."
+
+	PmkVersion = "1.20.11"
+	Docker     = "docker"
+	Calico     = "calico"
 )
 
 var (
@@ -88,11 +92,12 @@ var (
 	OptDir = "/var/opt/pf9"
 
 	//Location of ovf service file
-	OVFLoc    = "/etc/systemd/system/ovf.service"
-	VarDir    = "/var/log/pf9"
-	EtcDir    = "/etc/pf9"
-	Pf9LogLoc = "pf9/log"
-	Pf9DirLoc = filepath.Join(HomeDir, "/")
+	OVFLoc           = "/etc/systemd/system/ovf.service"
+	VarDir           = "/var/log/pf9"
+	EtcDir           = "/etc/pf9"
+	DefaultPf9LogLoc = "pf9/log"
+	Pf9LogLoc        string
+	Pf9DirLoc        = filepath.Join(HomeDir, "/")
 
 	//Auth,Dmesg,dpkg/yum files for Debian/Redhat
 	DmesgLog = "/var/log/dmesg"
@@ -250,7 +255,7 @@ func init() {
 
 //These are the constants needed for everything version related
 const (
-	Version         string = "pf9ctl version: v1.12"
+	Version         string = "pf9ctl version: v1.13"
 	AWSBucketName   string = "pmkft-assets"
 	AWSBucketKey    string = "pf9ctl"
 	AWSBucketRegion string = "us-west-1"
