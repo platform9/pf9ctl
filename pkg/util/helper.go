@@ -59,6 +59,8 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 	// 429 Too Many Requests is recoverable. Sometimes the server puts
 	// a Retry-After response header to indicate when the server is
 	// available to start processing request from client.
+
+	//409 Resource conflicts. Most of the time this error(authorizing host) is transient so putting this into retry
 	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusConflict {
 		return true, nil
 	}
