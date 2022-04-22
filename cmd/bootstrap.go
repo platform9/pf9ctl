@@ -142,14 +142,15 @@ func init() {
 	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found, use either --remove-existing-pkgs or --remove-existing-pkgs=true to change")
 	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
 	bootstrapCmd.Flags().StringVar(&storageType, "storage-type", "local", "Storage type of etcd-backup")
-	bootstrapCmd.Flags().BoolVar(&useIntervalBackups, "use-interval-backups", false, "Specify the etcd backup's time interval use either --use-interval-backups or --use-interval-backups=true to change")
+	bootstrapCmd.Flags().BoolVar(&useIntervalBackups, "use-interval-backups", false, "Enable automated etcd backups on this cluster daily at a specified time, use either --use-interval-backups or --use-interval-backups=true to change")
+	bootstrapCmd.Flags().BoolVar(&useTimestampBackups, "use-timestamp-backups", true, "Enable automated etcd backups on this cluster daily at a specified time, --use-timestamp-backups or --use-timestamp-backups=false to change")
 	bootstrapCmd.Flags().IntVar(&intervalInHours, "interval-in-hours", 4, "time interval of etcd-backup in hours(should be between 4 to 23)")
 	bootstrapCmd.Flags().IntVar(&maxIntervalBackupCount, "max-interval-backup-count", 3, "maximum interval backup count for etcd backup")
 	bootstrapCmd.Flags().IntVar(&maxTimestampBackupCount, "max-timestamp-backup-count", 3, "maximum timestamp backup count for etcd backup")
 	bootstrapCmd.Flags().IntVar(&intervalInMins, "interval-in-mins", 30, "time interval of etcd-backup in minutes(should be between 30 to 60)")
 	bootstrapCmd.Flags().StringVar(&backupPath, "etcd-backup-path", "/etc/pf9/etcd-backup", "Backup path for etcd")
 	bootstrapCmd.Flags().StringVar(&dailyBackupTime, "daily-backup-time", "02:00", "daily backup time for etcd")
-	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
+	//bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
 	rootCmd.AddCommand(bootstrapCmd)
 }
 
@@ -162,6 +163,7 @@ var (
 	intervalInMins           int      //etcd backup's time interval in mins
 	backupPath               string   //etcd backup's storage path
 	useIntervalBackups       bool     //if set then allow as to set backup interval time
+	useTimestampBackups      bool     //Enable automated etcd backups on this cluster daily at a specified time
 	useHostName              bool     //if set then hostname will be used for cluster creation
 	networkPluginOperator    bool     //if set then network plugin operator (add-on) will be enabled on cluster
 	enableKubVirt            bool     //if set then kubeVirt (add-on) will be enabled on cluster
@@ -382,13 +384,44 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 	defer c.Segment.Close()
 
+	var etcdDefaults qbert.EtcdBackup
+	if isEtcdBackupDisabled {
+		etcdDefaults = qbert.EtcdBackup{}
+	}
+
 	etcdBackupPath := qbert.Storageproperties{
 		LocalPath: backupPath,
 	}
 
-	var etcdDefaults qbert.EtcdBackup
-	if useIntervalBackups {
+	//for etcd backup there are two types of backup options we can choose
+	if cmd.Flags().Changed("use-timestamp-backups") {
+		if !cmd.Flags().Changed("use-interval-backups") {
+			zap.S().Fatalf("Either Timestamp backup or Interval backup shoud be enabled to enable etcd backup")
+		} else {
+			//if interval backup option is selected then it has two options (hours/minutes)
+			if cmd.Flags().Changed("interval-in-mins") {
+				//if minutes are slected
+				etcdDefaults = qbert.EtcdBackup{
+					IsEtcdBackupEnabled:    1,
+					IntervalInMins:         intervalInMins,
+					MaxIntervalBackupCount: maxIntervalBackupCount,
+					StorageType:            storageType,
+					StorageProperties:      etcdBackupPath,
+				}
+			} else {
+				//default hours are selected
+				etcdDefaults = qbert.EtcdBackup{
+					IsEtcdBackupEnabled:    1,
+					IntervalInHours:        intervalInHours,
+					MaxIntervalBackupCount: maxIntervalBackupCount,
+					StorageType:            storageType,
+					StorageProperties:      etcdBackupPath,
+				}
+			}
+		}
+	} else if !cmd.Flags().Changed("use-timestamp-backups") && cmd.Flags().Changed("use-interval-backups") {
 		if cmd.Flags().Changed("interval-in-mins") {
+			//if minutes are slected
 			etcdDefaults = qbert.EtcdBackup{
 				IsEtcdBackupEnabled:     1,
 				IntervalInMins:          intervalInMins,
@@ -399,6 +432,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 				StorageProperties:       etcdBackupPath,
 			}
 		} else {
+			//default hours are selected
 			etcdDefaults = qbert.EtcdBackup{
 				IsEtcdBackupEnabled:     1,
 				IntervalInHours:         intervalInHours,
@@ -410,6 +444,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			}
 		}
 	} else {
+		//if only timestamp backup option is slected
 		etcdDefaults = qbert.EtcdBackup{
 			IsEtcdBackupEnabled:     1,
 			DailyBackupTime:         dailyBackupTime,
@@ -417,10 +452,6 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			StorageType:             storageType,
 			StorageProperties:       etcdBackupPath,
 		}
-	}
-
-	if isEtcdBackupDisabled {
-		etcdDefaults = qbert.EtcdBackup{}
 	}
 
 	payload := qbert.ClusterCreateRequest{
