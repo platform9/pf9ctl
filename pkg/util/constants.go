@@ -255,7 +255,7 @@ func init() {
 
 //These are the constants needed for everything version related
 const (
-	Version         string = "pf9ctl version: v1.13"
+	Version         string = "pf9ctl version: v1.14"
 	AWSBucketName   string = "pmkft-assets"
 	AWSBucketKey    string = "pf9ctl"
 	AWSBucketRegion string = "us-west-1"
