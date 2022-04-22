@@ -27,59 +27,67 @@ const boostrapHelpTemplate = `
 Bootstrap a single node Kubernetes cluster with current node as the master node.
 
 Usage:
-  pf9ctl bootstrap [flags] cluster-name
+pf9ctl bootstrap [flags] cluster-name
 
 Examples:
 pf9ctl bootstrap <clusterName> --pmk-version <version>
 
 Required Flags:
-	    --pmk-version string                  Kubernetes pmk version
+	  	--pmk-version string                  Kubernetes pmk version
 Optional Flags:
-	    --advanced-api-configuration string   Allowed API groups and version. Option: default, all & custom
-	    --allow-workloads-on-master           Taint master nodes ( to enable workloads ), use either --allow-workloads-on-master or --allow-workloads-on-master=false to change (default true)
-	    --api-server-flags strings            Comma separated list of supported kube-apiserver flags, e.g: --request-timeout=2m0s,--kubelet-timeout=20s
-	    --block-size string                   Block size determines how many Pod's can run per node vs total number of nodes per cluster (default "26")
-	    --container-runtime string            The container runtime for the cluster (default "containerd")
-	    --containers-cidr string              CIDR for container overlay (default "10.20.0.0/16")
-	    --controller-manager-flags strings    Comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10
-	    --enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads, use either --enable-kubeVirt or --enable-kubeVirt=true to change
-	    --enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
-	    --etcd-backup                         Enable automated etcd backups on this cluster, use either --etcd-backup or --etcd-backup=false to change (default true)
-	    --external-dns-name string            External DNS for master VIP
+		--advanced-api-configuration string   Allowed API groups and version. Option: default, all & custom
+		--allow-workloads-on-master           Taint master nodes ( to enable workloads ), use either --allow-workloads-on-master or --allow-workloads-on-master=false to change (default true)
+		--api-server-flags strings            Comma separated list of supported kube-apiserver flags, e.g: --request-timeout=2m0s,--kubelet-timeout=20s
+		--block-size string                   Block size determines how many Pod's can run per node vs total number of nodes per cluster (default "26")
+		--container-runtime string            The container runtime for the cluster (default "containerd")
+		--containers-cidr string              CIDR for container overlay (default "10.20.0.0/16")
+		--controller-manager-flags strings    Comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10
+		--daily-backup-time string            daily backup time for etcd (default "02:00")
+		--enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads, use either --enable-kubeVirt or --enable-kubeVirt=true to change
+		--enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
+		--etcd-backup                         Enable automated etcd backups on this cluster, use either --etcd-backup or --etcd-backup=false to change (default true)
+		--etcd-backup-path string             Backup path for etcd (default "/etc/pf9/etcd-backup")
+		--external-dns-name string            External DNS for master VIP
 	-h, --help                                help for bootstrap
-	    --http-proxy string                   Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.
-	    --interface-detction-method string    Interface detection method for Calico CNI (default "first-found")
-	-i, --ip strings                          IP address of the host to be prepared
-	    --ip-encapsulation string             Encapsulates POD traffic in IP-in-IP between nodes (default "Always")
-	    --master-virtual-interface string     Physical interface for virtual IP association
-	    --master-virtual-ip string            Virtual IP address for cluster
-	    --metallb-ip-range string             Ip range for MetalLB
-	    --mfa string                          MFA token
-	    --monitoring                          Enable monitoring for this cluster, use either --monitoring or --monitoring=false to change (default true)
-	    --mtu-size string                     Maximum Transmission Unit (MTU) for the interface (default "1440")
-	    --nat int                             Packets destined outside the POD network will be SNAT'd using the node's IP (default 1)
-	    --network-plugin string               Specify network plugin ( Possible values: flannel or calico ) (default "calico")
-	    --network-plugin-operator             Will deploy Platform9 CRDs to enable multiple CNIs and features such as SR-IOV, use either --network-plugin-operator or --network-plugin-operator=true to change
-	    --network-stack int                   0 for ipv4 and 1 for ipv6
-	-p, --password string                     Ssh password for the node (use 'single quotes' to pass password)
-	    --privileged                          Enable privileged mode for K8s API, use either --privileged or --privileged=false to change (default true)
-	-r, --remove-existing-pkgs                Will remove previous installation if found, use either --remove-existing-pkgs or --remove-existing-pkgs=true to change
-	    --reserved-cpu string                 Comma separated list of CPUs to be reserved for the system, e.g: 4-8,9-12
-	    --scheduler-flags strings             Comma separated list of supported Kube-scheduler flags, e.g: --kube-api-burst=120,--log_file_max_size=3000
-	    --services-cidr string                CIDR for services overlay (default "10.21.0.0/16")
+		--http-proxy string                   Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.
+		--interface-detction-method string    Interface detection method for Calico CNI (default "first-found")
+		--interval-in-hours int               time interval of etcd-backup in hours(should be between 4 to 23) (default 4)
+		--interval-in-mins int                time interval of etcd-backup in minutes(should be between 30 to 60) (default 30)
+  	-i, --ip strings                          IP address of the host to be prepared
+		--ip-encapsulation string             Encapsulates POD traffic in IP-in-IP between nodes (default "Always")
+		--master-virtual-interface string     Physical interface for virtual IP association
+		--master-virtual-ip string            Virtual IP address for cluster
+		--max-interval-backup-count int       maximum interval backup count for etcd backup (default 3)
+		--max-timestamp-backup-count int      maximum timestamp backup count for etcd backup (default 3)
+		--metallb-ip-range string             Ip range for MetalLB
+		--mfa string                          MFA token
+		--monitoring                          Enable monitoring for this cluster, use either --monitoring or --monitoring=false to change (default true)
+		--mtu-size string                     Maximum Transmission Unit (MTU) for the interface (default "1440")
+		--nat int                             Packets destined outside the POD network will be SNAT'd using the node's IP (default 1)
+		--network-plugin string               Specify network plugin ( Possible values: flannel or calico ) (default "calico")
+		--network-plugin-operator             Will deploy Platform9 CRDs to enable multiple CNIs and features such as SR-IOV, use either --network-plugin-operator or --network-plugin-operator=true to change
+		--network-stack int                   0 for ipv4 and 1 for ipv6
+ 	-p, --password string                     Ssh password for the node (use 'single quotes' to pass password)
+	  	--privileged                          Enable privileged mode for K8s API, use either --privileged or --privileged=false to change (default true)
+  	-r, --remove-existing-pkgs                Will remove previous installation if found, use either --remove-existing-pkgs or --remove-existing-pkgs=true to change
+		--reserved-cpu string                 Comma separated list of CPUs to be reserved for the system, e.g: 4-8,9-12
+		--scheduler-flags strings             Comma separated list of supported Kube-scheduler flags, e.g: --kube-api-burst=120,--log_file_max_size=3000
+		--services-cidr string                CIDR for services overlay (default "10.21.0.0/16")
 	-s, --ssh-key string                      Ssh key file for connecting to the node
+		--storage-type string                 Storage type of etcd-backup (default "local")
 	-e, --sudo-pass string                    Sudo password for user on remote host
-	    --tag string                          Add tag metadata to this cluster (key=value)
-            --topology-manager-policy string      Topology manager policy (default "none")
-	    --use-hostname                        Use node hostname for cluster creation, use either --use-hostname or --use-hostname=true to change
+		--tag string                          Add tag metadata to this cluster (key=value)
+		--topology-manager-policy string      Topology manager policy (default "none")
+		--use-hostname                        Use node hostname for cluster creation, use either --use-hostname or --use-hostname=true to change
+		--use-interval-backups                Enable automated etcd backups on this cluster daily at a specified time, use either --use-interval-backups or --use-interval-backups=true to change
+		--use-timestamp-backups               Enable automated etcd backups on this cluster daily at a specified time, --use-timestamp-backups or --use-timestamp-backups=false to change (default true)
 	-u, --user string                         Ssh username for the node
 
 
 Global Flags:
-	    --log-dir string   path to save logs
-	    --no-prompt        disable all user prompts
-	    --verbose          print verbose logs
-
+	  --log-dir string   path to save logs
+	  --no-prompt        disable all user prompts
+	  --verbose          print verbose logs
 `
 
 // bootstrapCmd represents the bootstrap command
@@ -150,7 +158,7 @@ func init() {
 	bootstrapCmd.Flags().IntVar(&intervalInMins, "interval-in-mins", 30, "time interval of etcd-backup in minutes(should be between 30 to 60)")
 	bootstrapCmd.Flags().StringVar(&backupPath, "etcd-backup-path", "/etc/pf9/etcd-backup", "Backup path for etcd")
 	bootstrapCmd.Flags().StringVar(&dailyBackupTime, "daily-backup-time", "02:00", "daily backup time for etcd")
-	//bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
+	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
 	rootCmd.AddCommand(bootstrapCmd)
 }
 
