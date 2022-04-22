@@ -5,11 +5,12 @@ import (
 	"context"
 	"crypto/x509"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
+
+	"go.uber.org/zap"
 )
 
 var (
@@ -58,7 +59,9 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 	// 429 Too Many Requests is recoverable. Sometimes the server puts
 	// a Retry-After response header to indicate when the server is
 	// available to start processing request from client.
-	if resp.StatusCode == http.StatusTooManyRequests {
+
+	//409 Resource conflicts. Most of the time this error(authorizing host) is transient so putting this into retry
+	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusConflict {
 		return true, nil
 	}
 
@@ -66,7 +69,7 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 	// the server time to recover, as 500's are typically not permanent
 	// errors and may relate to outages on the server side. This will catch
 	// invalid response codes as well, like 0 and 999.
-	if resp.StatusCode == 0 || resp.StatusCode == 400 || resp.StatusCode == 404 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
+	if resp.StatusCode == 0 || resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusNotFound || (resp.StatusCode >= http.StatusInternalServerError && resp.StatusCode != http.StatusNotImplemented) {
 		return true, nil
 	}
 
