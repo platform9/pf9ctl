@@ -42,23 +42,23 @@ Optional Flags:
 	    --container-runtime string            The container runtime for the cluster (default "containerd")
 	    --containers-cidr string              CIDR for container overlay (default "10.20.0.0/16")
 	    --controller-manager-flags strings    Comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10
-	    --daily-backup-time string            daily backup time for etcd (default "02:00")
+	    --daily-backup-time string            Daily backup time for etcd (default "02:00")
 	    --enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads, use either --enable-kubeVirt or --enable-kubeVirt=true to change
 	    --enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
 	    --etcd-backup                         Enable automated etcd backups on this cluster, use either --etcd-backup or --etcd-backup=false to change (default true)
 	    --etcd-backup-path string             Backup path for etcd (default "/etc/pf9/etcd-backup")
 	    --external-dns-name string            External DNS for master VIP
-	-h, --help                                help for bootstrap
+	-h, --help                                Help for bootstrap
 	    --http-proxy string                   Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.
 	    --interface-detction-method string    Interface detection method for Calico CNI (default "first-found")
-	    --interval-in-hours int               time interval of etcd-backup in hours(should be between 4 to 23) (default 4)
-	    --interval-in-mins int                time interval of etcd-backup in minutes(should be between 30 to 60) (default 30)
+	    --interval-in-hours int               Time interval of etcd-backup in hours(should be between 4 to 23) (default 4)
+	    --interval-in-mins int                Time interval of etcd-backup in minutes(should be between 30 to 60) (default 30)
   	-i, --ip strings                          IP address of the host to be prepared
 	    --ip-encapsulation string             Encapsulates POD traffic in IP-in-IP between nodes (default "Always")
 	    --master-virtual-interface string     Physical interface for virtual IP association
 	    --master-virtual-ip string            Virtual IP address for cluster
-	    --max-interval-backup-count int       maximum interval backup count for etcd backup (default 3)
-	    --max-timestamp-backup-count int      maximum timestamp backup count for etcd backup (default 3)
+	    --max-interval-backup-count int       Maximum interval backup count for etcd backup (default 3)
+	    --max-timestamp-backup-count int      Maximum timestamp backup count for etcd backup (default 3)
 	    --metallb-ip-range string             Ip range for MetalLB
 	    --mfa string                          MFA token
 	    --monitoring                          Enable monitoring for this cluster, use either --monitoring or --monitoring=false to change (default true)
@@ -152,12 +152,12 @@ func init() {
 	bootstrapCmd.Flags().StringVar(&storageType, "storage-type", "local", "Storage type of etcd-backup")
 	bootstrapCmd.Flags().BoolVar(&useIntervalBackups, "use-interval-backups", false, "Enable automated etcd backups on this cluster daily at a specified time, use either --use-interval-backups or --use-interval-backups=true to change")
 	bootstrapCmd.Flags().BoolVar(&useTimestampBackups, "use-timestamp-backups", true, "Enable automated etcd backups on this cluster daily at a specified time, --use-timestamp-backups or --use-timestamp-backups=false to change")
-	bootstrapCmd.Flags().IntVar(&intervalInHours, "interval-in-hours", 4, "time interval of etcd-backup in hours(should be between 4 to 23)")
-	bootstrapCmd.Flags().IntVar(&maxIntervalBackupCount, "max-interval-backup-count", 3, "maximum interval backup count for etcd backup")
-	bootstrapCmd.Flags().IntVar(&maxTimestampBackupCount, "max-timestamp-backup-count", 3, "maximum timestamp backup count for etcd backup")
-	bootstrapCmd.Flags().IntVar(&intervalInMins, "interval-in-mins", 30, "time interval of etcd-backup in minutes(should be between 30 to 60)")
+	bootstrapCmd.Flags().IntVar(&intervalInHours, "interval-in-hours", 4, "Time interval of etcd-backup in hours(should be between 4 to 23)")
+	bootstrapCmd.Flags().IntVar(&maxIntervalBackupCount, "max-interval-backup-count", 3, "Maximum interval backup count for etcd backup")
+	bootstrapCmd.Flags().IntVar(&maxTimestampBackupCount, "max-timestamp-backup-count", 3, "Maximum timestamp backup count for etcd backup")
+	bootstrapCmd.Flags().IntVar(&intervalInMins, "interval-in-mins", 30, "Time interval of etcd-backup in minutes(should be between 30 to 60)")
 	bootstrapCmd.Flags().StringVar(&backupPath, "etcd-backup-path", "/etc/pf9/etcd-backup", "Backup path for etcd")
-	bootstrapCmd.Flags().StringVar(&dailyBackupTime, "daily-backup-time", "02:00", "daily backup time for etcd")
+	bootstrapCmd.Flags().StringVar(&dailyBackupTime, "daily-backup-time", "02:00", "Daily backup time for etcd")
 	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
 	rootCmd.AddCommand(bootstrapCmd)
 }
