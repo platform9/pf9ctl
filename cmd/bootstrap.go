@@ -404,11 +404,11 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	//for etcd backup there are two types of backup options we can choose
 	if cmd.Flags().Changed("use-timestamp-backups") {
 		if !cmd.Flags().Changed("use-interval-backups") {
-			zap.S().Fatalf("Either Timestamp backup or Interval backup shoud be enabled to enable etcd backup")
+			zap.S().Fatalf("Either Timestamp backup or Interval backup should be passed to enable etcd backup")
 		} else {
 			//if interval backup option is selected then it has two options (hours/minutes)
 			if cmd.Flags().Changed("interval-in-mins") {
-				//if minutes are slected
+				//if minutes are selected
 				etcdDefaults = qbert.EtcdBackup{
 					IsEtcdBackupEnabled:    1,
 					IntervalInMins:         intervalInMins,
@@ -429,7 +429,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		}
 	} else if !cmd.Flags().Changed("use-timestamp-backups") && cmd.Flags().Changed("use-interval-backups") {
 		if cmd.Flags().Changed("interval-in-mins") {
-			//if minutes are slected
+			//if minutes are selected
 			etcdDefaults = qbert.EtcdBackup{
 				IsEtcdBackupEnabled:     1,
 				IntervalInMins:          intervalInMins,
@@ -452,7 +452,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			}
 		}
 	} else {
-		//if only timestamp backup option is slected
+		//if only timestamp backup option is selected
 		etcdDefaults = qbert.EtcdBackup{
 			IsEtcdBackupEnabled:     1,
 			DailyBackupTime:         dailyBackupTime,
