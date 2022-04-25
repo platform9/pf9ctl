@@ -331,6 +331,26 @@ func (d *Debian) disableSwap() (bool, error) {
 	}
 }
 
+func (d *Debian) processAcquiredDpkgLock() (string, error) {
+	var f = []string{"lock", "lock-frontend"}
+	for _, file := range f {
+
+		output, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("lsof /var/lib/dpkg/%s | grep lib/dpkg/%s ", file, file))
+		if err != nil {
+			return "", errors.New("Unable to find pid with dpkg lock")
+		}
+		PID := strings.Fields(output)[1]
+		output, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -p %s -o command=", PID))
+		if err != nil {
+			return "", errors.New("Unable to find process with dpkg lock")
+		}
+		output = strings.Replace(output, "\n", "", -1)
+		return fmt.Sprintf("Process: '%s', Pid: %s ", output, PID), nil
+	}
+	return "", errors.New("Unable to find process with dpkg lock")
+
+}
+
 func (d *Debian) CheckIfdpkgISLock() (bool, error) {
 	var f = []string{"lock", "lock-frontend"}
 	for _, file := range f {
@@ -339,7 +359,8 @@ func (d *Debian) CheckIfdpkgISLock() (bool, error) {
 			return true, nil
 		} else {
 			zap.S().Debugf("Unable to acquire the dpkg lock on %s", file)
-			return false, fmt.Errorf("Unable to acquire the dpkg")
+			output, _ := d.processAcquiredDpkgLock()
+			return false, fmt.Errorf(fmt.Sprintf("Unable to acquire the dpkg - %s", output))
 		}
 	}
 	return true, fmt.Errorf("Unable to check dpkg lock")
