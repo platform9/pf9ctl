@@ -136,7 +136,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 	output = strings.TrimSpace(output)
-	if err != nil {
+	if err != nil || output == "" {
 		errStr := "Error: Unable to fetch host ID. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
