@@ -336,10 +336,15 @@ func (d *Debian) processAcquiredDpkgLock() (string, error) {
 	for _, file := range f {
 
 		output, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("lsof /var/lib/dpkg/%s | grep lib/dpkg/%s ", file, file))
-		if err != nil {
+		if err != nil || output == "" {
 			return "", errors.New("Unable to find pid with dpkg lock")
 		}
-		PID := strings.Fields(output)[1]
+		output_slice := strings.Fields(output)
+		if len(output_slice) < 2 {
+			return "", errors.New("Unable to find pid with dpkg lock")
+		}
+
+		PID := output_slice[1]
 		output, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -p %s -o command=", PID))
 		if err != nil {
 			return "", errors.New("Unable to find process with dpkg lock")

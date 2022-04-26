@@ -646,7 +646,7 @@ func TestDpkgLockCheck(t *testing.T) {
 			},
 			want: want{
 				result: false,
-				err:    fmt.Errorf("Unable to acquire the dpkg"),
+				err:    fmt.Errorf("Unable to acquire the dpkg - "),
 			},
 		},
 	}
