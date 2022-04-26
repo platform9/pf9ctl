@@ -90,10 +90,10 @@ func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote 
 	// Fetch the keystone token.
 	// This is used as a reference to the segment event.
 	auth, err := allClients.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-		ctx.MfaToken,
+		ctx.Spec.Username,
+		ctx.Spec.Password,
+		ctx.Spec.Tenant,
+		ctx.Spec.MfaToken,
 	)
 	if err != nil {
 		zap.S().Debug("Unable to locate keystone credentials: %s\n", err.Error())
@@ -101,14 +101,14 @@ func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote 
 	}
 
 	// To Fetch FQDN
-	FQDN, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
+	FQDN, err := keystone.FetchRegionFQDN(ctx.Spec.AccountUrl, ctx.Spec.Region, auth)
 	if err != nil {
 		zap.S().Debug("unable to fetch fqdn: %w")
 		return fmt.Errorf("unable to fetch fqdn: %w", err)
 	}
 	//To fetch FQDN from config if region given is invalid
 	if FQDN == "" {
-		FQDN = ctx.Fqdn
+		FQDN = ctx.Spec.AccountUrl
 		FQDN = strings.Replace(FQDN, "https://", "", 1)
 	}
 

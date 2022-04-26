@@ -5,7 +5,6 @@ package cmd
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
@@ -59,7 +58,15 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nc.MFA}
+	/*cfg := &objects.Config{
+		Spec: objects.UserData{
+			MfaToken: nc.MFA,
+			OtherData: objects.Other{
+				WaitPeriod:    time.Duration(60),
+				AllowInsecure: false,
+			},
+		},
+	}*/
 	var err error
 	if detachedMode {
 		nc.RemoveExistingPkgs = true
@@ -74,12 +81,12 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
 	var c client.Client
-	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+	if c, err = client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false); err != nil {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
@@ -87,10 +94,10 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
-		cfg.Username,
-		cfg.Password,
-		cfg.Tenant,
-		cfg.MfaToken,
+		cfg.Spec.Username,
+		cfg.Spec.Password,
+		cfg.Spec.Tenant,
+		cfg.Spec.MfaToken,
 	)
 
 	if err != nil {

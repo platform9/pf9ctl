@@ -129,7 +129,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Restart()
 	s.Suffix = " Authorising host"
 	hostID := strings.TrimSuffix(output, "\n")
-	time.Sleep(ctx.WaitPeriod * time.Second)
+	time.Sleep(ctx.Spec.OtherData.WaitPeriod * time.Second)
 
 	sendSegmentEvent(allClients, "Authorising host - 4", auth, false)
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token); err != nil {
@@ -171,7 +171,7 @@ func EnableUnattendedUpdates(allClients client.Client) {
 func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent")
 
-	regionURL, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
+	regionURL, err := keystone.FetchRegionFQDN(ctx.Spec.AccountUrl, ctx.Spec.Region, auth)
 	if err != nil {
 		return fmt.Errorf("Unable to fetch URL: %w", err)
 	}
@@ -205,7 +205,7 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 		"https://%s/clarity/platform9-install-%s.sh",
 		regionURL, hostOS)
 	insecureDownload := ""
-	if ctx.AllowInsecure {
+	if ctx.Spec.OtherData.AllowInsecure {
 		insecureDownload = "-k"
 	}
 
@@ -224,10 +224,10 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 	var installOptions string
 
 	//Pass keystone token if MFA token is provided
-	if ctx.MfaToken != "" {
+	if ctx.Spec.MfaToken != "" {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s  --user-token='%s'`, regionURL, auth.Token)
 	} else {
-		installOptions = fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
+		installOptions = fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Spec.Username, ctx.Spec.Password)
 	}
 
 	changePermission := fmt.Sprintf("chmod +x %s/pf9/installer.sh", homeDir)
@@ -236,8 +236,8 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 		return err
 	}
 
-	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`%s/pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, homeDir, ctx.ProxyURL)
+	if ctx.Spec.ProxyURL != "" {
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, homeDir, ctx.Spec.ProxyURL)
 	} else {
 		cmd = fmt.Sprintf(`%s/pf9/installer.sh --no-proxy --skip-os-check --no-ntp`, homeDir)
 	}
@@ -372,8 +372,8 @@ func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.
 		return err
 	}
 
-	if ctx.ProxyURL != "" {
-		cmd = fmt.Sprintf(`%s/pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, homeDir, ctx.ProxyURL)
+	if ctx.Spec.ProxyURL != "" {
+		cmd = fmt.Sprintf(`%s/pf9/installer.sh --proxy %s --skip-os-check --no-ntp`, homeDir, ctx.Spec.ProxyURL)
 	} else {
 		cmd = fmt.Sprintf(`%s/pf9/installer.sh --no-proxy --skip-os-check --no-ntp`, homeDir)
 	}

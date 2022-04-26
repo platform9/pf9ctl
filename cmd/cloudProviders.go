@@ -41,21 +41,21 @@ var checkAzureProviderCmd = &cobra.Command{
 
 func init() {
 
-	checkGoogleProviderCmd.Flags().StringVarP(&cfg.GooglePath, "service-account-path", "p", "", "sets the service account path (required)")
-	checkGoogleProviderCmd.Flags().StringVarP(&cfg.GoogleProjectName, "project-name", "n", "", "sets the project name (required)")
-	checkGoogleProviderCmd.Flags().StringVarP(&cfg.GoogleServiceEmail, "service-account-email", "e", "", "sets the service account email (required)")
+	checkGoogleProviderCmd.Flags().StringVarP(&cfg.Spec.Google.GooglePath, "service-account-path", "p", "", "sets the service account path (required)")
+	checkGoogleProviderCmd.Flags().StringVarP(&cfg.Spec.Google.GoogleProjectName, "project-name", "n", "", "sets the project name (required)")
+	checkGoogleProviderCmd.Flags().StringVarP(&cfg.Spec.Google.GoogleServiceEmail, "service-account-email", "e", "", "sets the service account email (required)")
 	rootCmd.AddCommand(checkGoogleProviderCmd)
 
-	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsIamUsername, "iam-user", "i", "", "sets the iam user (required)")
-	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsAccessKey, "access-key", "a", "", "sets the access key (required)")
-	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsSecretKey, "secret-key", "s", "", "sets the secret key (required)")
-	checkAmazonProviderCmd.Flags().StringVarP(&cfg.AwsRegion, "region", "r", "", "sets the region (required)")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.Spec.AWS.AwsIamUsername, "iam-user", "i", "", "sets the iam user (required)")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.Spec.AWS.AwsAccessKey, "access-key", "a", "", "sets the access key (required)")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.Spec.AWS.AwsSecretKey, "secret-key", "s", "", "sets the secret key (required)")
+	checkAmazonProviderCmd.Flags().StringVarP(&cfg.Spec.AWS.AwsRegion, "region", "r", "", "sets the region (required)")
 	rootCmd.AddCommand(checkAmazonProviderCmd)
 
-	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureTenant, "tenant-id", "t", "", "sets the tenant id (required)")
-	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureClient, "client-id", "c", "", "sets the client(applicaiton) id (required)")
-	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureSubscription, "subscription-id", "s", "", "sets the ssubscription id (required)")
-	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureSecret, "secret-key", "k", "", "sets the secret key (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.Spec.Azure.AzureTenant, "tenant-id", "t", "", "sets the tenant id (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.Spec.Azure.AzureClient, "client-id", "c", "", "sets the client(applicaiton) id (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.Spec.Azure.AzureSubscription, "subscription-id", "s", "", "sets the ssubscription id (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.Spec.Azure.AzureSecret, "secret-key", "k", "", "sets the secret key (required)")
 	rootCmd.AddCommand(checkAzureProviderCmd)
 }
 
@@ -69,13 +69,13 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("google.json", &cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("google.json", cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 
-	if !pmk.CheckGoogleProvider(cfg.GooglePath, cfg.GoogleProjectName, cfg.GoogleServiceEmail) {
+	if !pmk.CheckGoogleProvider(cfg.Spec.Google.GooglePath, cfg.Spec.Google.GoogleProjectName, cfg.Spec.Google.GoogleServiceEmail) {
 		os.Exit(1)
 	}
 
@@ -90,12 +90,12 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("amazon.json", &cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("amazon.json", cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
-	if !pmk.CheckAmazonPovider(cfg.AwsIamUsername, cfg.AwsAccessKey, cfg.AwsSecretKey, cfg.AwsRegion) {
+	if !pmk.CheckAmazonPovider(cfg.Spec.AWS.AwsIamUsername, cfg.Spec.AWS.AwsAccessKey, cfg.Spec.AWS.AwsSecretKey, cfg.Spec.AWS.AwsRegion) {
 		os.Exit(1)
 	}
 }
@@ -110,13 +110,13 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("azure.json", &cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("azure.json", cfg, objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n")
 	}
 
-	if !pmk.CheckAzureProvider(cfg.AzureTenant, cfg.AzureClient, cfg.AzureSubscription, cfg.AzureSecret) {
+	if !pmk.CheckAzureProvider(cfg.Spec.Azure.AzureTenant, cfg.Spec.Azure.AzureClient, cfg.Spec.Azure.AzureSubscription, cfg.Spec.Azure.AzureSecret) {
 		os.Exit(1)
 	}
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
@@ -61,7 +62,16 @@ var (
 		},
 	}
 
-	cfg objects.Config
+	//cfg objects.UserData
+	cfg = &objects.Config{
+		Spec: objects.UserData{
+			MfaToken: nc.MFA,
+			OtherData: objects.Other{
+				WaitPeriod:    time.Duration(60),
+				AllowInsecure: false,
+			},
+		},
+	}
 )
 
 func init() {
@@ -69,34 +79,34 @@ func init() {
 	configCmdCreate.AddCommand(configCmdGet)
 	configCmdCreate.AddCommand(configCmdSet)
 
-	configCmdSet.Flags().StringVarP(&cfg.Fqdn, "account-url", "u", "", "sets account-url")
-	configCmdSet.Flags().StringVarP(&cfg.Username, "username", "e", "", "sets username")
-	configCmdSet.Flags().StringVarP(&cfg.Password, "password", "p", "", "sets password (use 'single quotes' to pass password)")
-	configCmdSet.Flags().StringVarP(&cfg.ProxyURL, "proxy-url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
-	configCmdSet.Flags().StringVarP(&cfg.Region, "region", "r", "", "sets region")
-	configCmdSet.Flags().StringVarP(&cfg.Tenant, "tenant", "t", "", "sets tenant")
-	configCmdSet.Flags().StringVar(&cfg.MfaToken, "mfa", "", "set MFA token")
+	configCmdSet.Flags().StringVarP(&cfg.Spec.AccountUrl, "account-url", "u", "", "sets account-url")
+	configCmdSet.Flags().StringVarP(&cfg.Spec.Username, "username", "e", "", "sets username")
+	configCmdSet.Flags().StringVarP(&cfg.Spec.Password, "password", "p", "", "sets password (use 'single quotes' to pass password)")
+	configCmdSet.Flags().StringVarP(&cfg.Spec.ProxyURL, "proxy-url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
+	configCmdSet.Flags().StringVarP(&cfg.Spec.Region, "region", "r", "", "sets region")
+	configCmdSet.Flags().StringVarP(&cfg.Spec.Tenant, "tenant", "t", "", "sets tenant")
+	configCmdSet.Flags().StringVar(&cfg.Spec.MfaToken, "mfa", "", "set MFA token")
 }
 
 func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running set config==========")
 
 	var err error
-	if err = config.SetProxy(cfg.ProxyURL); err != nil {
+	if err = config.SetProxy(cfg.Spec.ProxyURL); err != nil {
 		zap.S().Fatal(color.Red("x "), err)
 	}
 
 	if cmd.Flags().Changed("no-prompt") {
-		if err = config.ValidateUserCredentials(&cfg, objects.NodeConfig{}); err != nil {
+		if err = config.ValidateUserCredentials(cfg, objects.NodeConfig{}); err != nil {
 			zap.S().Fatal(color.Red("x "), err)
 		}
 
-		if err = config.StoreConfig(&cfg, util.Pf9DBLoc); err != nil {
+		if err = config.StoreConfig(cfg, util.Pf9DBLoc); err != nil {
 			zap.S().Fatal(color.Red("x "), err)
 		}
 
 	} else {
-		if err = config.GetConfigRecursive(util.Pf9DBLoc, &cfg, objects.NodeConfig{}); err != nil {
+		if err = config.GetConfigRecursive(util.Pf9DBLoc, cfg, objects.NodeConfig{}); err != nil {
 			zap.S().Fatal(color.Red("x "), err)
 		}
 	}

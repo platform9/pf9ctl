@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
@@ -41,6 +40,7 @@ var prepNodeCmd = &cobra.Command{
 }
 
 var (
+	ConfigPath     string
 	user           string
 	password       string
 	sshKey         string
@@ -59,6 +59,7 @@ func init() {
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
 	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
+	prepNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
 	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	prepNodeCmd.Flags().BoolVarP(&nodeConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
@@ -68,6 +69,10 @@ func init() {
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running prep-node==========")
+
+	if cmd.Flags().Changed("user-config") {
+		util.Pf9DBLoc = ConfigPath
+	}
 
 	if skipChecks {
 		pmk.WarningOptionalChecks = true
@@ -82,7 +87,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nodeConfig.MFA}
+	//cfg := &objects.UserData{OtherData: objects.Other{WaitPeriod: time.Duration(60), AllowInsecure: false}, MfaToken: nodeConfig.MFA}
 	var err error
 	if detachedMode {
 		nodeConfig.RemoveExistingPkgs = true
@@ -98,21 +103,21 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nodeConfig); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nodeConfig); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
 	var c client.Client
-	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+	if c, err = client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false); err != nil {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 	defer c.Segment.Close()
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
-		cfg.Username,
-		cfg.Password,
-		cfg.Tenant,
-		cfg.MfaToken,
+		cfg.Spec.Username,
+		cfg.Spec.Password,
+		cfg.Spec.Tenant,
+		cfg.Spec.MfaToken,
 	)
 
 	if err != nil {

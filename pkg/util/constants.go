@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -84,7 +85,10 @@ var (
 	// Pf9DBLoc represents location of the config file.
 	Pf9DBLoc = filepath.Join(Pf9DBDir, "config.json")
 	// Pf9Log represents location of the log.
-	Pf9Log = filepath.Join(Pf9LogDir, "pf9ctl.log")
+	Pf9Log         = filepath.Join(Pf9LogDir, "pf9ctl.log")
+	ConfigFileName string
+	ConfigFileLoc  string
+	ConfigPath     string
 	// WaitPeriod is the sleep period for the cli
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
@@ -113,6 +117,11 @@ func init() {
 	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "kube-controller", "etcd"}
 	Pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
 	Files = []string{"/opt/cni", "/opt/containerd", "/var/lib/containerd", "/var/opt/pf9"}
+
+	if ConfigPath != "" {
+		Pf9DBLoc = filepath.Join(ConfigPath)
+		fmt.Println("updated config location: ", Pf9DBLoc)
+	}
 
 	AzureContributorID = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 
