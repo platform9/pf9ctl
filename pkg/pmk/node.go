@@ -75,10 +75,11 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf(errStr)
 	}
 
-	platform := debian.NewDebian(allClients.Executor)
-	result, _ := platform.CheckIfdpkgISLock()
-
 	if hostOS == "debian" {
+
+		platform := debian.NewDebian(allClients.Executor)
+		result, _ := platform.CheckIfdpkgISLock()
+
 		if StatusUnattendedUpdates(allClients) {
 			// stop unattended-upgrades
 			// this do not stop them if they are already running
