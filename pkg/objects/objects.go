@@ -23,6 +23,23 @@ type NodeConfig struct {
 	RemoveExistingPkgs bool
 }
 
+type NodeC struct {
+	APIVersion string `yaml:"apiVersion"`
+	Kind       string `yaml:"kind"`
+	Spec       Spec   `yaml:"spec"`
+	SSHKey     string `yaml:"ssh-key"`
+}
+type Node struct {
+	Ip       string `yaml:"ip"`
+	Hostname string `yaml:"hostname"`
+	Type     string `yaml:"type"`
+}
+type Spec struct {
+	DeploymentKind string `yaml:"deploymentKind"`
+	Type           string `yaml:"type"`
+	Nodes          []Node `yaml:"nodes"`
+}
+
 type UserAWSCreds struct {
 	AwsIamUsername string `yaml:"aws_iam_username" json:"aws_iam_username"`
 	AwsAccessKey   string `yaml:"aws_access_key" json:"aws_access_key"`
@@ -67,3 +84,46 @@ type Config struct {
 	Kind       string   `yaml:"kind" json:"kind"`
 	Spec       UserData `yaml:"spec" json:"spec"`
 }
+
+/*type ClusterConfig struct {
+	Name                      string     `json:"name"`
+	MasterNodes               []string   `json:"masterNodes"`
+	AllowWorkloadsOnMaster    bool       `json:"allowWorkloadsOnMaster"`
+	WorkerNodes               []string   `json:"workerNodes"`
+	ContainersCidr            string     `json:"containersCidr"`
+	ServicesCidr              string     `json:"servicesCidr"`
+	MtuSize                   int        `json:"mtuSize"`
+	Privileged                bool       `json:"privileged"`
+	DeployLuigiOperator       bool       `json:"deployLuigiOperator"`
+	UseHostname               bool       `json:"useHostname"`
+	NodePoolUUID              string     `json:"nodePoolUuid"`
+	EnableProfileAgent        bool       `json:"enableProfileAgent"`
+	KubeRoleVersion           string     `json:"kubeRoleVersion"`
+	CalicoIPIPMode            string     `json:"calicoIpIpMode"`
+	CalicoNatOutgoing         bool       `json:"calicoNatOutgoing"`
+	CalicoV4BlockSize         string     `json:"calicoV4BlockSize"`
+	CalicoIPv4DetectionMethod string     `json:"calicoIPv4DetectionMethod"`
+	NetworkPlugin             string     `json:"networkPlugin"`
+	RuntimeConfig             string     `json:"runtimeConfig"`
+	ContainerRuntime          string     `json:"containerRuntime"`
+	EtcdBackup                EtcdBackup `json:"etcdBackup"`
+	Monitoring                Monitoring `json:"monitoring"`
+	Tags                      Tags       `json:"tags"`
+}
+type StorageProperties struct {
+	LocalPath string `json:"localPath"`
+}
+type EtcdBackup struct {
+	StorageType             string            `json:"storageType"`
+	IsEtcdBackupEnabled     int               `json:"isEtcdBackupEnabled"`
+	StorageProperties       StorageProperties `json:"storageProperties"`
+	DailyBackupTime         string            `json:"dailyBackupTime"`
+	MaxTimestampBackupCount int               `json:"maxTimestampBackupCount"`
+	IntervalInHours         int               `json:"intervalInHours"`
+	MaxIntervalBackupCount  int               `json:"maxIntervalBackupCount"`
+}
+type Monitoring struct {
+	RetentionTime string `json:"retentionTime"`
+}
+type Tags struct {
+}*/

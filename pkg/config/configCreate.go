@@ -27,13 +27,13 @@ var (
 func CreateUserConfig() {
 	reader := bufio.NewReader(os.Stdin)
 
-	fmt.Printf("API version: ")
+	/*fmt.Printf("API version: ")
 	apiVersion, _ := reader.ReadString('\n')
 	cfg.ApiVersion = strings.TrimSuffix(apiVersion, "\n")
 
 	fmt.Printf("Kind: ")
 	kind, _ := reader.ReadString('\n')
-	cfg.Kind = strings.TrimSuffix(kind, "\n")
+	cfg.Kind = strings.TrimSuffix(kind, "\n")*/
 
 	fmt.Printf("Platform9 Account URL: ")
 	fqdn, _ := reader.ReadString('\n')
@@ -86,6 +86,78 @@ func CreateUserConfig() {
 		zap.S().Fatal("Error creating user config please try again")
 	}
 
+	ifDirNotExistCreat()
+	createConfigFile("config.json", b)
+}
+
+func CreateNodeConfig() {
+	cfg := objects.NodeC{}
+
+	reader := bufio.NewReader(os.Stdin)
+	/*fmt.Printf("API version: ")
+	apiVersion, _ := reader.ReadString('\n')
+	cfg.APIVersion = strings.TrimSuffix(apiVersion, "\n")
+
+	fmt.Printf("Kind: ")
+	kind, _ := reader.ReadString('\n')
+	cfg.Kind = strings.TrimSuffix(kind, "\n")
+
+	fmt.Printf("DeploymentKind: ")
+	Dkind, _ := reader.ReadString('\n')
+	cfg.Spec.DeploymentKind = strings.TrimSuffix(Dkind, "\n")
+
+	fmt.Printf("Type: ")
+	typ, _ := reader.ReadString('\n')
+	cfg.Spec.Type = strings.TrimSuffix(typ, "\n")*/
+
+	fmt.Printf("IP: ")
+	ip, _ := reader.ReadString('\n')
+	ip = strings.TrimSuffix(ip, "\n")
+
+	fmt.Printf("HostName: ")
+	hostName, _ := reader.ReadString('\n')
+	hostName = strings.TrimSuffix(hostName, "\n")
+
+	/*fmt.Printf("Type: ")
+	Ntyp, _ := reader.ReadString('\n')
+	Ntyp = strings.TrimSuffix(Ntyp, "\n")*/
+
+	node := objects.Node{
+		Ip:       ip,
+		Hostname: hostName,
+	}
+
+	cfg.Spec.Nodes = append(cfg.Spec.Nodes, node)
+
+	fmt.Printf("SSH-Key: ")
+	key, _ := reader.ReadString('\n')
+	cfg.SSHKey = strings.TrimSuffix(key, "\n")
+
+	var b []byte
+	var err error
+	if JsonFileType {
+		b, err = json.MarshalIndent(cfg, "", " ")
+	} else {
+		b, err = yaml.Marshal(cfg)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		zap.S().Fatal("Error creating user config please try again")
+	}
+
+	ifDirNotExistCreat()
+	createConfigFile("NodeConfig", b)
+}
+
+func CreateClusterConfig() {
+	fmt.Println("Cluster config")
+}
+
+func ifDirNotExistCreat() {
+	//If user have given dir location to store congig file, this function will check if that location is present,
+	//if not then it will create it,
+	//If user has not given any location it will store config in default db (pf9/db) file
 	if util.ConfigFileLoc != "" {
 		if _, err := os.Stat(util.ConfigFileLoc); os.IsNotExist(err) {
 			zap.S().Debugf("%s dir is not present creating it")
@@ -97,14 +169,17 @@ func CreateUserConfig() {
 	} else {
 		util.ConfigFileLoc = util.Pf9DBDir
 	}
+}
 
+func createConfigFile(name string, b []byte) {
+	//this function will create config file
 	if util.ConfigFileName != "" {
 		FileName = filepath.Join(util.ConfigFileLoc, util.ConfigFileName)
 	} else {
-		FileName = filepath.Join(util.ConfigFileLoc, "config.json")
+		FileName = filepath.Join(util.ConfigFileLoc, name)
 	}
 
-	_, err = os.OpenFile(FileName, os.O_CREATE|os.O_WRONLY, 0644)
+	_, err := os.OpenFile(FileName, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		fmt.Println("Error creating config file, please try again")
 	}
@@ -112,13 +187,4 @@ func CreateUserConfig() {
 	if err == nil {
 		fmt.Println("Config file created please check it here ", FileName)
 	}
-
-}
-
-func CreateNodeConfig() {
-	fmt.Println("Node config")
-}
-
-func CreateClusterConfig() {
-	fmt.Println("Cluster config")
 }
