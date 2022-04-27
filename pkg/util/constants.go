@@ -25,6 +25,9 @@ var EKSPermissions []string
 var GoogleCloudPermissions []string
 
 var AzureContributorID string
+var MFA string
+var SudoPassword string
+var RemoveExistingPkgs bool
 
 const (
 

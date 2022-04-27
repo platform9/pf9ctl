@@ -14,13 +14,10 @@ import "time"
 }*/
 
 type NodeConfig struct {
-	User               string
-	Password           string
-	SshKey             string
-	IPs                []string
-	MFA                string
-	SudoPassword       string
-	RemoveExistingPkgs bool
+	User     string
+	Password string
+	SshKey   string
+	IPs      []string
 }
 
 type NodeC struct {

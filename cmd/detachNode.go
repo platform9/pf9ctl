@@ -30,7 +30,7 @@ var detachNodeCmd = &cobra.Command{
 
 func init() {
 	detachNodeCmd.Flags().StringSliceVarP(&nodeIPs, "node-ip", "n", []string{}, "node ip address")
-	detachNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
+	detachNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(detachNodeCmd)
 }
 

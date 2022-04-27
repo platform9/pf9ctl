@@ -37,9 +37,9 @@ func init() {
 	checkNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	checkNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	checkNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
-	checkNodeCmd.Flags().StringVar(&nc.MFA, "mfa", "", "MFA token")
-	checkNodeCmd.Flags().StringVarP(&nc.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
-	checkNodeCmd.Flags().BoolVarP(&nc.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	checkNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
+	checkNodeCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+	checkNodeCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
@@ -69,7 +69,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}*/
 	var err error
 	if detachedMode {
-		nc.RemoveExistingPkgs = true
+		util.RemoveExistingPkgs = true
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
 	} else {
 		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
@@ -113,7 +113,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if isRemote {
-		if err := SudoPasswordCheck(executor, detachedMode, nc.SudoPassword); err != nil {
+		if err := SudoPasswordCheck(executor, detachedMode, util.SudoPassword); err != nil {
 			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}

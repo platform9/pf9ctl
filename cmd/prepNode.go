@@ -58,11 +58,11 @@ func init() {
 	prepNodeCmd.Flags().StringSliceVarP(&nodeConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
-	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
+	prepNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	prepNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
 	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
-	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
-	prepNodeCmd.Flags().BoolVarP(&nodeConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	prepNodeCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+	prepNodeCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 
 	rootCmd.AddCommand(prepNodeCmd)
 }
@@ -90,7 +90,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	//cfg := &objects.UserData{OtherData: objects.Other{WaitPeriod: time.Duration(60), AllowInsecure: false}, MfaToken: nodeConfig.MFA}
 	var err error
 	if detachedMode {
-		nodeConfig.RemoveExistingPkgs = true
+		util.RemoveExistingPkgs = true
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nodeConfig)
 	} else {
 		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nodeConfig)
@@ -132,7 +132,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 	if isRemote {
-		if err := SudoPasswordCheck(executor, detachedMode, nodeConfig.SudoPassword); err != nil {
+		if err := SudoPasswordCheck(executor, detachedMode, util.SudoPassword); err != nil {
 			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}

@@ -28,7 +28,7 @@ var deauthNodeCmd = &cobra.Command{
 }
 
 func init() {
-	deauthNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
+	deauthNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	deauthNodeCmd.Flags().StringVarP(&ipAdd, "ip", "i", "", "IP address of the host to be deauthorized")
 	rootCmd.AddCommand(deauthNodeCmd)
 }

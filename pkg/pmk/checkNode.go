@@ -15,6 +15,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -130,12 +131,12 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	removeCurrentInstallation := ""
 	if !cleanInstallCheck {
 		fmt.Println(color.Yellow("\nPrevious installation found"))
-		if !nc.RemoveExistingPkgs {
+		if !util.RemoveExistingPkgs {
 			fmt.Println(color.Yellow("Reinstall Required..."))
 			fmt.Print("Remove Current Installation Type ('yes'/'no'):")
 			fmt.Scanf("%s", &removeCurrentInstallation)
 		}
-		if nc.RemoveExistingPkgs || strings.ToLower(removeCurrentInstallation) == "yes" {
+		if util.RemoveExistingPkgs || strings.ToLower(removeCurrentInstallation) == "yes" {
 			DecommissionNode(&ctx, nc, false)
 			return CleanInstallFail, nil
 		}

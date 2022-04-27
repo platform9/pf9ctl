@@ -31,7 +31,7 @@ var ipAdd string
 func init() {
 	rootCmd.AddCommand(authNodeCmd)
 	authNodeCmd.Flags().StringVarP(&ipAdd, "ip", "i", "", "IP address of the host to be authorized")
-	authNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
+	authNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 }
 
 func authNodeRun(cmd *cobra.Command, args []string) {

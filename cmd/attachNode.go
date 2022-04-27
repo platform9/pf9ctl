@@ -51,7 +51,7 @@ func init() {
 	attachNodeCmd.Flags().StringSliceVarP(&masterIPs, "master-ip", "m", []string{}, "master node ip address")
 	attachNodeCmd.Flags().StringSliceVarP(&workerIPs, "worker-ip", "w", []string{}, "worker node ip address")
 	attachNodeCmd.Flags().StringVarP(&clusterUuid, "uuid", "u", "", "uuid of the cluster to attach the node to")
-	attachNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
+	attachNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(attachNodeCmd)
 }
 

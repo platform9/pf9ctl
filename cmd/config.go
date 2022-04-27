@@ -65,7 +65,7 @@ var (
 	//cfg objects.UserData
 	cfg = &objects.Config{
 		Spec: objects.UserData{
-			MfaToken: nc.MFA,
+			MfaToken: util.MFA,
 			OtherData: objects.Other{
 				WaitPeriod:    time.Duration(60),
 				AllowInsecure: false,

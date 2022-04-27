@@ -131,9 +131,9 @@ func init() {
 	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "Ssh password for the node (use 'single quotes' to pass password)")
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "Ssh key file for connecting to the node")
 	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of the host to be prepared")
-	bootstrapCmd.Flags().StringVar(&bootConfig.MFA, "mfa", "", "MFA token")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
-	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	bootstrapCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
+	bootstrapCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
+	bootstrapCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
 	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
 	rootCmd.AddCommand(bootstrapCmd)
@@ -230,7 +230,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	defer c.Segment.Close()
 
 	if isRemote {
-		if err := SudoPasswordCheck(executor, detachedMode, bootConfig.SudoPassword); err != nil {
+		if err := SudoPasswordCheck(executor, detachedMode, util.SudoPassword); err != nil {
 			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}

@@ -27,7 +27,7 @@ var decommissionNodeCmd = &cobra.Command{
 }
 
 func init() {
-	decommissionNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
+	decommissionNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	decommissionNodeCmd.Flags().StringVarP(&nc.User, "user", "u", "", "ssh username for the nodes")
 	decommissionNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	decommissionNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")

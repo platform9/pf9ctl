@@ -34,7 +34,7 @@ var deleteClusterCmd = &cobra.Command{
 func init() {
 	deleteClusterCmd.Flags().StringVarP(&clusterName, "name", "n", "", "clusters name")
 	deleteClusterCmd.Flags().StringVarP(&clusterUuid, "uuid", "i", "", "clusters uuid")
-	deleteClusterCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
+	deleteClusterCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	rootCmd.AddCommand(deleteClusterCmd)
 }
 
