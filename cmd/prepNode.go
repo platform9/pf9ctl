@@ -92,11 +92,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	isRemote := cmdexec.CheckRemote(nc)
 
 	if isRemote {
-		fmt.Println("Remote")
-		fmt.Println("IP :", node.Ip)
-		fmt.Println("UserName :", node.Hostname)
-		fmt.Println("node list :", nc.Spec.Nodes)
-		fmt.Println("list len :", len(nc.Spec.Nodes))
 		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
