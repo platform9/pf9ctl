@@ -170,7 +170,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 
 func StatusUnattendedUpdates(allClients client.Client) bool {
 	zap.S().Debug("Checking Status of unattended-upgrades")
-	output, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl status unattended-upgrades | grep -i Active")
+	output, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl is-active unattended-upgrades")
 	if err != nil {
 		zap.S().Debugf("Failed to check unattended-upgrades : %s", err)
 	}
