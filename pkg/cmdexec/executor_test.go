@@ -13,7 +13,7 @@ func TestGetExecutor(t *testing.T) {
 	localExecutor := LocalExecutor{ProxyUrl: proxyURL}
 
 	// Test local executor
-	executor, err := GetExecutor(proxyURL, objects.NodeConfig{})
+	executor, err := GetExecutor(proxyURL, &objects.NodeConfig{})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, localExecutor, executor)
 }

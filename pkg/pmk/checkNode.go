@@ -39,7 +39,7 @@ when user passes --skip-checks and optional checks fails.
 var WarningOptionalChecks bool
 
 // CheckNode checks the prerequisites for k8s stack
-func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth, nc objects.NodeConfig) (CheckNodeResult, error) {
+func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth, nc *objects.NodeConfig) (CheckNodeResult, error) {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")

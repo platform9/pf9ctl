@@ -39,7 +39,7 @@ func authNodeRun(cmd *cobra.Command, args []string) {
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(nc) {
-		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}

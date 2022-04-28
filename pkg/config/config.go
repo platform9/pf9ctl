@@ -58,7 +58,7 @@ func StoreConfig(cfg *objects.Config, loc string) error {
 }
 
 // LoadConfig returns the information for communication with PF9 controller.
-func LoadConfig(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
+func LoadConfig(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
 
 	zap.S().Debug("Loading configuration details. pf9ctl version: ", util.Version)
 
@@ -101,7 +101,7 @@ func LoadConfig(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
 	return ValidateUserCredentials(cfg, nc)
 }
 
-func LoadConfigInteractive(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
+func LoadConfigInteractive(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
 
 	err := LoadConfig(loc, cfg, nc)
 	if err == nil {
@@ -121,7 +121,7 @@ func LoadConfigInteractive(loc string, cfg *objects.Config, nc objects.NodeConfi
 
 }
 
-func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
+func GetConfigRecursive(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
 	maxLoopNoConfig := 3
 	InvalidExistingConfig := false
 	count := 0
@@ -168,7 +168,7 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) 
 	return err
 }
 
-func ValidateUserCredentials(cfg *objects.Config, nc objects.NodeConfig) error {
+func ValidateUserCredentials(cfg *objects.Config, nc *objects.NodeConfig) error {
 
 	if err := validateConfigFields(cfg); err != nil {
 		return err
@@ -365,7 +365,7 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 	return SetProxy(cfg.Spec.ProxyURL)
 }
 
-func createClient(cfg *objects.Config, nc objects.NodeConfig) (client.Client, error) {
+func createClient(cfg *objects.Config, nc *objects.NodeConfig) (client.Client, error) {
 	executor, err := cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc)
 	if err != nil {
 		//debug first since Fatalf calls os.Exit
@@ -384,16 +384,16 @@ func clearContext(v interface{}) {
 
 func ValidateNodeConfig(nc *objects.NodeConfig, interactive bool) bool {
 
-	if nc.User == "" || (nc.SshKey == "" && nc.Password == "") {
+	if nc.Spec.Nodes[0].Hostname == "" || (nc.SshKey == "" && nc.Password == "") {
 		if !interactive {
 			return false
 		}
 
-		if nc.User == "" {
+		if nc.Spec.Nodes[0].Hostname == "" {
 			fmt.Printf("Enter username for remote host: ")
 			reader := bufio.NewReader(os.Stdin)
-			nc.User, _ = reader.ReadString('\n')
-			nc.User = strings.TrimSpace(nc.User)
+			nc.Spec.Nodes[0].Hostname, _ = reader.ReadString('\n')
+			nc.Spec.Nodes[0].Hostname = strings.TrimSpace(nc.Spec.Nodes[0].Hostname)
 		}
 		if nc.SshKey == "" && nc.Password == "" {
 			var choice int
@@ -434,4 +434,20 @@ func validateConfigFields(cfg *objects.Config) error {
 		return MISSSING_FIELDS
 	}
 	return nil
+}
+
+func LoadNodeConfig(nc *objects.NodeConfig, loc string) {
+	f, err := os.Open(loc)
+	if err != nil {
+		fmt.Println("Error opening node config file")
+	}
+	defer f.Close()
+	var nodec objects.NodeConfig
+	if JsonFileType {
+		err = json.NewDecoder(f).Decode(&nodec)
+	} else {
+		err = yaml.NewDecoder(f).Decode(&nodec)
+	}
+	//nc := &objects.NodeConfig{}
+	copier.CopyWithOption(nc, &nodec, copier.Option{IgnoreEmpty: true})
 }

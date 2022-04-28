@@ -13,18 +13,19 @@ import "time"
 	MfaToken string `json:"mfa_token"`
 }*/
 
-type NodeConfig struct {
+/*type NodeConfig struct {
 	User     string
 	Password string
 	SshKey   string
 	IPs      []string
-}
+}*/
 
-type NodeC struct {
+type NodeConfig struct {
 	APIVersion string `yaml:"apiVersion"`
 	Kind       string `yaml:"kind"`
 	Spec       Spec   `yaml:"spec"`
-	SSHKey     string `yaml:"ssh-key"`
+	SshKey     string `yaml:"ssh-key"`
+	Password   string `yaml:"password,omitempty" `
 }
 type Node struct {
 	Ip       string `yaml:"ip"`

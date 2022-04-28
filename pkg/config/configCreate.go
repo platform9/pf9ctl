@@ -91,7 +91,7 @@ func CreateUserConfig() {
 }
 
 func CreateNodeConfig() {
-	cfg := objects.NodeC{}
+	cfg := objects.NodeConfig{}
 
 	reader := bufio.NewReader(os.Stdin)
 	/*fmt.Printf("API version: ")
@@ -131,7 +131,7 @@ func CreateNodeConfig() {
 
 	fmt.Printf("SSH-Key: ")
 	key, _ := reader.ReadString('\n')
-	cfg.SSHKey = strings.TrimSuffix(key, "\n")
+	cfg.SshKey = strings.TrimSuffix(key, "\n")
 
 	var b []byte
 	var err error

@@ -69,7 +69,7 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("google.json", cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("google.json", cfg, &objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -90,7 +90,7 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("amazon.json", cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("amazon.json", cfg, &objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -110,7 +110,7 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("azure.json", cfg, objects.NodeConfig{})
+		err = config.GetConfigRecursive("azure.json", cfg, &objects.NodeConfig{})
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n")

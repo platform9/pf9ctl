@@ -14,7 +14,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
@@ -37,6 +36,11 @@ var prepNodeCmd = &cobra.Command{
 		}
 		return nil
 	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if node.Hostname != "" {
+			nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+		}
+	},
 }
 
 var (
@@ -47,19 +51,21 @@ var (
 	ips            []string
 	skipChecks     bool
 	disableSwapOff bool
+	NodeConfigPath string
 )
 
-var nodeConfig objects.NodeConfig
+//var nodeConfig *objects.NodeConfig
 
 func init() {
-	prepNodeCmd.Flags().StringVarP(&nodeConfig.User, "user", "u", "", "ssh username for the nodes")
-	prepNodeCmd.Flags().StringVarP(&nodeConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
-	prepNodeCmd.Flags().StringVarP(&nodeConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	prepNodeCmd.Flags().StringSliceVarP(&nodeConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
+	prepNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
+	prepNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
+	prepNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
+	prepNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
 	prepNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	prepNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
+	prepNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
 	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
 	prepNodeCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	prepNodeCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
@@ -74,15 +80,24 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		util.Pf9DBLoc = ConfigPath
 	}
 
+	if cmd.Flags().Changed("node-config") {
+		config.LoadNodeConfig(nc, NodeConfigPath)
+	}
+
 	if skipChecks {
 		pmk.WarningOptionalChecks = true
 	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
-	isRemote := cmdexec.CheckRemote(nodeConfig)
+	isRemote := cmdexec.CheckRemote(nc)
 
 	if isRemote {
-		if !config.ValidateNodeConfig(&nodeConfig, !detachedMode) {
+		fmt.Println("Remote")
+		fmt.Println("IP :", node.Ip)
+		fmt.Println("UserName :", node.Hostname)
+		fmt.Println("node list :", nc.Spec.Nodes)
+		fmt.Println("list len :", len(nc.Spec.Nodes))
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}
@@ -91,9 +106,9 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	var err error
 	if detachedMode {
 		util.RemoveExistingPkgs = true
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, nodeConfig)
+		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nodeConfig)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
 	}
 
 	if err != nil {
@@ -103,7 +118,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nodeConfig); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
@@ -138,7 +153,7 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	result, err := pmk.CheckNode(*cfg, c, auth, nodeConfig)
+	result, err := pmk.CheckNode(*cfg, c, auth, nc)
 	if err != nil {
 		// Uploads pf9cli log bundle if pre-requisite checks fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)

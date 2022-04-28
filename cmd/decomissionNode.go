@@ -24,23 +24,39 @@ var decommissionNodeCmd = &cobra.Command{
 		return nil
 	},
 	Run: decommissionNodeRun,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if node.Hostname != "" {
+			nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+		}
+	},
 }
 
 func init() {
 	decommissionNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
-	decommissionNodeCmd.Flags().StringVarP(&nc.User, "user", "u", "", "ssh username for the nodes")
+	decommissionNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
 	decommissionNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	decommissionNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	decommissionNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be decommissioned")
+	decommissionNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be decommissioned")
+	decommissionNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
+	decommissionNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
 	rootCmd.AddCommand(decommissionNodeCmd)
+	//nc.Spec.Nodes = append(nc.Spec.Nodes, node)
 }
 
 func decommissionNodeRun(cmd *cobra.Command, args []string) {
 
+	if cmd.Flags().Changed("user-config") {
+		util.Pf9DBLoc = ConfigPath
+	}
+
+	if cmd.Flags().Changed("node-config") {
+		config.LoadNodeConfig(nc, NodeConfigPath)
+	}
+
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(nc) {
-		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}

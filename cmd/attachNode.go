@@ -8,7 +8,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -44,7 +43,7 @@ var (
 		Run: attachNodeRun,
 	}
 
-	attachconfig objects.NodeConfig
+	//attachconfig *objects.NodeConfig
 )
 
 func init() {
@@ -61,7 +60,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(nc) {
-		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}

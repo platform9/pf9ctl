@@ -11,7 +11,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -20,7 +19,7 @@ import (
 )
 
 var (
-	nc objects.NodeConfig
+	//nc *objects.NodeConfig
 
 	checkNodeCmd = &cobra.Command{
 		Use:   "check-node",
@@ -28,32 +27,48 @@ var (
 		Long: `Check if a node satisfies prerequisites to be ready to be added to a Kubernetes cluster. Read more
 	at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/`,
 		Run: checkNodeRun,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if node.Hostname != "" {
+				nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+			}
+		},
 	}
 )
 
 func init() {
 	// nc := objects.NodeConfig{}
-	checkNodeCmd.Flags().StringVarP(&nc.User, "user", "u", "", "ssh username for the nodes")
+	checkNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
 	checkNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	checkNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	checkNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
+	checkNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be prepared")
 	checkNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	checkNodeCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	checkNodeCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	checkNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
+	checkNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
 
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
 
 	rootCmd.AddCommand(checkNodeCmd)
+	//nc.Spec.Nodes = append(nc.Spec.Nodes, node)
 }
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
 
+	if cmd.Flags().Changed("user-config") {
+		util.Pf9DBLoc = ConfigPath
+	}
+
+	if cmd.Flags().Changed("node-config") {
+		config.LoadNodeConfig(nc, NodeConfigPath)
+	}
+
 	detachedMode := cmd.Flags().Changed("no-prompt")
 	isRemote := cmdexec.CheckRemote(nc)
 
 	if isRemote {
-		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}

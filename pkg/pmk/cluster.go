@@ -20,7 +20,7 @@ import (
 )
 
 // Bootstrap simply onboards the local node and attaches it as master to a newly created cluster.
-func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateRequest, keystoneAuth keystone.KeystoneAuth, bootConfig objects.NodeConfig) error {
+func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateRequest, keystoneAuth keystone.KeystoneAuth, bootConfig *objects.NodeConfig) error {
 
 	if err1 := c.Segment.SendEvent("Starting Cluster creation(Bootstrap)", keystoneAuth, checkPass, ""); err1 != nil {
 		zap.S().Debugf("Unable to send Segment event for bootstrap node. Error: %s", err1.Error())

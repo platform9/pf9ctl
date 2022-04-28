@@ -24,7 +24,7 @@ func removePf9Instation(c client.Client) {
 	c.Executor.RunCommandWait(cmd)
 }
 
-func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool) {
+func DecommissionNode(cfg *objects.Config, nc *objects.NodeConfig, removePf9 bool) {
 
 	var executor cmdexec.Executor
 	var err error
