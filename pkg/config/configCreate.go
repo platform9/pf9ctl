@@ -143,7 +143,7 @@ func CreateNodeConfig() {
 
 	if err != nil {
 		fmt.Println(err)
-		zap.S().Fatal("Error creating user config please try again")
+		zap.S().Fatal("Error creating node config please try again")
 	}
 
 	ifDirNotExistCreat()
@@ -151,7 +151,72 @@ func CreateNodeConfig() {
 }
 
 func CreateClusterConfig() {
-	fmt.Println("Cluster config")
+	clusterConfig := objects.ClusterConfig{
+		APIVersion: "v4",
+		Kind:       "cluster",
+		Spec: objects.ClusterSpec{
+			ClusterSetting: objects.ClusterInfo{
+				Name:            "pf9-cluster",
+				KubeRoleVersion: "1.21.3-pmk.111",
+			},
+			ApplicationContainerSetting: objects.ContainerSetting{
+				Previleged:            true,
+				AllowWorkloadOnMaster: true,
+				ContainerRuntime:      "Docker",
+			},
+			NetworkingAndRegistration: objects.Networking{
+				ClusterNetworkStack: objects.NetworkStack{
+					IPv4: true,
+				},
+				NodeRegistration: objects.Registration{
+					UseNodeIPForClusterCreation: true,
+				},
+			},
+			ClusterAddOns: objects.ClusterAddon{
+				EtcdBackup: objects.EtcdBackup{
+					StorageProperties: objects.StorageProperties{
+						LocalPath: "/etc/pf9/etcd-backup",
+					},
+					DailyBackupTime:         "02:00",
+					MaxTimestampBackupCount: 3,
+				},
+				Monitoring: objects.Monitoring{
+					RetentionTime: "7d",
+				},
+				EnableProfileAgent: true,
+			},
+			ClusterNetworkInfo: objects.ClusterNetworkInfo{
+				ContainerCIDR: "10.20.0.0/16",
+				ServiceCIDR:   "10.21.0.0/16",
+				ClusterCNI: objects.ClusterCNI{
+					NetworkBackend:     "Calico",
+					IPEncapsulation:    "Always",
+					InterfaceDetection: "First Round",
+				},
+				NatOutgoing: objects.NatOutgoing{
+					BlockSize: "26",
+					MtuSize:   "1440",
+				},
+			},
+		},
+	}
+
+	var b []byte
+	var err error
+	if JsonFileType {
+		b, err = json.MarshalIndent(clusterConfig, "", " ")
+	} else {
+		b, err = yaml.Marshal(clusterConfig)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+		zap.S().Fatal("Error creating cluster config please try again")
+	}
+
+	ifDirNotExistCreat()
+	createConfigFile("ClusterConfig", b)
+
 }
 
 func ifDirNotExistCreat() {
