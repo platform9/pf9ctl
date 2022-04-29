@@ -62,7 +62,7 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.CheckKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = d.checkIfdpkgISLock()
+	result, err = d.CheckIfdpkgISLock()
 	checks = append(checks, platform.Check{"Check lock on dpkg", true, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.checkIfaptISLock()
@@ -331,8 +331,32 @@ func (d *Debian) disableSwap() (bool, error) {
 	}
 }
 
-func (d *Debian) checkIfdpkgISLock() (bool, error) {
+func (d *Debian) processAcquiredDpkgLock() (string, error) {
+	var f = []string{"lock", "lock-frontend"}
+	for _, file := range f {
 
+		output, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("lsof /var/lib/dpkg/%s | grep lib/dpkg/%s ", file, file))
+		if err != nil || output == "" {
+			return "", errors.New("Unable to find pid with dpkg lock")
+		}
+		output_slice := strings.Fields(output)
+		if len(output_slice) < 2 {
+			return "", errors.New("Unable to find pid with dpkg lock")
+		}
+
+		PID := output_slice[1]
+		output, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("ps -p %s -o command=", PID))
+		if err != nil {
+			return "", errors.New("Unable to find process with dpkg lock")
+		}
+		output = strings.Replace(output, "\n", "", -1)
+		return fmt.Sprintf("Process: '%s', Pid: %s ", output, PID), nil
+	}
+	return "", errors.New("Unable to find process with dpkg lock")
+
+}
+
+func (d *Debian) CheckIfdpkgISLock() (bool, error) {
 	var f = []string{"lock", "lock-frontend"}
 	for _, file := range f {
 		_, err := d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("lsof /var/lib/dpkg/%s", file))
@@ -340,7 +364,8 @@ func (d *Debian) checkIfdpkgISLock() (bool, error) {
 			return true, nil
 		} else {
 			zap.S().Debugf("Unable to acquire the dpkg lock on %s", file)
-			return false, fmt.Errorf("Unable to acquire the dpkg")
+			output, _ := d.processAcquiredDpkgLock()
+			return false, fmt.Errorf(fmt.Sprintf("Unable to acquire the dpkg - %s", output))
 		}
 	}
 	return true, fmt.Errorf("Unable to check dpkg lock")
