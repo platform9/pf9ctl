@@ -45,12 +45,12 @@ Optional Flags:
 	    --enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads, use either --enable-kubeVirt or --enable-kubeVirt=true to change
 	    --enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
 	    --etcd-backup                         Enable automated etcd backups on this cluster, use either --etcd-backup or --etcd-backup=false to change (default true)
-		--etcd-backup-path string             Backup path for etcd (default "/etc/pf9/etcd-backup")
+	    --etcd-backup-path string             Backup path for etcd (default "/etc/pf9/etcd-backup")
 	    --external-dns-name string            External DNS for master VIP
 	-h, --help                                help for bootstrap
 	    --http-proxy string                   Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.
 	    --interface-detction-method string    Interface detection method for Calico CNI (default "first-found")
-		--interval-in-mins                    Time interval of etcd-backup in minutes(should be between 30 to 60) (default 30)
+	    --interval-in-mins                    Time interval of etcd-backup in minutes(should be between 30 to 60) (default 30)
 	-i, --ip strings                          IP address of the host to be prepared
 	    --ip-encapsulation string             Encapsulates POD traffic in IP-in-IP between nodes (default "Always")
 	    --master-virtual-interface string     Physical interface for virtual IP association
