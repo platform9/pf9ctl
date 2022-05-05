@@ -45,10 +45,12 @@ Optional Flags:
 	    --enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads, use either --enable-kubeVirt or --enable-kubeVirt=true to change
 	    --enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
 	    --etcd-backup                         Enable automated etcd backups on this cluster, use either --etcd-backup or --etcd-backup=false to change (default true)
+		--etcd-backup-path string             Backup path for etcd (default "/etc/pf9/etcd-backup")
 	    --external-dns-name string            External DNS for master VIP
 	-h, --help                                help for bootstrap
 	    --http-proxy string                   Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.
 	    --interface-detction-method string    Interface detection method for Calico CNI (default "first-found")
+		--interval-in-mins                    Time interval of etcd-backup in minutes(should be between 30 to 60) (default 30)
 	-i, --ip strings                          IP address of the host to be prepared
 	    --ip-encapsulation string             Encapsulates POD traffic in IP-in-IP between nodes (default "Always")
 	    --master-virtual-interface string     Physical interface for virtual IP association
@@ -141,6 +143,8 @@ func init() {
 	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
 	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found, use either --remove-existing-pkgs or --remove-existing-pkgs=true to change")
 	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
+	bootstrapCmd.Flags().IntVar(&intervalInMins, "interval-in-mins", 30, "time interval of etcd-backup in minutes(should be between 30 to 60)")
+	bootstrapCmd.Flags().StringVar(&backupPath, "etcd-backup-path", "/etc/pf9/etcd-backup", "Backup path for etcd")
 	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
 	rootCmd.AddCommand(bootstrapCmd)
 }
@@ -177,6 +181,8 @@ var (
 	networkPlugin            string   //cluster CNI network backend
 	calicoNatOutgoing        int      //if set then packets destined outside the POD network will be SNAT'd using the node's IP.
 	httpProxy                string   //the HTTP proxy for this cluster.
+	intervalInMins           int      //etcd backup interval in minutes
+	backupPath               string   //etcd storage path
 )
 
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
@@ -367,14 +373,15 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	defer c.Segment.Close()
 
 	etcdBackupPath := qbert.Storageproperties{
-		LocalPath: "/etc/pf9/etcd-backup",
+		LocalPath: backupPath,
 	}
 
 	etcdDefaults := qbert.EtcdBackup{
-		StorageType:         "local",
-		IsEtcdBackupEnabled: 1,
-		StorageProperties:   etcdBackupPath,
-		IntervalInMins:      1440,
+		StorageType:            "local",
+		IsEtcdBackupEnabled:    1,
+		StorageProperties:      etcdBackupPath,
+		IntervalInMins:         intervalInMins,
+		MaxIntervalBackupCount: 3,
 	}
 	if isEtcdBackupDisabled {
 		etcdDefaults = qbert.EtcdBackup{}
