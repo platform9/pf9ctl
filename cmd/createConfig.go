@@ -54,9 +54,7 @@ func configCreateRun(cmd *cobra.Command, args []string) {
 		config.CreateUserConfig()
 	} else if kind == "node" {
 		config.CreateNodeConfig()
-	} else if kind == "cluster" {
-		config.CreateClusterConfig()
 	} else {
-		zap.S().Fatal("Please make sure kind is user-config/node/cluster")
+		zap.S().Fatal("Please make sure kind is user-config/node")
 	}
 }

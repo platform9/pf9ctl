@@ -150,7 +150,8 @@ func CreateNodeConfig() {
 	createConfigFile("NodeConfig", b)
 }
 
-func CreateClusterConfig() {
+// For now it is decided that cluster create command is on hold
+/*func CreateClusterConfig() {
 	clusterConfig := objects.ClusterConfig{
 		APIVersion: "v4",
 		Kind:       "cluster",
@@ -217,7 +218,7 @@ func CreateClusterConfig() {
 	ifDirNotExistCreat()
 	createConfigFile("ClusterConfig", b)
 
-}
+}*/
 
 func ifDirNotExistCreat() {
 	//If user have given dir location to store congig file, this function will check if that location is present,
