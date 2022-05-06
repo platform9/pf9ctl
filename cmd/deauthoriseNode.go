@@ -54,7 +54,7 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
-
+	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
 	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
@@ -109,9 +109,13 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 	err = c.Qbert.DeauthoriseNode(isMaster.Uuid, token)
 
 	if err != nil {
+		node := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
+		if node.Uuid == "" {
+			zap.S().Infof("Node might be already deauthorized, please check in UI")
+		}
 		zap.S().Fatalf("Error deauthorising node ", err.Error())
 	}
 
 	fmt.Println("Node deauthorization started....This may take a few minutes....Check the latest status in UI")
-
+	zap.S().Debug("Node deauthorization started....This may take a few minutes....Check the latest status in UI")
 }

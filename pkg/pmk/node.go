@@ -76,8 +76,26 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	}
 
 	if hostOS == "debian" {
-		DisableUnattendedUpdates(allClients)
-		defer EnableUnattendedUpdates(allClients)
+
+		platform := debian.NewDebian(allClients.Executor)
+		result, _ := platform.CheckIfdpkgISLock()
+
+		if StatusUnattendedUpdates(allClients) {
+			// stop unattended-upgrades
+			// this do not stop them if they are already running
+			StopUnattendedUpdates(allClients)
+			defer StartUnattendedUpdates(allClients)
+
+			if IsEnabledUnattendedUpdates(allClients) {
+				DisableUnattendedUpdates(allClients)
+				defer EnableUnattendedUpdates(allClients)
+			}
+		}
+
+		if !result {
+			zap.S().Error("Dpkg lock is acquired by another process while prep-node was running")
+			return fmt.Errorf("Dpkg is under lock")
+		}
 	}
 
 	present := pf9PackagesPresent(hostOS, allClients.Executor)
@@ -118,7 +136,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 	output = strings.TrimSpace(output)
-	if err != nil {
+	if err != nil || output == "" {
 		errStr := "Error: Unable to fetch host ID. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
@@ -126,8 +144,10 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 
 	s.Stop()
 	fmt.Println(color.Green("✓ ") + "Initialised host successfully")
+	zap.S().Debug("Initialised host successfully")
 	s.Restart()
 	s.Suffix = " Authorising host"
+	zap.S().Debug("Authorising host")
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.Spec.OtherData.WaitPeriod * time.Second)
 
@@ -148,11 +168,51 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	return nil
 }
 
-func DisableUnattendedUpdates(allClients client.Client) {
-	zap.S().Debug("Disabling unattended-upgrades")
+func StatusUnattendedUpdates(allClients client.Client) bool {
+	zap.S().Debug("Checking Status of unattended-upgrades")
+	output, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl is-active unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("Failed to check unattended-upgrades : %s", err)
+	}
+	output = strings.TrimSpace(output)
+	return !strings.Contains(output, "inactive")
+}
+
+func StopUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Stopping unattended-upgrades")
 	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl stop unattended-upgrades")
 	if err != nil {
-		zap.S().Debugf("failed to disable unattended-upgrades : %s", err)
+		zap.S().Debugf("Failed to stop unattended-upgrades : %s", err)
+	} else {
+		zap.S().Debug("Stopped unattended-upgrades")
+	}
+}
+
+func StartUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Start unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl start unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("Failed to start unattended-upgrades : %s", err)
+	} else {
+		zap.S().Debug("Started unattended-upgrades")
+	}
+}
+
+func IsEnabledUnattendedUpdates(allClients client.Client) bool {
+	zap.S().Debug("Checking if unattended-upgrades is enabled")
+	output, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl is-enabled unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("Failed to check unattended-upgrades is enabled : %s", err)
+	}
+	output = strings.TrimSpace(output)
+	return strings.Contains(output, "enabled")
+}
+
+func DisableUnattendedUpdates(allClients client.Client) {
+	zap.S().Debug("Disabling unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl disable unattended-upgrades")
+	if err != nil {
+		zap.S().Debugf("Failed to disable unattended-upgrades : %s", err)
 	} else {
 		zap.S().Debug("Disabled unattended-upgrades")
 	}
@@ -160,16 +220,16 @@ func DisableUnattendedUpdates(allClients client.Client) {
 
 func EnableUnattendedUpdates(allClients client.Client) {
 	zap.S().Debug("Enabling unattended-upgrades")
-	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl start unattended-upgrades")
+	_, err := allClients.Executor.RunWithStdout("bash", "-c", "systemctl enable unattended-upgrades")
 	if err != nil {
-		zap.S().Debugf("failed to start unattended-upgrades : %s", err)
+		zap.S().Debugf("Failed to enable unattended-upgrades : %s", err)
 	} else {
 		zap.S().Debug("Enabled unattended-upgrades")
 	}
 }
 
 func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
-	zap.S().Debug("Downloading Hostagent")
+	zap.S().Debug("Downloading the Hostagent (this might take a few minutes...)")
 
 	regionURL, err := keystone.FetchRegionFQDN(ctx.Spec.AccountUrl, ctx.Spec.Region, auth)
 	if err != nil {

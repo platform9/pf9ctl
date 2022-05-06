@@ -72,7 +72,7 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
 	}
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
-
+	zap.S().Debug("Loaded Config Successfully")
 	pmk.DecommissionNode(cfg, nc, true)
 
 }
