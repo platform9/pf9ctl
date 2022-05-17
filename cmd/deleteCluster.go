@@ -35,7 +35,7 @@ func init() {
 	deleteClusterCmd.Flags().StringVarP(&clusterName, "name", "n", "", "clusters name")
 	deleteClusterCmd.Flags().StringVarP(&clusterUuid, "uuid", "i", "", "clusters uuid")
 	deleteClusterCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
-	rootCmd.AddCommand(deleteClusterCmd)
+	clusterCmd.AddCommand(deleteClusterCmd)
 }
 
 func deleteClusterRun(cmd *cobra.Command, args []string) {

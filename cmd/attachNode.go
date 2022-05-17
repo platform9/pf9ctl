@@ -22,7 +22,7 @@ var (
 
 var (
 	attachNodeCmd = &cobra.Command{
-		Use:   "attach-node [flags] cluster-name",
+		Use:   "attach [flags] cluster-name",
 		Short: "Attaches a node to the Kubernetes cluster",
 		Long:  "Attach nodes to existing cluster. At a time, multiple workers but only one master can be attached",
 		Args: func(attachNodeCmd *cobra.Command, args []string) error {
@@ -50,8 +50,9 @@ func init() {
 	attachNodeCmd.Flags().StringSliceVarP(&masterIPs, "master-ip", "m", []string{}, "master node ip address")
 	attachNodeCmd.Flags().StringSliceVarP(&workerIPs, "worker-ip", "w", []string{}, "worker node ip address")
 	attachNodeCmd.Flags().StringVarP(&clusterUuid, "uuid", "u", "", "uuid of the cluster to attach the node to")
+
 	attachNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
-	rootCmd.AddCommand(attachNodeCmd)
+	nodeCmd.AddCommand(attachNodeCmd)
 }
 
 func attachNodeRun(cmd *cobra.Command, args []string) {

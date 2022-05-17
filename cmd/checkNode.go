@@ -22,7 +22,7 @@ var (
 	//nc *objects.NodeConfig
 
 	checkNodeCmd = &cobra.Command{
-		Use:   "check-node",
+		Use:   "check",
 		Short: "Checks prerequisites on a node to use with PMK",
 		Long: `Check if a node satisfies prerequisites to be ready to be added to a Kubernetes cluster. Read more
 	at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/`,
@@ -48,9 +48,8 @@ func init() {
 	checkNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
 
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
+	nodeCmd.AddCommand(checkNodeCmd)
 
-	rootCmd.AddCommand(checkNodeCmd)
-	//nc.Spec.Nodes = append(nc.Spec.Nodes, node)
 }
 
 func checkNodeRun(cmd *cobra.Command, args []string) {

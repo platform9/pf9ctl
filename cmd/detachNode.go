@@ -19,7 +19,7 @@ var (
 )
 
 var detachNodeCmd = &cobra.Command{
-	Use:   "detach-node [flags]",
+	Use:   "detach [flags]",
 	Short: "Detaches a node from a Kubernetes cluster",
 	Long:  "Detach nodes from their clusters. If no nodes are passed it will detach the node on which the command was run.",
 	Args: func(detachNodeCmd *cobra.Command, args []string) error {
@@ -31,7 +31,7 @@ var detachNodeCmd = &cobra.Command{
 func init() {
 	detachNodeCmd.Flags().StringSliceVarP(&nodeIPs, "node-ip", "n", []string{}, "node ip address")
 	detachNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
-	rootCmd.AddCommand(detachNodeCmd)
+	nodeCmd.AddCommand(detachNodeCmd)
 }
 
 func detachNodeRun(cmd *cobra.Command, args []string) {

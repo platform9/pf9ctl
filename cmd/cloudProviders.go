@@ -40,23 +40,22 @@ var checkAzureProviderCmd = &cobra.Command{
 }
 
 func init() {
-
 	checkGoogleProviderCmd.Flags().StringVarP(&cfg.Spec.Google.GooglePath, "service-account-path", "p", "", "sets the service account path (required)")
 	checkGoogleProviderCmd.Flags().StringVarP(&cfg.Spec.Google.GoogleProjectName, "project-name", "n", "", "sets the project name (required)")
 	checkGoogleProviderCmd.Flags().StringVarP(&cfg.Spec.Google.GoogleServiceEmail, "service-account-email", "e", "", "sets the service account email (required)")
-	rootCmd.AddCommand(checkGoogleProviderCmd)
+	cloudProviderCmd.AddCommand(checkGoogleProviderCmd)
 
 	checkAmazonProviderCmd.Flags().StringVarP(&cfg.Spec.AWS.AwsIamUsername, "iam-user", "i", "", "sets the iam user (required)")
 	checkAmazonProviderCmd.Flags().StringVarP(&cfg.Spec.AWS.AwsAccessKey, "access-key", "a", "", "sets the access key (required)")
 	checkAmazonProviderCmd.Flags().StringVarP(&cfg.Spec.AWS.AwsSecretKey, "secret-key", "s", "", "sets the secret key (required)")
 	checkAmazonProviderCmd.Flags().StringVarP(&cfg.Spec.AWS.AwsRegion, "region", "r", "", "sets the region (required)")
-	rootCmd.AddCommand(checkAmazonProviderCmd)
+	cloudProviderCmd.AddCommand(checkAmazonProviderCmd)
 
 	checkAzureProviderCmd.Flags().StringVarP(&cfg.Spec.Azure.AzureTenant, "tenant-id", "t", "", "sets the tenant id (required)")
 	checkAzureProviderCmd.Flags().StringVarP(&cfg.Spec.Azure.AzureClient, "client-id", "c", "", "sets the client(applicaiton) id (required)")
 	checkAzureProviderCmd.Flags().StringVarP(&cfg.Spec.Azure.AzureSubscription, "subscription-id", "s", "", "sets the ssubscription id (required)")
 	checkAzureProviderCmd.Flags().StringVarP(&cfg.Spec.Azure.AzureSecret, "secret-key", "k", "", "sets the secret key (required)")
-	rootCmd.AddCommand(checkAzureProviderCmd)
+	cloudProviderCmd.AddCommand(checkAzureProviderCmd)
 }
 
 func checkGoogleProviderRun(cmd *cobra.Command, args []string) {

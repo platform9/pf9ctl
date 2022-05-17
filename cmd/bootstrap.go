@@ -156,8 +156,8 @@ func init() {
 	bootstrapCmd.Flags().IntVar(&intervalInMins, "interval-in-mins", 30, "time interval of etcd-backup in minutes(should be between 30 to 60)")
 	bootstrapCmd.Flags().StringVar(&backupPath, "etcd-backup-path", "/etc/pf9/etcd-backup", "Backup path for etcd")
 	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
-	rootCmd.AddCommand(bootstrapCmd)
-	//nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+
+	clusterCmd.AddCommand(bootstrapCmd)
 }
 
 var (

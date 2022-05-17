@@ -14,7 +14,7 @@ import (
 )
 
 var decommissionNodeCmd = &cobra.Command{
-	Use:   "decommission-node",
+	Use:   "decommission",
 	Short: "Decommissions this node from the PMK control plane",
 	Long:  "Removes the host agent package and decommissions this node from the Platform9 control plane.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
@@ -39,8 +39,7 @@ func init() {
 	decommissionNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be decommissioned")
 	decommissionNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
 	decommissionNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
-	rootCmd.AddCommand(decommissionNodeCmd)
-	//nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+	nodeCmd.AddCommand(decommissionNodeCmd)
 }
 
 func decommissionNodeRun(cmd *cobra.Command, args []string) {
