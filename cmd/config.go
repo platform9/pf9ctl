@@ -62,7 +62,6 @@ var (
 		},
 	}
 
-	//cfg objects.UserData
 	cfg = &objects.Config{
 		Spec: objects.UserData{
 			MfaToken: util.MFA,

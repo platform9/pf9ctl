@@ -48,7 +48,6 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	//cfg := &objects.UserData{OtherData: objects.Other{WaitPeriod: time.Duration(60), AllowInsecure: false}, MfaToken: attachconfig.MFA}
 	var err error
 	if detachedMode {
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)

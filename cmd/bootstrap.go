@@ -109,7 +109,6 @@ var bootstrapCmd = &cobra.Command{
 	Run:     bootstrapCmdRun,
 }
 
-//var bootConfig *objects.NodeConfig
 var node objects.Node
 
 func init() {
@@ -235,7 +234,6 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	//cfg := &objects.UserData{OtherData: objects.Other{WaitPeriod: time.Duration(60), AllowInsecure: false}, MfaToken: bootConfig.MFA}
 	var err error
 	if detachedMode {
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)

@@ -19,8 +19,6 @@ import (
 )
 
 var (
-	//nc *objects.NodeConfig
-
 	checkNodeCmd = &cobra.Command{
 		Use:   "check",
 		Short: "Checks prerequisites on a node to use with PMK",
@@ -36,7 +34,6 @@ var (
 )
 
 func init() {
-	// nc := objects.NodeConfig{}
 	checkNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
 	checkNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	checkNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
@@ -72,15 +69,6 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	/*cfg := &objects.Config{
-		Spec: objects.UserData{
-			MfaToken: nc.MFA,
-			OtherData: objects.Other{
-				WaitPeriod:    time.Duration(60),
-				AllowInsecure: false,
-			},
-		},
-	}*/
 	var err error
 	if detachedMode {
 		util.RemoveExistingPkgs = true

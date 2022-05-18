@@ -54,8 +54,6 @@ var (
 	NodeConfigPath string
 )
 
-//var nodeConfig *objects.NodeConfig
-
 func init() {
 	prepNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
 	prepNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
@@ -97,7 +95,6 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	//cfg := &objects.UserData{OtherData: objects.Other{WaitPeriod: time.Duration(60), AllowInsecure: false}, MfaToken: nodeConfig.MFA}
 	var err error
 	if detachedMode {
 		util.RemoveExistingPkgs = true

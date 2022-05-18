@@ -28,8 +28,6 @@ var (
 			}
 		},
 	}
-
-	//bundleConfig *objects.NodeConfig
 )
 
 //This initialization is using create commands which is not in use for now.
@@ -65,7 +63,6 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	//cfg := &objects.UserData{OtherData: objects.Other{WaitPeriod: time.Duration(60), AllowInsecure: false}, MfaToken: bundleConfig.MFA}
 	var err error
 	if detachedMode {
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)

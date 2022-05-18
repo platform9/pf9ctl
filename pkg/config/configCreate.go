@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh/terminal"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -87,7 +88,10 @@ func CreateUserConfig() {
 	}
 
 	ifDirNotExistCreat()
-	createConfigFile("config.json", b)
+	err = createConfigFile("userConfig", b)
+	if err != nil {
+		zap.S().Fatalf("Error creating user config:", err)
+	}
 }
 
 func CreateNodeConfig() {
@@ -147,7 +151,10 @@ func CreateNodeConfig() {
 	}
 
 	ifDirNotExistCreat()
-	createConfigFile("NodeConfig", b)
+	err = createConfigFile("NodeConfig", b)
+	if err != nil {
+		zap.S().Fatalf("Error creating node config:", err)
+	}
 }
 
 // For now it is decided that cluster create command is on hold
@@ -237,7 +244,7 @@ func ifDirNotExistCreat() {
 	}
 }
 
-func createConfigFile(name string, b []byte) {
+func createConfigFile(name string, b []byte) error {
 	//this function will create config file
 	if util.ConfigFileName != "" {
 		FileName = filepath.Join(util.ConfigFileLoc, util.ConfigFileName)
@@ -245,12 +252,25 @@ func createConfigFile(name string, b []byte) {
 		FileName = filepath.Join(util.ConfigFileLoc, name)
 	}
 
+	if JsonFileType {
+		ext := filepath.Ext(FileName)
+		if ext == "" {
+			FileName = FileName + ".json"
+		}
+	} else {
+		ext := filepath.Ext(FileName)
+		if ext == "" {
+			FileName = FileName + ".yaml"
+		}
+	}
+
 	_, err := os.OpenFile(FileName, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Println("Error creating config file, please try again")
+		return errors.New("error creating config file, please try again")
 	}
 	err = ioutil.WriteFile(FileName, b, 0644)
 	if err == nil {
 		fmt.Println("Config file created please check it here ", FileName)
 	}
+	return nil
 }

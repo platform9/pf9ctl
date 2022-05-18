@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -76,9 +77,9 @@ func LoadConfig(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
 	defer f.Close()
 
 	var fileConfig objects.Config
-	//err = json.NewDecoder(f).Decode(&fileConfig)
 
-	if JsonFileType {
+	ext := filepath.Ext(loc)
+	if ext != ".yaml" {
 		err = json.NewDecoder(f).Decode(&fileConfig)
 	} else {
 		err = yaml.NewDecoder(f).Decode(&fileConfig)
@@ -448,6 +449,5 @@ func LoadNodeConfig(nc *objects.NodeConfig, loc string) {
 	} else {
 		err = yaml.NewDecoder(f).Decode(&nodec)
 	}
-	//nc := &objects.NodeConfig{}
 	copier.CopyWithOption(nc, &nodec, copier.Option{IgnoreEmpty: true})
 }

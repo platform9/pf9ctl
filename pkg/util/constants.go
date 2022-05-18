@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -86,7 +85,7 @@ var (
 	// Pf9DBDir is the base dir for storing pf9 db config
 	Pf9DBDir = filepath.Join(Pf9Dir, "db")
 	// Pf9DBLoc represents location of the config file.
-	Pf9DBLoc = filepath.Join(Pf9DBDir, "config.json")
+	Pf9DBLoc = filepath.Join(Pf9DBDir, "userConfig.json")
 	// Pf9Log represents location of the log.
 	Pf9Log         = filepath.Join(Pf9LogDir, "pf9ctl.log")
 	ConfigFileName string
@@ -124,7 +123,6 @@ func init() {
 
 	if ConfigPath != "" {
 		Pf9DBLoc = filepath.Join(ConfigPath)
-		fmt.Println("updated config location: ", Pf9DBLoc)
 	}
 
 	AzureContributorID = "b24988ac-6180-42a0-ab88-20f7382dd24c"
