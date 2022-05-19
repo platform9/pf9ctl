@@ -444,7 +444,8 @@ func LoadNodeConfig(nc *objects.NodeConfig, loc string) {
 	}
 	defer f.Close()
 	var nodec objects.NodeConfig
-	if JsonFileType {
+	ext := filepath.Ext(loc)
+	if ext != ".yaml" {
 		err = json.NewDecoder(f).Decode(&nodec)
 	} else {
 		err = yaml.NewDecoder(f).Decode(&nodec)
