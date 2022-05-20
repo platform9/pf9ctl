@@ -63,6 +63,8 @@ var (
 	}
 
 	cfg = &objects.Config{
+		ApiVersion: "v1",
+		Kind:       "user",
 		Spec: objects.UserData{
 			MfaToken: util.MFA,
 			OtherData: objects.Other{

@@ -29,12 +29,12 @@ func CreateUserConfig() {
 	reader := bufio.NewReader(os.Stdin)
 
 	/*fmt.Printf("API version: ")
-	apiVersion, _ := reader.ReadString('\n')
-	cfg.ApiVersion = strings.TrimSuffix(apiVersion, "\n")
+	apiVersion, _ := reader.ReadString('\n')*/
+	cfg.ApiVersion = strings.TrimSuffix("v1", "\n")
 
-	fmt.Printf("Kind: ")
-	kind, _ := reader.ReadString('\n')
-	cfg.Kind = strings.TrimSuffix(kind, "\n")*/
+	/*fmt.Printf("Kind: ")
+	kind, _ := reader.ReadString('\n')*/
+	cfg.Kind = strings.TrimSuffix("user-config", "\n")
 
 	fmt.Printf("Platform9 Account URL: ")
 	fqdn, _ := reader.ReadString('\n')
@@ -99,20 +99,20 @@ func CreateNodeConfig() {
 
 	reader := bufio.NewReader(os.Stdin)
 	/*fmt.Printf("API version: ")
-	apiVersion, _ := reader.ReadString('\n')
-	cfg.APIVersion = strings.TrimSuffix(apiVersion, "\n")
+	apiVersion, _ := reader.ReadString('\n')*/
+	cfg.APIVersion = strings.TrimSuffix("v1", "\n")
 
-	fmt.Printf("Kind: ")
-	kind, _ := reader.ReadString('\n')
-	cfg.Kind = strings.TrimSuffix(kind, "\n")
+	/*fmt.Printf("Kind: ")
+	kind, _ := reader.ReadString('\n')*/
+	cfg.Kind = strings.TrimSuffix("node-config", "\n")
 
-	fmt.Printf("DeploymentKind: ")
-	Dkind, _ := reader.ReadString('\n')
-	cfg.Spec.DeploymentKind = strings.TrimSuffix(Dkind, "\n")
+	/*fmt.Printf("DeploymentKind: ")
+	Dkind, _ := reader.ReadString('\n')*/
+	cfg.Spec.DeploymentKind = strings.TrimSuffix("upi", "\n")
 
-	fmt.Printf("Type: ")
-	typ, _ := reader.ReadString('\n')
-	cfg.Spec.Type = strings.TrimSuffix(typ, "\n")*/
+	/*fmt.Printf("Type: ")
+	typ, _ := reader.ReadString('\n')*/
+	cfg.Spec.Type = strings.TrimSuffix("BareOS", "\n")
 
 	fmt.Printf("IP: ")
 	ip, _ := reader.ReadString('\n')
@@ -133,7 +133,7 @@ func CreateNodeConfig() {
 
 	cfg.Spec.Nodes = append(cfg.Spec.Nodes, node)
 
-	fmt.Printf("SSH-Key: ")
+	fmt.Printf("SSH-Key-Path: ")
 	key, _ := reader.ReadString('\n')
 	cfg.SshKey = strings.TrimSuffix(key, "\n")
 
