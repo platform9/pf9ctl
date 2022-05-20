@@ -8,14 +8,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
@@ -27,7 +25,7 @@ import (
 
 // prepNodeCmd represents the prepNode command
 var prepNodeCmd = &cobra.Command{
-	Use:   "prep-node",
+	Use:   "prep",
 	Short: "Sets up prerequisites & prepares a node to use with PMK",
 	Long: `Prepare a node to be ready to be added to a Kubernetes cluster. Read more
 	at http://pf9.io/cli_clprep.`,
@@ -38,57 +36,71 @@ var prepNodeCmd = &cobra.Command{
 		}
 		return nil
 	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if node.Hostname != "" {
+			nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+		}
+	},
 }
 
 var (
+	ConfigPath     string
 	user           string
 	password       string
 	sshKey         string
 	ips            []string
 	skipChecks     bool
 	disableSwapOff bool
+	NodeConfigPath string
 )
 
-var nodeConfig objects.NodeConfig
-
 func init() {
-	prepNodeCmd.Flags().StringVarP(&nodeConfig.User, "user", "u", "", "ssh username for the nodes")
-	prepNodeCmd.Flags().StringVarP(&nodeConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
-	prepNodeCmd.Flags().StringVarP(&nodeConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	prepNodeCmd.Flags().StringSliceVarP(&nodeConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
+	prepNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
+	prepNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
+	prepNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
+	prepNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
-	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
+	prepNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
+	prepNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
+	prepNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
 	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
-	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
-	prepNodeCmd.Flags().BoolVarP(&nodeConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	prepNodeCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+	prepNodeCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 
-	rootCmd.AddCommand(prepNodeCmd)
+	nodeCmd.AddCommand(prepNodeCmd)
 }
 
 func prepNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running prep-node==========")
+
+	if cmd.Flags().Changed("user-config") {
+		util.Pf9DBLoc = ConfigPath
+	}
+
+	if cmd.Flags().Changed("node-config") {
+		config.LoadNodeConfig(nc, NodeConfigPath)
+	}
 
 	if skipChecks {
 		pmk.WarningOptionalChecks = true
 	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
-	isRemote := cmdexec.CheckRemote(nodeConfig)
+	isRemote := cmdexec.CheckRemote(nc)
 
 	if isRemote {
-		if !config.ValidateNodeConfig(&nodeConfig, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}
 
-	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nodeConfig.MFA}
 	var err error
 	if detachedMode {
-		nodeConfig.RemoveExistingPkgs = true
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, nodeConfig)
+		util.RemoveExistingPkgs = true
+		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nodeConfig)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
 	}
 
 	if err != nil {
@@ -98,21 +110,21 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nodeConfig); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
 	var c client.Client
-	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+	if c, err = client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false); err != nil {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 	defer c.Segment.Close()
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
-		cfg.Username,
-		cfg.Password,
-		cfg.Tenant,
-		cfg.MfaToken,
+		cfg.Spec.Username,
+		cfg.Spec.Password,
+		cfg.Spec.Tenant,
+		cfg.Spec.MfaToken,
 	)
 
 	if err != nil {
@@ -127,13 +139,13 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 	if isRemote {
-		if err := SudoPasswordCheck(executor, detachedMode, nodeConfig.SudoPassword); err != nil {
+		if err := SudoPasswordCheck(executor, detachedMode, util.SudoPassword); err != nil {
 			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}
 
 	// If all pre-requisite checks passed in Check-Node then prep-node
-	result, err := pmk.CheckNode(*cfg, c, auth, nodeConfig)
+	result, err := pmk.CheckNode(*cfg, c, auth, nc)
 	if err != nil {
 		// Uploads pf9cli log bundle if pre-requisite checks fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)

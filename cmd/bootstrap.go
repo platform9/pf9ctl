@@ -98,11 +98,18 @@ var bootstrapCmd = &cobra.Command{
 		clusterName = args[0]
 		return nil
 	},
+
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if node.Hostname != "" {
+			nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+		}
+	},
+
 	Example: "pf9ctl bootstrap <clusterName> --pmk-version <version>",
 	Run:     bootstrapCmdRun,
 }
 
-var bootConfig objects.NodeConfig
+var node objects.Node
 
 func init() {
 	bootstrapCmd.Flags().IntVar(&networkStack, "network-stack", 0, "0 for ipv4 and 1 for ipv6")
@@ -135,18 +142,21 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&privileged, "privileged", true, "Enable privileged mode for K8s API, use either --privileged or --privileged=false to change")
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allow-workloads-on-master", true, "Taint master nodes ( to enable workloads ), use either --allow-workloads-on-master or --allow-workloads-on-master=false to change")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "network-plugin", "calico", "Specify network plugin ( Possible values: flannel or calico )")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.User, "user", "u", "", "Ssh username for the node")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.Password, "password", "p", "", "Ssh password for the node (use 'single quotes' to pass password)")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.SshKey, "ssh-key", "s", "", "Ssh key file for connecting to the node")
-	bootstrapCmd.Flags().StringSliceVarP(&bootConfig.IPs, "ip", "i", []string{}, "IP address of the host to be prepared")
-	bootstrapCmd.Flags().StringVar(&bootConfig.MFA, "mfa", "", "MFA token")
-	bootstrapCmd.Flags().StringVarP(&bootConfig.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
-	bootstrapCmd.Flags().BoolVarP(&bootConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found, use either --remove-existing-pkgs or --remove-existing-pkgs=true to change")
+	bootstrapCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "Ssh username for the node")
+	bootstrapCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "Ssh password for the node (use 'single quotes' to pass password)")
+	bootstrapCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "Ssh key file for connecting to the node")
+	bootstrapCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of the host to be prepared")
+	bootstrapCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
+	bootstrapCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
+	bootstrapCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 	bootstrapCmd.Flags().StringVar(&httpProxy, "http-proxy", "", "Specify the HTTP proxy for this cluster. Format-> <scheme>://<username>:<password>@<host>:<port>, username and password are optional.")
+	bootstrapCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
+	bootstrapCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
 	bootstrapCmd.Flags().IntVar(&intervalInMins, "interval-in-mins", 30, "time interval of etcd-backup in minutes(should be between 30 to 60)")
 	bootstrapCmd.Flags().StringVar(&backupPath, "etcd-backup-path", "/etc/pf9/etcd-backup", "Backup path for etcd")
 	bootstrapCmd.SetHelpTemplate(boostrapHelpTemplate)
-	rootCmd.AddCommand(bootstrapCmd)
+
+	clusterCmd.AddCommand(bootstrapCmd)
 }
 
 var (
@@ -188,8 +198,16 @@ var (
 func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("Received a call to bootstrap the node")
 
+	if cmd.Flags().Changed("user-config") {
+		util.Pf9DBLoc = ConfigPath
+	}
+
+	if cmd.Flags().Changed("node-config") {
+		config.LoadNodeConfig(nc, NodeConfigPath)
+	}
+
 	detachedMode := cmd.Flags().Changed("no-prompt")
-	isRemote := cmdexec.CheckRemote(bootConfig)
+	isRemote := cmdexec.CheckRemote(nc)
 
 	isEtcdBackupDisabled := cmd.Flags().Changed("etcd-backup")
 	qbert.IsMonitoringDisabled = cmd.Flags().Changed("monitoring")
@@ -211,17 +229,16 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 
 	if isRemote {
-		if !config.ValidateNodeConfig(&bootConfig, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}
 
-	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: bootConfig.MFA}
 	var err error
 	if detachedMode {
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, bootConfig)
+		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, bootConfig)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -230,19 +247,19 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, bootConfig); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
 	var c client.Client
-	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+	if c, err = client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false); err != nil {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
 	defer c.Segment.Close()
 
 	if isRemote {
-		if err := SudoPasswordCheck(executor, detachedMode, bootConfig.SudoPassword); err != nil {
+		if err := SudoPasswordCheck(executor, detachedMode, util.SudoPassword); err != nil {
 			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}
@@ -251,10 +268,10 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
-		cfg.Username,
-		cfg.Password,
-		cfg.Tenant,
-		cfg.MfaToken,
+		cfg.Spec.Username,
+		cfg.Spec.Password,
+		cfg.Spec.Tenant,
+		cfg.Spec.MfaToken,
 	)
 
 	//Getting all pmk versions
@@ -323,7 +340,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	if !util.SkipPrepNode {
 		zap.S().Debug("========== Running check-node as a part of bootstrap ==========")
 
-		result, err := pmk.CheckNode(*cfg, c, auth, bootConfig)
+		result, err := pmk.CheckNode(*cfg, c, auth, nc)
 		if err != nil {
 			// Uploads pf9cli log bundle if checknode fails
 			errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
@@ -432,7 +449,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
 	}
 
-	if err := pmk.Bootstrap(*cfg, c, payload, auth, bootConfig); err != nil {
+	if err := pmk.Bootstrap(*cfg, c, payload, auth, nc); err != nil {
 
 		// Uploads pf9cli log bundle if bootstrap command fails
 		errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)

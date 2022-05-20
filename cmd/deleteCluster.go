@@ -3,13 +3,11 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -36,8 +34,8 @@ var deleteClusterCmd = &cobra.Command{
 func init() {
 	deleteClusterCmd.Flags().StringVarP(&clusterName, "name", "n", "", "clusters name")
 	deleteClusterCmd.Flags().StringVarP(&clusterUuid, "uuid", "i", "", "clusters uuid")
-	deleteClusterCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
-	rootCmd.AddCommand(deleteClusterCmd)
+	deleteClusterCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
+	clusterCmd.AddCommand(deleteClusterCmd)
 }
 
 func deleteClusterRun(cmd *cobra.Command, args []string) {
@@ -49,12 +47,11 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(nc) {
-		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}
 
-	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: attachconfig.MFA}
 	var err error
 	if detachedMode {
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
@@ -67,16 +64,16 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
 	var c client.Client
-	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+	if c, err = client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false); err != nil {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
-	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
+	auth, err := c.Keystone.GetAuth(cfg.Spec.Username, cfg.Spec.Password, cfg.Spec.Tenant, cfg.Spec.MfaToken)
 	if err != nil {
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}

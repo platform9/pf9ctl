@@ -24,6 +24,9 @@ var EKSPermissions []string
 var GoogleCloudPermissions []string
 
 var AzureContributorID string
+var MFA string
+var SudoPassword string
+var RemoveExistingPkgs bool
 
 const (
 
@@ -82,9 +85,12 @@ var (
 	// Pf9DBDir is the base dir for storing pf9 db config
 	Pf9DBDir = filepath.Join(Pf9Dir, "db")
 	// Pf9DBLoc represents location of the config file.
-	Pf9DBLoc = filepath.Join(Pf9DBDir, "config.json")
+	Pf9DBLoc = filepath.Join(Pf9DBDir, "userConfig.json")
 	// Pf9Log represents location of the log.
-	Pf9Log = filepath.Join(Pf9LogDir, "pf9ctl.log")
+	Pf9Log         = filepath.Join(Pf9LogDir, "pf9ctl.log")
+	ConfigFileName string
+	ConfigFileLoc  string
+	ConfigPath     string
 	// WaitPeriod is the sleep period for the cli
 	// before it starts with the operations.
 	WaitPeriod = time.Duration(60)
@@ -114,6 +120,10 @@ func init() {
 	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "kube-controller", "etcd"}
 	Pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
 	Files = []string{"/opt/cni", "/opt/containerd", "/var/lib/containerd", "/var/opt/pf9"}
+
+	if ConfigPath != "" {
+		Pf9DBLoc = filepath.Join(ConfigPath)
+	}
 
 	AzureContributorID = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 

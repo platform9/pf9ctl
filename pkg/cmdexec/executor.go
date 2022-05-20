@@ -163,7 +163,7 @@ func ConfidentialInfoRemover(cmd string) string {
 	return cmd
 }
 
-func GetExecutor(proxyURL string, nc objects.NodeConfig) (Executor, error) {
+func GetExecutor(proxyURL string, nc *objects.NodeConfig) (Executor, error) {
 	if CheckRemote(nc) {
 		var pKey []byte
 		var err error
@@ -173,15 +173,15 @@ func GetExecutor(proxyURL string, nc objects.NodeConfig) (Executor, error) {
 				zap.S().Fatalf("Unable to read the sshKey %s, %s", nc.SshKey, err.Error())
 			}
 		}
-		return NewRemoteExecutor(nc.IPs[0], 22, nc.User, pKey, nc.Password, proxyURL)
+		return NewRemoteExecutor(nc.Spec.Nodes[0].Ip, 22, nc.Spec.Nodes[0].Hostname, pKey, nc.Password, proxyURL)
 	}
 	zap.S().Debug("Using local executor")
 	return LocalExecutor{ProxyUrl: proxyURL}, nil
 }
 
-func CheckRemote(nc objects.NodeConfig) bool {
-	for _, ip := range nc.IPs {
-		if ip != "localhost" && ip != "127.0.0.1" && ip != "::1" {
+func CheckRemote(nc *objects.NodeConfig) bool {
+	for _, node := range nc.Spec.Nodes {
+		if node.Ip != "localhost" && node.Ip != "127.0.0.1" && node.Ip != "::1" {
 			return true
 		}
 	}

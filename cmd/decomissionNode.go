@@ -3,12 +3,10 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
@@ -16,7 +14,7 @@ import (
 )
 
 var decommissionNodeCmd = &cobra.Command{
-	Use:   "decommission-node",
+	Use:   "decommission",
 	Short: "Decommissions this node from the PMK control plane",
 	Long:  "Removes the host agent package and decommissions this node from the Platform9 control plane.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
@@ -26,28 +24,42 @@ var decommissionNodeCmd = &cobra.Command{
 		return nil
 	},
 	Run: decommissionNodeRun,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if node.Hostname != "" {
+			nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+		}
+	},
 }
 
 func init() {
-	decommissionNodeCmd.Flags().StringVar(&attachconfig.MFA, "mfa", "", "MFA token")
-	decommissionNodeCmd.Flags().StringVarP(&nc.User, "user", "u", "", "ssh username for the nodes")
+	decommissionNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
+	decommissionNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
 	decommissionNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	decommissionNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	decommissionNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be decommissioned")
-	rootCmd.AddCommand(decommissionNodeCmd)
+	decommissionNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be decommissioned")
+	decommissionNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
+	decommissionNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
+	nodeCmd.AddCommand(decommissionNodeCmd)
 }
 
 func decommissionNodeRun(cmd *cobra.Command, args []string) {
 
+	if cmd.Flags().Changed("user-config") {
+		util.Pf9DBLoc = ConfigPath
+	}
+
+	if cmd.Flags().Changed("node-config") {
+		config.LoadNodeConfig(nc, NodeConfigPath)
+	}
+
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
 	if cmdexec.CheckRemote(nc) {
-		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}
 
-	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: attachconfig.MFA}
 	var err error
 	if detachedMode {
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)

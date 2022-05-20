@@ -5,14 +5,12 @@ package cmd
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -21,48 +19,59 @@ import (
 )
 
 var (
-	nc objects.NodeConfig
-
 	checkNodeCmd = &cobra.Command{
-		Use:   "check-node",
+		Use:   "check",
 		Short: "Checks prerequisites on a node to use with PMK",
 		Long: `Check if a node satisfies prerequisites to be ready to be added to a Kubernetes cluster. Read more
 	at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/`,
 		Run: checkNodeRun,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if node.Hostname != "" {
+				nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+			}
+		},
 	}
 )
 
 func init() {
-	// nc := objects.NodeConfig{}
-	checkNodeCmd.Flags().StringVarP(&nc.User, "user", "u", "", "ssh username for the nodes")
+	checkNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
 	checkNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	checkNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	checkNodeCmd.Flags().StringSliceVarP(&nc.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
-	checkNodeCmd.Flags().StringVar(&nc.MFA, "mfa", "", "MFA token")
-	checkNodeCmd.Flags().StringVarP(&nc.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
-	checkNodeCmd.Flags().BoolVarP(&nc.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	checkNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be prepared")
+	checkNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
+	checkNodeCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
+	checkNodeCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	checkNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
+	checkNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
 
 	//checkNodeCmd.Flags().BoolVarP(&floatingIP, "floating-ip", "f", false, "") //Unsupported in first version.
+	nodeCmd.AddCommand(checkNodeCmd)
 
-	rootCmd.AddCommand(checkNodeCmd)
 }
 
 func checkNodeRun(cmd *cobra.Command, args []string) {
 	zap.S().Debug("==========Running check-node==========")
 
+	if cmd.Flags().Changed("user-config") {
+		util.Pf9DBLoc = ConfigPath
+	}
+
+	if cmd.Flags().Changed("node-config") {
+		config.LoadNodeConfig(nc, NodeConfigPath)
+	}
+
 	detachedMode := cmd.Flags().Changed("no-prompt")
 	isRemote := cmdexec.CheckRemote(nc)
 
 	if isRemote {
-		if !config.ValidateNodeConfig(&nc, !detachedMode) {
+		if !config.ValidateNodeConfig(nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}
 
-	cfg := &objects.Config{WaitPeriod: time.Duration(60), AllowInsecure: false, MfaToken: nc.MFA}
 	var err error
 	if detachedMode {
-		nc.RemoveExistingPkgs = true
+		util.RemoveExistingPkgs = true
 		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
 	} else {
 		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
@@ -74,12 +83,12 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.ProxyURL, nc); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
 	var c client.Client
-	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
+	if c, err = client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false); err != nil {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
@@ -87,10 +96,10 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	// Fetch the keystone token.
 	auth, err := c.Keystone.GetAuth(
-		cfg.Username,
-		cfg.Password,
-		cfg.Tenant,
-		cfg.MfaToken,
+		cfg.Spec.Username,
+		cfg.Spec.Password,
+		cfg.Spec.Tenant,
+		cfg.Spec.MfaToken,
 	)
 
 	if err != nil {
@@ -106,7 +115,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	if isRemote {
-		if err := SudoPasswordCheck(executor, detachedMode, nc.SudoPassword); err != nil {
+		if err := SudoPasswordCheck(executor, detachedMode, util.SudoPassword); err != nil {
 			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
 		}
 	}

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"gopkg.in/yaml.v2"
 
 	"github.com/jinzhu/copier"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -39,10 +41,10 @@ func StoreConfig(cfg *objects.Config, loc string) error {
 	copier.CopyWithOption(&cfgCopy, cfg, copier.Option{IgnoreEmpty: true, DeepCopy: true})
 
 	// obscure the password
-	cfgCopy.Password = base64.StdEncoding.EncodeToString([]byte(cfg.Password))
+	cfgCopy.Spec.Password = base64.StdEncoding.EncodeToString([]byte(cfg.Spec.Password))
 
 	// Clear the MFA token as it will be required afresh every time
-	cfgCopy.MfaToken = ""
+	cfgCopy.Spec.MfaToken = ""
 
 	f, err := os.Create(loc)
 	if err != nil {
@@ -57,7 +59,7 @@ func StoreConfig(cfg *objects.Config, loc string) error {
 }
 
 // LoadConfig returns the information for communication with PF9 controller.
-func LoadConfig(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
+func LoadConfig(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
 
 	zap.S().Debug("Loading configuration details. pf9ctl version: ", util.Version)
 
@@ -75,26 +77,32 @@ func LoadConfig(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
 	defer f.Close()
 
 	var fileConfig objects.Config
-	err = json.NewDecoder(f).Decode(&fileConfig)
+
+	ext := filepath.Ext(loc)
+	if ext != ".yaml" {
+		err = json.NewDecoder(f).Decode(&fileConfig)
+	} else {
+		err = yaml.NewDecoder(f).Decode(&fileConfig)
+	}
 	// decode the password
 	// Decoding base64 encoded password
-	decodedBytePassword, err := base64.StdEncoding.DecodeString(fileConfig.Password)
+	decodedBytePassword, err := base64.StdEncoding.DecodeString(fileConfig.Spec.Password)
 	if err != nil {
 		return err
 	}
-	fileConfig.Password = string(decodedBytePassword)
+	fileConfig.Spec.Password = string(decodedBytePassword)
 	//s.Stop()
 
 	copier.CopyWithOption(cfg, &fileConfig, copier.Option{IgnoreEmpty: true})
 
-	if err = SetProxy(cfg.ProxyURL); err != nil {
+	if err = SetProxy(cfg.Spec.ProxyURL); err != nil {
 		return err
 	}
 
 	return ValidateUserCredentials(cfg, nc)
 }
 
-func LoadConfigInteractive(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
+func LoadConfigInteractive(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
 
 	err := LoadConfig(loc, cfg, nc)
 	if err == nil {
@@ -114,7 +122,7 @@ func LoadConfigInteractive(loc string, cfg *objects.Config, nc objects.NodeConfi
 
 }
 
-func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) error {
+func GetConfigRecursive(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
 	maxLoopNoConfig := 3
 	InvalidExistingConfig := false
 	count := 0
@@ -161,7 +169,7 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc objects.NodeConfig) 
 	return err
 }
 
-func ValidateUserCredentials(cfg *objects.Config, nc objects.NodeConfig) error {
+func ValidateUserCredentials(cfg *objects.Config, nc *objects.NodeConfig) error {
 
 	if err := validateConfigFields(cfg); err != nil {
 		return err
@@ -174,10 +182,10 @@ func ValidateUserCredentials(cfg *objects.Config, nc objects.NodeConfig) error {
 	}
 
 	auth, err := c.Keystone.GetAuth(
-		cfg.Username,
-		cfg.Password,
-		cfg.Tenant,
-		cfg.MfaToken,
+		cfg.Spec.Username,
+		cfg.Spec.Password,
+		cfg.Spec.Tenant,
+		cfg.Spec.MfaToken,
 	)
 	if err != nil {
 		zap.S().Debug(err)
@@ -185,7 +193,7 @@ func ValidateUserCredentials(cfg *objects.Config, nc objects.NodeConfig) error {
 	}
 
 	// To validate region.
-	endpointURL, err1 := keystone.FetchRegionFQDN(cfg.Fqdn, cfg.Region, auth)
+	endpointURL, err1 := keystone.FetchRegionFQDN(cfg.Spec.AccountUrl, cfg.Spec.Region, auth)
 	if endpointURL == "" || err1 != nil {
 		zap.S().Debug("Invalid Region")
 		return REGION_INVALID
@@ -201,34 +209,34 @@ func ConfigCmdCreateAmazonRun(cfg *objects.Config) error {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	if cfg.AwsIamUsername == "" {
+	if cfg.Spec.AWS.AwsIamUsername == "" {
 		fmt.Printf("Amazon IAM User: ")
 		awsIamUsername, _ := reader.ReadString('\n')
-		cfg.AwsIamUsername = strings.TrimSuffix(awsIamUsername, "\n")
+		cfg.Spec.AWS.AwsIamUsername = strings.TrimSuffix(awsIamUsername, "\n")
 	}
 
-	if cfg.AwsAccessKey == "" {
+	if cfg.Spec.AWS.AwsAccessKey == "" {
 		fmt.Printf("Amazon Access Key: ")
 		accessKey, _ := terminal.ReadPassword(0)
-		cfg.AwsAccessKey = string(accessKey)
+		cfg.Spec.AWS.AwsAccessKey = string(accessKey)
 		fmt.Println()
 	}
 
-	if cfg.AwsSecretKey == "" {
+	if cfg.Spec.AWS.AwsSecretKey == "" {
 		fmt.Printf("Amazon Secret Key: ")
 		secretKey, _ := terminal.ReadPassword(0)
-		cfg.AwsSecretKey = string(secretKey)
+		cfg.Spec.AWS.AwsSecretKey = string(secretKey)
 		fmt.Println()
 	}
 	var region string
-	if cfg.AwsRegion == "" {
+	if cfg.Spec.AWS.AwsRegion == "" {
 		fmt.Printf("Region: ")
 		region, _ = reader.ReadString('\n')
-		cfg.AwsRegion = strings.TrimSuffix(region, "\n")
+		cfg.Spec.AWS.AwsRegion = strings.TrimSuffix(region, "\n")
 	}
 
-	if cfg.AwsRegion == "" {
-		cfg.AwsRegion = "us-east-1"
+	if cfg.Spec.AWS.AwsRegion == "" {
+		cfg.Spec.AWS.AwsRegion = "us-east-1"
 	}
 
 	return nil
@@ -238,31 +246,31 @@ func ConfigCmdCreateAzureRun(cfg *objects.Config) error {
 
 	zap.S().Debug("==========Running set config==========")
 
-	if cfg.AzureTenant == "" {
+	if cfg.Spec.Azure.AzureTenant == "" {
 		fmt.Printf("Azure TenantID: ")
 		azureTenant, _ := terminal.ReadPassword(0)
-		cfg.AzureTenant = string(azureTenant)
+		cfg.Spec.Azure.AzureTenant = string(azureTenant)
 		fmt.Println()
 	}
 
-	if cfg.AzureClient == "" {
+	if cfg.Spec.Azure.AzureClient == "" {
 		fmt.Printf("Azure ApplicationID: ")
 		azureClient, _ := terminal.ReadPassword(0)
-		cfg.AzureClient = string(azureClient)
+		cfg.Spec.Azure.AzureClient = string(azureClient)
 		fmt.Println()
 	}
 
-	if cfg.AzureSubscription == "" {
+	if cfg.Spec.Azure.AzureSubscription == "" {
 		fmt.Printf("Azure SubscriptionID: ")
 		azureSub, _ := terminal.ReadPassword(0)
-		cfg.AzureSubscription = string(azureSub)
+		cfg.Spec.Azure.AzureSubscription = string(azureSub)
 		fmt.Println()
 	}
 
-	if cfg.AzureSecret == "" {
+	if cfg.Spec.Azure.AzureSecret == "" {
 		fmt.Printf("\nAzure Secret Key: ")
 		azureSecret, _ := terminal.ReadPassword(0)
-		cfg.AzureSecret = string(azureSecret)
+		cfg.Spec.Azure.AzureSecret = string(azureSecret)
 		fmt.Println()
 	}
 
@@ -275,22 +283,22 @@ func ConfigCmdCreateGoogleRun(cfg *objects.Config) error {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	if cfg.GooglePath == "" {
+	if cfg.Spec.Google.GooglePath == "" {
 		fmt.Printf("Service JSON path: ")
 		googleProjectName, _ := reader.ReadString('\n')
-		cfg.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
+		cfg.Spec.Google.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
 	}
 
-	if cfg.GoogleProjectName == "" {
+	if cfg.Spec.Google.GoogleProjectName == "" {
 		fmt.Printf("Project Name: ")
 		googleProjectName, _ := reader.ReadString('\n')
-		cfg.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
+		cfg.Spec.Google.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
 	}
 
-	if cfg.GoogleServiceEmail == "" {
+	if cfg.Spec.Google.GoogleServiceEmail == "" {
 		fmt.Printf("Service Account Email: ")
 		googleServiceEmail, _ := reader.ReadString('\n')
-		cfg.GoogleServiceEmail = strings.TrimSuffix(googleServiceEmail, "\n")
+		cfg.Spec.Google.GoogleServiceEmail = strings.TrimSuffix(googleServiceEmail, "\n")
 	}
 
 	return nil
@@ -303,70 +311,70 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 
 	reader := bufio.NewReader(os.Stdin)
 
-	if cfg.Fqdn == "" {
+	if cfg.Spec.AccountUrl == "" {
 		fmt.Printf("Platform9 Account URL: ")
 		fqdn, _ := reader.ReadString('\n')
-		cfg.Fqdn = strings.TrimSuffix(fqdn, "\n")
+		cfg.Spec.AccountUrl = strings.TrimSuffix(fqdn, "\n")
 	}
 
-	if cfg.Username == "" {
+	if cfg.Spec.Username == "" {
 		fmt.Printf("Username: ")
 		username, _ := reader.ReadString('\n')
-		cfg.Username = strings.TrimSuffix(username, "\n")
+		cfg.Spec.Username = strings.TrimSuffix(username, "\n")
 	}
 
-	if cfg.Password == "" {
+	if cfg.Spec.Password == "" {
 		fmt.Printf("Password: ")
 		passwordBytes, _ := terminal.ReadPassword(0)
-		cfg.Password = string(passwordBytes)
+		cfg.Spec.Password = string(passwordBytes)
 		fmt.Println()
 	}
 	var region string
-	if cfg.Region == "" {
+	if cfg.Spec.Region == "" {
 		fmt.Printf("Region [RegionOne]: ")
 		region, _ = reader.ReadString('\n')
-		cfg.Region = strings.TrimSuffix(region, "\n")
+		cfg.Spec.Region = strings.TrimSuffix(region, "\n")
 	}
 	var service string
-	if cfg.Tenant == "" {
+	if cfg.Spec.Tenant == "" {
 		fmt.Printf("Tenant [service]: ")
 		service, _ = reader.ReadString('\n')
-		cfg.Tenant = strings.TrimSuffix(service, "\n")
+		cfg.Spec.Tenant = strings.TrimSuffix(service, "\n")
 	}
 	var proxyURL string
-	if cfg.ProxyURL == "" {
+	if cfg.Spec.ProxyURL == "" {
 		fmt.Print("Proxy URL [None]: ")
 		proxyURL, _ = reader.ReadString('\n')
-		cfg.ProxyURL = strings.TrimSuffix(proxyURL, "\n")
+		cfg.Spec.ProxyURL = strings.TrimSuffix(proxyURL, "\n")
 	}
 
-	if cfg.Region == "" {
-		cfg.Region = "RegionOne"
+	if cfg.Spec.Region == "" {
+		cfg.Spec.Region = "RegionOne"
 	}
 
-	if cfg.Tenant == "" {
-		cfg.Tenant = "service"
+	if cfg.Spec.Tenant == "" {
+		cfg.Spec.Tenant = "service"
 	}
 
 	var mfaToken string
-	if cfg.MfaToken == "" {
+	if cfg.Spec.MfaToken == "" {
 		fmt.Print("MFA Token [None]: ")
 		mfaToken, _ = reader.ReadString('\n')
-		cfg.MfaToken = strings.TrimSuffix(mfaToken, "\n")
+		cfg.Spec.MfaToken = strings.TrimSuffix(mfaToken, "\n")
 	}
 
-	return SetProxy(cfg.ProxyURL)
+	return SetProxy(cfg.Spec.ProxyURL)
 }
 
-func createClient(cfg *objects.Config, nc objects.NodeConfig) (client.Client, error) {
-	executor, err := cmdexec.GetExecutor(cfg.ProxyURL, nc)
+func createClient(cfg *objects.Config, nc *objects.NodeConfig) (client.Client, error) {
+	executor, err := cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc)
 	if err != nil {
 		//debug first since Fatalf calls os.Exit
 		zap.S().Debug("Error connecting to host %s", err.Error())
 		zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
 	}
 
-	return client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false)
+	return client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false)
 }
 
 //This function clears the context if it is invalid. Before storing it.
@@ -377,16 +385,16 @@ func clearContext(v interface{}) {
 
 func ValidateNodeConfig(nc *objects.NodeConfig, interactive bool) bool {
 
-	if nc.User == "" || (nc.SshKey == "" && nc.Password == "") {
+	if nc.Spec.Nodes[0].Hostname == "" || (nc.SshKey == "" && nc.Password == "") {
 		if !interactive {
 			return false
 		}
 
-		if nc.User == "" {
+		if nc.Spec.Nodes[0].Hostname == "" {
 			fmt.Printf("Enter username for remote host: ")
 			reader := bufio.NewReader(os.Stdin)
-			nc.User, _ = reader.ReadString('\n')
-			nc.User = strings.TrimSpace(nc.User)
+			nc.Spec.Nodes[0].Hostname, _ = reader.ReadString('\n')
+			nc.Spec.Nodes[0].Hostname = strings.TrimSpace(nc.Spec.Nodes[0].Hostname)
 		}
 		if nc.SshKey == "" && nc.Password == "" {
 			var choice int
@@ -423,8 +431,24 @@ func SetProxy(proxyURL string) error {
 }
 
 func validateConfigFields(cfg *objects.Config) error {
-	if cfg.Fqdn == "" || cfg.Username == "" || cfg.Password == "" || cfg.Region == "" || cfg.Tenant == "" {
+	if cfg.Spec.AccountUrl == "" || cfg.Spec.Username == "" || cfg.Spec.Password == "" || cfg.Spec.Region == "" || cfg.Spec.Tenant == "" {
 		return MISSSING_FIELDS
 	}
 	return nil
+}
+
+func LoadNodeConfig(nc *objects.NodeConfig, loc string) {
+	f, err := os.Open(loc)
+	if err != nil {
+		fmt.Println("Error opening node config file")
+	}
+	defer f.Close()
+	var nodec objects.NodeConfig
+	ext := filepath.Ext(loc)
+	if ext != ".yaml" {
+		err = json.NewDecoder(f).Decode(&nodec)
+	} else {
+		err = yaml.NewDecoder(f).Decode(&nodec)
+	}
+	copier.CopyWithOption(nc, &nodec, copier.Option{IgnoreEmpty: true})
 }
