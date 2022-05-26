@@ -26,11 +26,12 @@ var deleteClusterCmd = &cobra.Command{
 	Long:  "Deletes the cluster with the specified name. Additionally the user can pass the cluster UID instead of the name.",
 	Args: func(deauthNodeCmd *cobra.Command, args []string) error {
 		if len(args) > 0 {
-			return errors.New("No parameters are needed")
+			return errors.New("please pass cluster name using flag")
 		}
 		return nil
 	},
-	Run: deleteClusterRun,
+	Example: "pf9ctl delete-cluster -n <clusterName>",
+	Run:     deleteClusterRun,
 }
 
 func init() {
