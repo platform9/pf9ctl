@@ -84,7 +84,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 			return fmt.Errorf("Dpkg is under lock")
 		}
 
-		if ifUnattendedUpgradesAreEnabked(allClients) {
+		if ifUnattendedUpgradesAreEnabled(allClients) {
 			DisableUnattendedUpgrades(allClients)
 			defer EnableUnattendedUpgrades(allClients)
 		} else {
@@ -162,7 +162,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	return nil
 }
 
-func ifUnattendedUpgradesAreEnabked(allClients client.Client) bool {
+func ifUnattendedUpgradesAreEnabled(allClients client.Client) bool {
 	zap.S().Debug("Checking if unattended-upgrades is enabled")
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", "cat /etc/apt/apt.conf.d/20auto-upgrades")
 	if err != nil {
