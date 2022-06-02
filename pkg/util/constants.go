@@ -24,6 +24,7 @@ var EKSPermissions []string
 var GoogleCloudPermissions []string
 
 var AzureContributorID string
+var InstallerErrors = make(map[int]string)
 
 const (
 
@@ -250,6 +251,46 @@ func init() {
 		"eks:DescribeNodegroup",
 		"eks:ListTagsForResource",
 	}
+
+	InstallerErrors[31] = "CONTROLLER_ADRESS_MISSING"
+	InstallerErrors[32] = "CONTROLLER_USER_MISSING"
+	InstallerErrors[33] = "CONTROLLER_PROJECTNAME_MISSING"
+	InstallerErrors[34] = "CONTROLLER_PASSWORD_MISSING"
+	InstallerErrors[35] = "KEYSTONE_REQUEST_FAILED"
+	InstallerErrors[36] = "KEYSTONE_TOKEN_MISSING"
+	InstallerErrors[41] = "NTPD_INSTALL_FAILED"
+	InstallerErrors[42] = "NTPD_FAILED_TO_START"
+	InstallerErrors[43] = "CHRONY_INSTALL_FAILED"
+	InstallerErrors[44] = "CHRONY_FAILED_TO_START"
+	InstallerErrors[51] = "ARCHITECTURE_NOT_SUPPORTED"
+	InstallerErrors[51] = "OS_NOT_SUPPORTED"
+	InstallerErrors[53] = "CORRUPT_SUDOERS_FILE"
+	InstallerErrors[54] = "IMPORTANT_PORT_OCCUPIED"
+	InstallerErrors[55] = "CONNECTION_FAILED"
+	InstallerErrors[56] = "CONNECTION_FAILED_VIA_PROXY"
+	InstallerErrors[57] = "PKG_MANAGER_MISSING"
+	InstallerErrors[58] = "PF9_PACKAGES_PRESENT"
+	InstallerErrors[61] = "HOSTAGENT_DEPENDANCY_INSTALLATION_FAILED"
+	InstallerErrors[71] = "DOWNLOAD_NOCERT_ARGUMENT_MISSING"
+	InstallerErrors[72] = "PACKAGE_LIST_DOWNLOAD_FAILED"
+	InstallerErrors[73] = "PACKAGE_DOWNLOAD_FAILED"
+	InstallerErrors[81] = "HOSTAGENT_PKG_INSTALLATION_FAILED"
+	InstallerErrors[90] = "PROXY_SETUP_FAILED"
+	InstallerErrors[100] = "UPDATE_CONFIG_FAILED"
+	InstallerErrors[111] = "VOUCH_ARGUMENT_MISSING"
+	InstallerErrors[112] = "HOST_CERTS_SCRIPT_FAILED"
+	InstallerErrors[121] = "VMWARE_INSALL_FAILED"
+	InstallerErrors[131] = "SYSTEMCTL_FAILED_TO_START_COMMS"
+	InstallerErrors[132] = "COMMS_NOT_UP"
+	InstallerErrors[133] = "SYSTEMCTL_FAILED_TO_START_SIDEKICK"
+	InstallerErrors[134] = "SIDEKICK_NOT_UP"
+	InstallerErrors[135] = "SYSTEMCTL_FAILED_TO_START_HOSTAGENT"
+	InstallerErrors[136] = "HOSTAGENT_NOT_UP"
+	InstallerErrors[137] = "HOSTAGENT_NOT_RUNNING"
+	InstallerErrors[138] = "HOSTAGENT_FILES_MISSING"
+	InstallerErrors[139] = "COMMS_NOT_RUNNING"
+	InstallerErrors[141] = "PARAMS_MISSING"
+	InstallerErrors[142] = "CREDS_NOT_NEEDED"
 
 }
 

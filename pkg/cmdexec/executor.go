@@ -187,3 +187,13 @@ func CheckRemote(nc objects.NodeConfig) bool {
 	}
 	return false
 }
+
+func ExitCodeChecker(err error) (string, int) {
+	var stderr string
+	var exitCode int
+	if exitError, ok := err.(*exec.ExitError); ok {
+		stderr = string(exitError.Stderr)
+		exitCode = exitError.ExitCode()
+	}
+	return stderr, exitCode
+}
