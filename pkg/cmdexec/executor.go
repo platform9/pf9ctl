@@ -22,7 +22,7 @@ const (
 	env_path   = "PATH"
 )
 
-// Executor interace abstracts us from local or remote execution
+// Executor interface abstracts us from local or remote execution
 type Executor interface {
 	Run(name string, args ...string) error
 	RunWithStdout(name string, args ...string) (string, error)

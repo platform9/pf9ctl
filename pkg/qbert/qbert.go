@@ -228,7 +228,7 @@ func (c QbertImpl) AttachNode(clusterID, projectID, token string, nodeIDs []stri
 	if resp.StatusCode != 200 {
 		respString, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			zap.S().Errorf("Error occured while converting response body to string")
+			zap.S().Errorf("Error occurred while converting response body to string")
 		}
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
@@ -273,7 +273,7 @@ func (c QbertImpl) DetachNode(clusterID, projectID, token string, nodeID string)
 	if resp.StatusCode != 200 {
 		respString, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			zap.S().Info("Error occured while converting response body to string")
+			zap.S().Info("Error occurred while converting response body to string")
 		}
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
@@ -307,7 +307,7 @@ func (c QbertImpl) DeleteCluster(clusterID, projectID, token string) error {
 	if resp.StatusCode != 200 {
 		respString, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			zap.S().Info("Error occured while converting response body to string")
+			zap.S().Info("Error occurred while converting response body to string")
 		}
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
@@ -340,7 +340,7 @@ func (c QbertImpl) DeauthoriseNode(nodeUuid, token string) error {
 	if resp.StatusCode != 200 {
 		respString, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			zap.S().Info("Error occured while converting response body to string")
+			zap.S().Info("Error occurred while converting response body to string")
 		}
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))
@@ -373,7 +373,7 @@ func (c QbertImpl) AuthoriseNode(nodeUuid, token string) error {
 	if resp.StatusCode != 200 {
 		respString, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			zap.S().Info("Error occured while converting response body to string")
+			zap.S().Info("Error occurred while converting response body to string")
 		}
 		zap.S().Debug(string(respString))
 		return fmt.Errorf("%v", string(respString))

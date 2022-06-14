@@ -20,7 +20,7 @@ import (
 func CheckAzureProvider(tenantID, appID, subID, secretKey string) bool {
 
 	success := true
-	//Gets environment values and saves them in temporary varaibles so they can be returned later
+	//Gets environment values and saves them in temporary variables so they can be returned later
 	oldAppID := os.Getenv("AZURE_CLIENT_ID")
 	oldTenantID := os.Getenv("AZURE_TENANT_ID")
 	oldSecretKey := os.Getenv("AZURE_CLIENT_SECRET")

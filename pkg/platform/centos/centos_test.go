@@ -588,18 +588,18 @@ func TestDisableSwap(t *testing.T) {
 				err:    nil,
 			},
 		},
-		//Failure case. returns false if error occured while disabling swap.
+		//Failure case. returns false if error occurred while disabling swap.
 		"CheckFail": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "1", errors.New("error occured while disabling swap")
+						return "1", errors.New("error occurred while disabling swap")
 					},
 				},
 			},
 			want: want{
 				result: false,
-				err:    errors.New("error occured while disabling swap"),
+				err:    errors.New("error occurred while disabling swap"),
 			},
 		},
 	}

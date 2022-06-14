@@ -42,7 +42,7 @@ func TestNewClient(t *testing.T) {
 			client, err := client.NewClient("fqdn", executor, true, true) //(fqdn, executor, allowInsecure, noTracking)
 
 			if err != nil {
-				t.Errorf("Error occured : %s", err)
+				t.Errorf("Error occurred : %s", err)
 			}
 			assert.Equal(t, tc.Client.Resmgr, client.Resmgr)
 			assert.Equal(t, tc.Client.Keystone, client.Keystone)

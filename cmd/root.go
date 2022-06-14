@@ -103,6 +103,6 @@ func initConfig() {
 	// Read in environment variables that match
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err == nil {
-		zap.S().Errorf("Error occured while reading the config file: %s", viper.ConfigFileUsed())
+		zap.S().Errorf("Error occurred while reading the config file: %s", viper.ConfigFileUsed())
 	}
 }
