@@ -434,7 +434,8 @@ func (d *Debian) checkIfAnyTimeSyncServiceIsRunning() error {
 			if err != nil {
 				err = d.start(service)
 				if err != nil {
-					return err
+					zap.S().Debugf("Failed to start service %s", service)
+					zap.S().Debug("Checking next service")
 				} else {
 					return nil
 				}
