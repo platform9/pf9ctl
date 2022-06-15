@@ -1,7 +1,8 @@
 # pf9ctl
 
 ### Status
-![Go](https://github.com/roopakparikh/pf9ctl/workflows/Go/badge.svg)
+![Go](https://github.com/platform9/pf9ctl/workflows/Go/badge.svg)
+[![Go Report Card](https://goreportcard.com/badge/github.com/platform9/pf9ctl)](https://goreportcard.com/report/github.com/platform9/pf9ctl)
 
 ### Purpose
    CLI tool for Platform9 management.
@@ -626,7 +627,7 @@ Optional Flags:
 		--containers-cidr string              CIDR for container overlay (default "10.20.0.0/16")
 		--controller-manager-flags strings    Comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10
 		--enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads, use either --enable-kubeVirt or --enable-kubeVirt=true to change
-		--enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
+		--enable-profile-engine               Simplify cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
 		--etcd-backup                         Enable automated etcd backups on this cluster, use either --etcd-backup or --etcd-backup=false to change (default true)
 		--external-dns-name string            External DNS for master VIP
 	-h, --help                                help for bootstrap

@@ -43,7 +43,7 @@ Optional Flags:
 	    --containers-cidr string              CIDR for container overlay (default "10.20.0.0/16")
 	    --controller-manager-flags strings    Comma separated list of supported kube-controller-manager flags, e.g: --large-cluster-size-threshold=60,--concurrent-statefulset-syncs=10
 	    --enable-kubeVirt                     Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads, use either --enable-kubeVirt or --enable-kubeVirt=true to change
-	    --enable-profile-engine               Simplfy cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
+	    --enable-profile-engine               Simplify cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change (default true)
 	    --etcd-backup                         Enable automated etcd backups on this cluster, use either --etcd-backup or --etcd-backup=false to change (default true)
 	    --etcd-backup-path string             Backup path for etcd (default "/etc/pf9/etcd-backup")
 	    --external-dns-name string            External DNS for master VIP
@@ -127,7 +127,7 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&etcdBackup, "etcd-backup", true, "Enable automated etcd backups on this cluster, use either --etcd-backup or --etcd-backup=false to change")
 	bootstrapCmd.Flags().BoolVar(&networkPluginOperator, "network-plugin-operator", false, "Will deploy Platform9 CRDs to enable multiple CNIs and features such as SR-IOV, use either --network-plugin-operator or --network-plugin-operator=true to change")
 	bootstrapCmd.Flags().BoolVar(&enableKubVirt, "enable-kubeVirt", false, "Enables Kubernetes to run Virtual Machines within Pods. This feature is not recommended for production workloads, use either --enable-kubeVirt or --enable-kubeVirt=true to change")
-	bootstrapCmd.Flags().BoolVar(&enableProfileEngine, "enable-profile-engine", true, "Simplfy cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change")
+	bootstrapCmd.Flags().BoolVar(&enableProfileEngine, "enable-profile-engine", true, "Simplify cluster governance using the Platform9 Profile Engine, use either --enable-profile-engine or --enable-profile-engine=false to change")
 	bootstrapCmd.Flags().StringVar(&metallbIPRange, "metallb-ip-range", "", "Ip range for MetalLB")
 	bootstrapCmd.Flags().StringVar(&containersCIDR, "containers-cidr", "10.20.0.0/16", "CIDR for container overlay")
 	bootstrapCmd.Flags().StringVar(&servicesCIDR, "services-cidr", "10.21.0.0/16", "CIDR for services overlay")

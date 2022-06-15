@@ -53,7 +53,7 @@ func init() {
 	rootCmd.AddCommand(checkAmazonProviderCmd)
 
 	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureTenant, "tenant-id", "t", "", "sets the tenant id (required)")
-	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureClient, "client-id", "c", "", "sets the client(applicaiton) id (required)")
+	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureClient, "client-id", "c", "", "sets the client(application) id (required)")
 	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureSubscription, "subscription-id", "s", "", "sets the ssubscription id (required)")
 	checkAzureProviderCmd.Flags().StringVarP(&cfg.AzureSecret, "secret-key", "k", "", "sets the secret key (required)")
 	rootCmd.AddCommand(checkAzureProviderCmd)
