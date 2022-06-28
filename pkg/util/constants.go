@@ -25,6 +25,7 @@ var GoogleCloudPermissions []string
 
 var AzureContributorID string
 var InstallerErrors = make(map[int]string)
+var LogFileNamePath string
 
 const (
 
