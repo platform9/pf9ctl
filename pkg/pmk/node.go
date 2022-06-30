@@ -313,7 +313,11 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 	removeTempDirAndInstaller(exec)
 
 	if err != nil {
-		return fmt.Errorf("Unable to run installer script")
+		_, exitCode := cmdexec.ExitCodeChecker(err)
+		fmt.Printf("\n")
+		fmt.Println("Error :", util.InstallerErrors[exitCode])
+		zap.S().Debugf("Error:%s", util.InstallerErrors[exitCode])
+		return fmt.Errorf("error while running installer script: %s", util.InstallerErrors[exitCode])
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
@@ -449,7 +453,11 @@ func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.
 	removeTempDirAndInstaller(exec)
 
 	if err != nil {
-		return err
+		_, exitCode := cmdexec.ExitCodeChecker(err)
+		fmt.Printf("\n")
+		zap.S().Debugf("Error:%s", util.InstallerErrors[exitCode])
+		fmt.Println("Error :", util.InstallerErrors[exitCode])
+		return fmt.Errorf("error while running installer script: %s", util.InstallerErrors[exitCode])
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log

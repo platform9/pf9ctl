@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -22,6 +23,7 @@ func GetLogLocation(logFile string) string {
 func ConfigureGlobalLog(debug bool, logFile string) error {
 
 	runLogLocation := GetLogLocation(logFile)
+	util.LogFileNamePath = logFile
 	// If the file doesn't exist, create it, or append to the file
 	f, err := os.OpenFile(runLogLocation, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {

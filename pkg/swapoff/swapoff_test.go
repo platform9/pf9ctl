@@ -37,7 +37,7 @@ func TestFsTabEdit(t *testing.T) {
 		args
 		want
 	}{
-		//Success case, successfull substitution of linesin the file
+		//Success case, successful substitution of linesin the file
 		"CheckPass": {
 			args: args{
 				exec: &cmdexec.MockExecutor{

@@ -325,7 +325,7 @@ func (d *Debian) installOSPackages(p string) error {
 func (d *Debian) disableSwap() (bool, error) {
 	err := swapoff.SetupNode(d.exec)
 	if err != nil {
-		return false, errors.New("error occured while disabling swap")
+		return false, errors.New("error occurred while disabling swap")
 	} else {
 		return true, nil
 	}
@@ -434,7 +434,8 @@ func (d *Debian) checkIfAnyTimeSyncServiceIsRunning() error {
 			if err != nil {
 				err = d.start(service)
 				if err != nil {
-					return err
+					zap.S().Debugf("Failed to start service %s", service)
+					zap.S().Debug("Checking next service")
 				} else {
 					return nil
 				}

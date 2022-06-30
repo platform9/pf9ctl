@@ -92,7 +92,7 @@ func TestGenSupportBundle(t *testing.T) {
 		args
 		want
 	}{
-		//Success case.The GenSupportBundle function returns nil on succesful execution
+		//Success case.The GenSupportBundle function returns nil on successful execution
 		"CheckCompleteBundle": {
 			args: args{
 				exec: &cmdexec.MockExecutor{
