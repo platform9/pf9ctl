@@ -356,7 +356,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		}
 
 		zap.S().Debug("========== Running prep-node as a part of bootstrap ==========")
-		if err := pmk.PrepNode(*cfg, c, auth, false); err != nil {
+		if err := pmk.PrepNode(*cfg, c, auth); err != nil {
 
 			// Uploads pf9cli log bundle if prepnode failed to get prepared
 			errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)

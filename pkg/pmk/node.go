@@ -57,7 +57,7 @@ func sendSegmentEvent(allClients client.Client, eventStr string, auth keystone.K
 }
 
 // PrepNode sets up prerequisites for k8s stack
-func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth, skipKube bool) error {
+func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth) error {
 	// Building our new spinner
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
@@ -145,7 +145,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Stop()
 	fmt.Println(color.Green("✓ ") + "Initialised host successfully")
 	zap.S().Debug("Initialised host successfully")
-	if skipKube {
+	if util.SkipKube {
 		zap.S().Debug("Skip authorizing host as --skip-kube flag is true")
 		sendSegmentEvent(allClients, "Successful", auth, false)
 		return nil
