@@ -10,9 +10,12 @@ var Files []string
 var Pf9Packages []string
 var RequiredPorts []string
 var PortErr string
-var ProcessesList []string //Kubernetes clusters processes list
-var SwapOffDisabled bool   //If this is true the swapOff functionality will be disabled.
+var ProcessesList []string // Kubernetes clusters processes list
+var SwapOffDisabled bool   // If this is true the swapOff functionality will be disabled.
 var SkipPrepNode bool
+
+// SkipKube skips authorizing kube role during prep-node. Not applicable to bootstrap command
+var SkipKube bool
 var HostDown bool
 var EBSPermissions []string
 var Route53Permissions []string
