@@ -11,7 +11,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	"github.com/pkg/sftp"
 	"go.uber.org/zap"
@@ -132,13 +131,6 @@ func (c *client) UploadFile(localFile string, remoteFilePath string, mode os.Fil
 	// create a progrssReader that will call the callback function after each read
 	progressReader := newProgressCBReader(fInfo.Size(), localFileReader, cb)
 
-	dir, _ := filepath.Split(remoteFilePath)
-	if dir != "" {
-		if err := c.sftpClient.MkdirAll(dir); err != nil {
-			return fmt.Errorf("Could not create remote dir %s: %s", dir, err)
-		}
-	}
-
 	remoteFile, err := c.sftpClient.Create(remoteFilePath)
 	if err != nil {
 		return fmt.Errorf("unable to create file: %s", err)
@@ -174,13 +166,6 @@ func (c *client) DownloadFile(remoteFile string, localFilePath string, mode os.F
 
 	remoteFileReader := bufio.NewReader(remoteFP)
 	progressReader := newProgressCBReader(fInfo.Size(), remoteFileReader, cb)
-
-	dir, _ := filepath.Split(localFilePath)
-	if dir != "" {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			return fmt.Errorf("Could not create local dir %s: %s", dir, err)
-		}
-	}
 
 	localFile, err := os.Create(localFilePath)
 	if err != nil {
