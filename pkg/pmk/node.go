@@ -116,16 +116,21 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf(errStr)
 	}
 
+	hostName, err := allClients.Executor.RunWithStdout("bash", "-c", "hostname")
+	if err != nil {
+		zap.S().Debugf("error getting host name")
+	}
+	hostName = strings.TrimSpace(hostName)
 	s.Suffix = " Platform9 packages installed successfully"
 
 	if HostAgent == HostAgentCertless {
 		s.Suffix = " Platform9 packages installed successfully"
 		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
+		fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully" + " on host " + hostName)
 	} else if HostAgent == HostAgentLegacy {
 		s.Suffix = " Hostagent installed successfully"
 		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
+		fmt.Println(color.Green("✓ ") + "Hostagent installed successfully" + " on host " + hostName)
 	}
 	s.Restart()
 
@@ -143,8 +148,8 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	}
 
 	s.Stop()
-	fmt.Println(color.Green("✓ ") + "Initialised host successfully")
-	zap.S().Debug("Initialised host successfully")
+	fmt.Println(color.Green("✓ ") + "Initialised host " + hostName + " successfully")
+	zap.S().Debug("Initialised host " + hostName + " successfully")
 	s.Restart()
 	s.Suffix = " Authorising host"
 	zap.S().Debug("Authorising host")
@@ -163,7 +168,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	sendSegmentEvent(allClients, "Successful", auth, false)
 	s.Stop()
 
-	fmt.Println(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
+	fmt.Println(color.Green("✓ ") + "Host " + hostName + " successfully attached to the Platform9 control-plane")
 
 	return nil
 }

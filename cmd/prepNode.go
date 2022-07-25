@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/log"
+	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
@@ -37,8 +39,8 @@ var prepNodeCmd = &cobra.Command{
 		return nil
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if node.Hostname != "" {
-			nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+		if util.Node.Hostname != "" {
+			nc.Spec.Nodes = append(nc.Spec.Nodes, util.Node)
 		}
 	},
 }
@@ -52,13 +54,16 @@ var (
 	skipChecks     bool
 	disableSwapOff bool
 	NodeConfigPath string
+	wg             sync.WaitGroup
+	isRemote       bool
+	detachedMode   bool
 )
 
 func init() {
-	prepNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
+	prepNodeCmd.Flags().StringVarP(&util.Node.Hostname, "user", "u", "", "ssh username for the nodes")
 	prepNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	prepNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	prepNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be prepared")
+	prepNodeCmd.Flags().StringVarP(&util.Node.Ip, "ip", "i", "", "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
 	prepNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
@@ -80,27 +85,22 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 	if cmd.Flags().Changed("node-config") {
 		config.LoadNodeConfig(nc, NodeConfigPath)
+		skipChecks = true
+		util.RemoveExistingPkgs = true
 	}
 
 	if skipChecks {
 		pmk.WarningOptionalChecks = true
 	}
 
-	detachedMode := cmd.Flags().Changed("no-prompt")
-	isRemote := cmdexec.CheckRemote(nc)
-
-	if isRemote {
-		if !config.ValidateNodeConfig(nc, !detachedMode) {
-			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
-		}
-	}
+	detachedMode = cmd.Flags().Changed("no-prompt")
 
 	var err error
 	if detachedMode {
 		util.RemoveExistingPkgs = true
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfig(util.Pf9DBLoc, cfg)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg)
 	}
 
 	if err != nil {
@@ -109,8 +109,67 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	zap.S().Debug("Loaded Config Successfully")
+
+	wg.Add(len(nc.Spec.Nodes))
+	for _, util.Node = range nc.Spec.Nodes {
+		go onboardNodes(util.Node)
+	}
+	wg.Wait()
+
+	zap.S().Debug("==========Finished running prep-node==========")
+}
+
+// To check if Remote Host needs Password to access Sudo and prompt for Sudo Password if exists.
+func SudoPasswordCheck(exec cmdexec.Executor, detached bool, sudoPass string) error {
+
+	ssh.SudoPassword = sudoPass
+
+	_, err := exec.RunWithStdout("-l | grep '(ALL) PASSWD: ALL'")
+	if err == nil {
+		if detached {
+			if sudoPass == "" {
+				return errors.New("sudo password is required for the user on remote host, use --sudo-pass(-e) flag to pass")
+			} else if validateSudoPassword(exec) == util.Invalid {
+				return errors.New("Invalid password for user on remote host")
+			}
+		}
+
+		// To bail out if Sudo Password entered is invalid multiple times.
+		loopcounter := 1
+		for true {
+			if loopcounter >= 4 {
+				zap.S().Fatalf("\n" + color.Red("x ") + "Invalid Sudo Password entered multiple times")
+			}
+			// Validate Sudo Password entered.
+			if ssh.SudoPassword == "" || validateSudoPassword(exec) == util.Invalid {
+				loopcounter += 1
+				fmt.Printf("\n" + color.Red("x ") + "Invalid Sudo Password provided of Remote Host\n")
+				fmt.Printf("Enter Sudo password for Remote Host: ")
+				sudopassword, _ := terminal.ReadPassword(0)
+				ssh.SudoPassword = string(sudopassword)
+			} else {
+				return nil
+			}
+		}
+	}
+	return nil
+}
+
+func validateSudoPassword(exec cmdexec.Executor) string {
+
+	_ = pmk.CheckSudo(exec)
+	// Validate Sudo Password entered for Remote Host from stderr.
+	if strings.Contains(cmdexec.StdErrSudoPassword, util.InvalidPassword) {
+		return util.Invalid
+	}
+	return util.Valid
+}
+
+func onboardNodes(node objects.Node) {
+	defer wg.Done()
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
+	var err error
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, node, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
@@ -138,6 +197,15 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		}
 		zap.S().Fatalf("Unable to obtain keystone credentials: %s", err.Error())
 	}
+
+	isRemote = cmdexec.CheckRemote(node)
+
+	if isRemote {
+		/*if !config.ValidateNodeConfig(node, nc, !detachedMode) {
+			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
+		}*/
+	}
+
 	if isRemote {
 		if err := SudoPasswordCheck(executor, detachedMode, util.SudoPassword); err != nil {
 			zap.S().Fatal("Failed executing commands on remote machine with sudo: ", err.Error())
@@ -190,52 +258,4 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Debugf("Unable to prep node: %s\n", err.Error())
 		zap.S().Fatalf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
 	}
-
-	zap.S().Debug("==========Finished running prep-node==========")
-}
-
-// To check if Remote Host needs Password to access Sudo and prompt for Sudo Password if exists.
-func SudoPasswordCheck(exec cmdexec.Executor, detached bool, sudoPass string) error {
-
-	ssh.SudoPassword = sudoPass
-
-	_, err := exec.RunWithStdout("-l | grep '(ALL) PASSWD: ALL'")
-	if err == nil {
-		if detached {
-			if sudoPass == "" {
-				return errors.New("sudo password is required for the user on remote host, use --sudo-pass(-e) flag to pass")
-			} else if validateSudoPassword(exec) == util.Invalid {
-				return errors.New("Invalid password for user on remote host")
-			}
-		}
-
-		// To bail out if Sudo Password entered is invalid multiple times.
-		loopcounter := 1
-		for true {
-			if loopcounter >= 4 {
-				zap.S().Fatalf("\n" + color.Red("x ") + "Invalid Sudo Password entered multiple times")
-			}
-			// Validate Sudo Password entered.
-			if ssh.SudoPassword == "" || validateSudoPassword(exec) == util.Invalid {
-				loopcounter += 1
-				fmt.Printf("\n" + color.Red("x ") + "Invalid Sudo Password provided of Remote Host\n")
-				fmt.Printf("Enter Sudo password for Remote Host: ")
-				sudopassword, _ := terminal.ReadPassword(0)
-				ssh.SudoPassword = string(sudopassword)
-			} else {
-				return nil
-			}
-		}
-	}
-	return nil
-}
-
-func validateSudoPassword(exec cmdexec.Executor) string {
-
-	_ = pmk.CheckSudo(exec)
-	// Validate Sudo Password entered for Remote Host from stderr.
-	if strings.Contains(cmdexec.StdErrSudoPassword, util.InvalidPassword) {
-		return util.Invalid
-	}
-	return util.Valid
 }

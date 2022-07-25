@@ -25,18 +25,18 @@ var decommissionNodeCmd = &cobra.Command{
 	},
 	Run: decommissionNodeRun,
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if node.Hostname != "" {
-			nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+		if util.Node.Hostname != "" {
+			nc.Spec.Nodes = append(nc.Spec.Nodes, util.Node)
 		}
 	},
 }
 
 func init() {
 	decommissionNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
-	decommissionNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
+	decommissionNodeCmd.Flags().StringVarP(&util.Node.Hostname, "user", "u", "", "ssh username for the nodes")
 	decommissionNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	decommissionNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	decommissionNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be decommissioned")
+	decommissionNodeCmd.Flags().StringVarP(&util.Node.Ip, "ip", "i", "", "IP address of host to be decommissioned")
 	decommissionNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
 	decommissionNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
 	nodeCmd.AddCommand(decommissionNodeCmd)
@@ -50,21 +50,22 @@ func decommissionNodeRun(cmd *cobra.Command, args []string) {
 
 	if cmd.Flags().Changed("node-config") {
 		config.LoadNodeConfig(nc, NodeConfigPath)
+		util.Node = nc.Spec.Nodes[0]
 	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
-	if cmdexec.CheckRemote(nc) {
-		if !config.ValidateNodeConfig(nc, !detachedMode) {
+	if cmdexec.CheckRemote(util.Node) {
+		/*if !config.ValidateNodeConfig(host, nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
-		}
+		}*/
 	}
 
 	var err error
 	if detachedMode {
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfig(util.Pf9DBLoc, cfg)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())

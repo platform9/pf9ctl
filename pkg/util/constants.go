@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/platform9/pf9ctl/pkg/objects"
 )
 
 var Files []string
@@ -29,6 +31,7 @@ var SudoPassword string
 var RemoveExistingPkgs bool
 var InstallerErrors = make(map[int]string)
 var LogFileNamePath string
+var Node objects.Node
 
 const (
 

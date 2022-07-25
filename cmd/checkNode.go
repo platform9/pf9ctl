@@ -26,18 +26,18 @@ var (
 	at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/`,
 		Run: checkNodeRun,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if node.Hostname != "" {
-				nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+			if util.Node.Hostname != "" {
+				nc.Spec.Nodes = append(nc.Spec.Nodes, util.Node)
 			}
 		},
 	}
 )
 
 func init() {
-	checkNodeCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
+	checkNodeCmd.Flags().StringVarP(&util.Node.Hostname, "user", "u", "", "ssh username for the nodes")
 	checkNodeCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	checkNodeCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	checkNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be prepared")
+	checkNodeCmd.Flags().StringVarP(&util.Node.Ip, "ip", "i", "", "IP address of host to be prepared")
 	checkNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	checkNodeCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	checkNodeCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
@@ -61,20 +61,20 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
-	isRemote := cmdexec.CheckRemote(nc)
+	isRemote := cmdexec.CheckRemote(util.Node)
 
 	if isRemote {
-		if !config.ValidateNodeConfig(nc, !detachedMode) {
+		/*if !config.ValidateNodeConfig(host, nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
-		}
+		}*/
 	}
 
 	var err error
 	if detachedMode {
 		util.RemoveExistingPkgs = true
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfig(util.Pf9DBLoc, cfg)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -83,7 +83,7 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, util.Node, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 

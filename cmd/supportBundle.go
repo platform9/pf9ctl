@@ -23,8 +23,8 @@ var (
 		Long:  `Gathers support bundle that includes logs for pf9 services and pf9ctl, uploads to S3 `,
 		Run:   supportBundleUpload,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if node.Hostname != "" {
-				nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+			if util.Node.Hostname != "" {
+				nc.Spec.Nodes = append(nc.Spec.Nodes, util.Node)
 			}
 		},
 	}
@@ -32,10 +32,10 @@ var (
 
 //This initialization is using create commands which is not in use for now.
 func init() {
-	supportBundleCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "ssh username for the nodes")
+	supportBundleCmd.Flags().StringVarP(&util.Node.Hostname, "user", "u", "", "ssh username for the nodes")
 	supportBundleCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	supportBundleCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
-	supportBundleCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be prepared")
+	supportBundleCmd.Flags().StringVarP(&util.Node.Ip, "ip", "i", "", "IP address of host to be prepared")
 	supportBundleCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	supportBundleCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	supportBundleCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
@@ -55,19 +55,19 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
-	isRemote := cmdexec.CheckRemote(nc)
+	isRemote := cmdexec.CheckRemote(util.Node)
 
 	if isRemote {
-		if !config.ValidateNodeConfig(nc, !detachedMode) {
+		/*f !config.ValidateNodeConfig(host, nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
-		}
+		}*/
 	}
 
 	var err error
 	if detachedMode {
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfig(util.Pf9DBLoc, cfg)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -75,7 +75,7 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, util.Node, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 
