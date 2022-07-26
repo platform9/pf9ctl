@@ -282,14 +282,19 @@ func (c *CentOS) Version() (string, error) {
 	//using cat command content of os-release file is printed on terminal
 	//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
 	//using cut command required field (7.6.1810) is selected.
-	out, err := c.exec.RunWithStdout(
-		"bash",
-		"-c",
-		"cat /etc/*release | grep 'Red Hat Enterprise Linux Server release' -m 1 | cut -f7 -d ' ' && cat /etc/*release | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
+	var cmd string
+	_, err := c.exec.RunWithStdout("bash", "-c", "grep -i 'centos' /etc/*release")
+	if err != nil {
+		cmd = fmt.Sprintf("grep -oP '(?<=^VERSION_ID=).+' /etc/os-release")
+	} else {
+		cmd = fmt.Sprintf("cat /etc/*release | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
+	}
+
+	out, err := c.exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-6]\.*`, string(out)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
