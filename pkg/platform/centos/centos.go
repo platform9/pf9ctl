@@ -283,16 +283,24 @@ func (c *CentOS) Version() (string, error) {
 	//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
 	//using cut command required field (7.6.1810) is selected.
 	var cmd string
+	var centos bool
 	_, err := c.exec.RunWithStdout("bash", "-c", "grep -i 'centos' /etc/*release")
 	if err != nil {
 		cmd = fmt.Sprintf("grep -oP '(?<=^VERSION_ID=).+' /etc/os-release")
 	} else {
+		centos = true
 		cmd = fmt.Sprintf("cat /etc/*release | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
 	}
 
 	out, err := c.exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
+	}
+	if centos {
+		//comparing because we are not supporting centos 8.5 and 8.6
+		if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match {
+			return "redhat", nil
+		}
 	}
 	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-6]\.*`, string(out)); match {
 		return "redhat", nil
