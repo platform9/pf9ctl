@@ -265,7 +265,7 @@ func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS str
 
 func installHostAgentCertless(ctx objects.Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading the installer (this might take a few minutes...)")
-
+	ctx.AllowInsecure = true
 	url := fmt.Sprintf(
 		"https://%s/clarity/platform9-install-%s.sh",
 		regionURL, hostOS)
