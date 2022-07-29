@@ -47,12 +47,6 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
-	if cmdexec.CheckRemote(util.Node) {
-		/*if !config.ValidateNodeConfig(host, nc, !detachedMode) {
-			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
-		}*/
-	}
-
 	var err error
 	if detachedMode {
 		err = config.LoadConfig(util.Pf9DBLoc, cfg)

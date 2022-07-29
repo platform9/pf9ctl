@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +14,7 @@ func TestGetExecutor(t *testing.T) {
 	localExecutor := LocalExecutor{ProxyUrl: proxyURL}
 
 	// Test local executor
-	executor, err := GetExecutor(proxyURL, &objects.NodeConfig{})
+	executor, err := GetExecutor(proxyURL, util.Node, &objects.NodeConfig{})
 	assert.Equal(t, nil, err)
 	assert.Equal(t, localExecutor, executor)
 }

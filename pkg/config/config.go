@@ -173,12 +173,6 @@ func ValidateUserCredentials(cfg *objects.Config) error {
 		return err
 	}
 
-	/*c, err := createClient(cfg, nc)
-	defer c.Segment.Close()
-	if err != nil {
-		return fmt.Errorf("Error validating credentials %w", err)
-	}*/
-
 	k := keystone.NewKeystone(cfg.Spec.AccountUrl)
 	auth, err := k.GetAuth(
 		cfg.Spec.Username,
@@ -364,18 +358,6 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 
 	return SetProxy(cfg.Spec.ProxyURL)
 }
-
-/*func createClient(cfg *objects.Config, nc *objects.NodeConfig) (client.Client, error) {
-	var host objects.Node
-	executor, err := cmdexec.GetExecutor(cfg.Spec.ProxyURL, host, nc)
-	if err != nil {
-		//debug first since Fatalf calls os.Exit
-		zap.S().Debug("Error connecting to host %s", err.Error())
-		zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
-	}
-
-	return client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false)
-}*/
 
 //This function clears the context if it is invalid. Before storing it.
 func clearContext(v interface{}) {

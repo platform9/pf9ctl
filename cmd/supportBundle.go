@@ -58,9 +58,9 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 	isRemote := cmdexec.CheckRemote(util.Node)
 
 	if isRemote {
-		/*f !config.ValidateNodeConfig(host, nc, !detachedMode) {
+		if !config.ValidateNodeConfig(util.Node, nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
-		}*/
+		}
 	}
 
 	var err error

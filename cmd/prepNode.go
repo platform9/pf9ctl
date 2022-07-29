@@ -202,9 +202,9 @@ func onboardNodes(node objects.Node) {
 	isRemote = cmdexec.CheckRemote(node)
 
 	if isRemote {
-		/*if !config.ValidateNodeConfig(node, nc, !detachedMode) {
+		if !config.ValidateNodeConfig(node, nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
-		}*/
+		}
 	}
 
 	if isRemote {

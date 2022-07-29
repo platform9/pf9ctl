@@ -228,9 +228,9 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 
 	if isRemote {
-		/*if !config.ValidateNodeConfig(host, nc, !detachedMode) {
+		if !config.ValidateNodeConfig(util.Node, nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
-		}*/
+		}
 	}
 
 	var err error
