@@ -75,6 +75,7 @@ var (
 	}
 
 	nc = &objects.NodeConfig{}
+	//host = objects.Node{}
 )
 
 func init() {
@@ -100,7 +101,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 	}
 
 	if cmd.Flags().Changed("no-prompt") {
-		if err = config.ValidateUserCredentials(cfg, &objects.NodeConfig{}); err != nil {
+		if err = config.ValidateUserCredentials(cfg); err != nil {
 			zap.S().Fatal(color.Red("x "), err)
 		}
 
@@ -109,7 +110,7 @@ func configCmdCreateRun(cmd *cobra.Command, args []string) {
 		}
 
 	} else {
-		if err = config.GetConfigRecursive(util.Pf9DBLoc, cfg, &objects.NodeConfig{}); err != nil {
+		if err = config.GetConfigRecursive(util.Pf9DBLoc, cfg); err != nil {
 			zap.S().Fatal(color.Red("x "), err)
 		}
 	}

@@ -14,7 +14,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/log"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/qbert"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
@@ -100,8 +99,8 @@ var bootstrapCmd = &cobra.Command{
 	},
 
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if node.Hostname != "" {
-			nc.Spec.Nodes = append(nc.Spec.Nodes, node)
+		if util.Node.Hostname != "" {
+			nc.Spec.Nodes = append(nc.Spec.Nodes, util.Node)
 		}
 	},
 
@@ -109,7 +108,7 @@ var bootstrapCmd = &cobra.Command{
 	Run:     bootstrapCmdRun,
 }
 
-var node objects.Node
+//var node objects.Node
 
 func init() {
 	bootstrapCmd.Flags().IntVar(&networkStack, "network-stack", 0, "0 for ipv4 and 1 for ipv6")
@@ -142,10 +141,10 @@ func init() {
 	bootstrapCmd.Flags().BoolVar(&privileged, "privileged", true, "Enable privileged mode for K8s API, use either --privileged or --privileged=false to change")
 	bootstrapCmd.Flags().BoolVar(&allowWorkloadsOnMaster, "allow-workloads-on-master", true, "Taint master nodes ( to enable workloads ), use either --allow-workloads-on-master or --allow-workloads-on-master=false to change")
 	bootstrapCmd.Flags().StringVar(&networkPlugin, "network-plugin", "calico", "Specify network plugin ( Possible values: flannel or calico )")
-	bootstrapCmd.Flags().StringVarP(&node.Hostname, "user", "u", "", "Ssh username for the node")
+	bootstrapCmd.Flags().StringVarP(&util.Node.Hostname, "user", "u", "", "Ssh username for the node")
 	bootstrapCmd.Flags().StringVarP(&nc.Password, "password", "p", "", "Ssh password for the node (use 'single quotes' to pass password)")
 	bootstrapCmd.Flags().StringVarP(&nc.SshKey, "ssh-key", "s", "", "Ssh key file for connecting to the node")
-	bootstrapCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of the host to be prepared")
+	bootstrapCmd.Flags().StringVarP(&util.Node.Ip, "ip", "i", "", "IP address of the host to be prepared")
 	bootstrapCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	bootstrapCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "Sudo password for user on remote host")
 	bootstrapCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
@@ -207,7 +206,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
-	isRemote := cmdexec.CheckRemote(nc)
+	isRemote := cmdexec.CheckRemote(util.Node)
 
 	isEtcdBackupDisabled := cmd.Flags().Changed("etcd-backup")
 	qbert.IsMonitoringDisabled = cmd.Flags().Changed("monitoring")
@@ -229,16 +228,16 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 
 	if isRemote {
-		if !config.ValidateNodeConfig(nc, !detachedMode) {
+		if !config.ValidateNodeConfig(util.Node, nc, !detachedMode) {
 			zap.S().Fatal("Invalid remote node config (Username/Password/IP), use 'single quotes' to pass password")
 		}
 	}
 
 	var err error
 	if detachedMode {
-		err = config.LoadConfig(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfig(util.Pf9DBLoc, cfg)
 	} else {
-		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg, nc)
+		err = config.LoadConfigInteractive(util.Pf9DBLoc, cfg)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -247,7 +246,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	fmt.Println(color.Green("✓ ") + "Loaded Config Successfully")
 	zap.S().Debug("Loaded Config Successfully")
 	var executor cmdexec.Executor
-	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc); err != nil {
+	if executor, err = cmdexec.GetExecutor(cfg.Spec.ProxyURL, util.Node, nc); err != nil {
 		zap.S().Fatalf("Unable to create executor: %s\n", err.Error())
 	}
 

@@ -62,7 +62,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	case "redhat":
 		platform = centos.NewCentOS(allClients.Executor)
 	default:
-		return RequiredFail, fmt.Errorf("This OS is not supported. Supported operating systems are: Ubuntu (16.04, 18.04, 20.04), CentOS 7.x & RHEL 7.x")
+		return RequiredFail, fmt.Errorf("This OS is not supported. Supported operating systems are: Ubuntu (18.04, 20.04), CentOS 7.[3-9], RHEL 7.[3-9] & RHEL 8.[5-6]")
 	}
 
 	if err = allClients.Segment.SendEvent("Starting CheckNode", auth, checkPass, ""); err != nil {

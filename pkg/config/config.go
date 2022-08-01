@@ -11,8 +11,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/platform9/pf9ctl/pkg/client"
-	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/objects"
@@ -59,7 +57,7 @@ func StoreConfig(cfg *objects.Config, loc string) error {
 }
 
 // LoadConfig returns the information for communication with PF9 controller.
-func LoadConfig(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
+func LoadConfig(loc string, cfg *objects.Config) error {
 
 	zap.S().Debug("Loading configuration details. pf9ctl version: ", util.Version)
 
@@ -99,12 +97,12 @@ func LoadConfig(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
 		return err
 	}
 
-	return ValidateUserCredentials(cfg, nc)
+	return ValidateUserCredentials(cfg)
 }
 
-func LoadConfigInteractive(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
+func LoadConfigInteractive(loc string, cfg *objects.Config) error {
 
-	err := LoadConfig(loc, cfg, nc)
+	err := LoadConfig(loc, cfg)
 	if err == nil {
 		return nil
 	}
@@ -118,11 +116,11 @@ func LoadConfigInteractive(loc string, cfg *objects.Config, nc *objects.NodeConf
 	}
 
 	clearContext(cfg)
-	return GetConfigRecursive(loc, cfg, nc)
+	return GetConfigRecursive(loc, cfg)
 
 }
 
-func GetConfigRecursive(loc string, cfg *objects.Config, nc *objects.NodeConfig) error {
+func GetConfigRecursive(loc string, cfg *objects.Config) error {
 	maxLoopNoConfig := 3
 	InvalidExistingConfig := false
 	count := 0
@@ -153,7 +151,7 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc *objects.NodeConfig)
 			continue
 		}
 
-		if err = ValidateUserCredentials(cfg, nc); err != nil {
+		if err = ValidateUserCredentials(cfg); err != nil {
 			clearContext(cfg)
 			InvalidExistingConfig = true
 			count++
@@ -169,19 +167,14 @@ func GetConfigRecursive(loc string, cfg *objects.Config, nc *objects.NodeConfig)
 	return err
 }
 
-func ValidateUserCredentials(cfg *objects.Config, nc *objects.NodeConfig) error {
+func ValidateUserCredentials(cfg *objects.Config) error {
 
 	if err := validateConfigFields(cfg); err != nil {
 		return err
 	}
 
-	c, err := createClient(cfg, nc)
-	defer c.Segment.Close()
-	if err != nil {
-		return fmt.Errorf("Error validating credentials %w", err)
-	}
-
-	auth, err := c.Keystone.GetAuth(
+	k := keystone.NewKeystone(cfg.Spec.AccountUrl)
+	auth, err := k.GetAuth(
 		cfg.Spec.Username,
 		cfg.Spec.Password,
 		cfg.Spec.Tenant,
@@ -366,35 +359,24 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 	return SetProxy(cfg.Spec.ProxyURL)
 }
 
-func createClient(cfg *objects.Config, nc *objects.NodeConfig) (client.Client, error) {
-	executor, err := cmdexec.GetExecutor(cfg.Spec.ProxyURL, nc)
-	if err != nil {
-		//debug first since Fatalf calls os.Exit
-		zap.S().Debug("Error connecting to host %s", err.Error())
-		zap.S().Fatalf(" Invalid (Username/Password/IP), use 'single quotes' to pass password")
-	}
-
-	return client.NewClient(cfg.Spec.AccountUrl, executor, cfg.Spec.OtherData.AllowInsecure, false)
-}
-
 //This function clears the context if it is invalid. Before storing it.
 func clearContext(v interface{}) {
 	p := reflect.ValueOf(v).Elem()
 	p.Set(reflect.Zero(p.Type()))
 }
 
-func ValidateNodeConfig(nc *objects.NodeConfig, interactive bool) bool {
+func ValidateNodeConfig(node objects.Node, nc *objects.NodeConfig, interactive bool) bool {
 
-	if nc.Spec.Nodes[0].Hostname == "" || (nc.SshKey == "" && nc.Password == "") {
+	if node.Hostname == "" || (nc.SshKey == "" && nc.Password == "") {
 		if !interactive {
 			return false
 		}
 
-		if nc.Spec.Nodes[0].Hostname == "" {
+		if node.Hostname == "" {
 			fmt.Printf("Enter username for remote host: ")
 			reader := bufio.NewReader(os.Stdin)
-			nc.Spec.Nodes[0].Hostname, _ = reader.ReadString('\n')
-			nc.Spec.Nodes[0].Hostname = strings.TrimSpace(nc.Spec.Nodes[0].Hostname)
+			node.Hostname, _ = reader.ReadString('\n')
+			node.Hostname = strings.TrimSpace(node.Hostname)
 		}
 		if nc.SshKey == "" && nc.Password == "" {
 			var choice int

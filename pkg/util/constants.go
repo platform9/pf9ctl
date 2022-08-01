@@ -4,15 +4,20 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/platform9/pf9ctl/pkg/objects"
 )
 
 var Files []string
 var Pf9Packages []string
 var RequiredPorts []string
 var PortErr string
-var ProcessesList []string //Kubernetes clusters processes list
-var SwapOffDisabled bool   //If this is true the swapOff functionality will be disabled.
+var ProcessesList []string // Kubernetes clusters processes list
+var SwapOffDisabled bool   // If this is true the swapOff functionality will be disabled.
 var SkipPrepNode bool
+
+// SkipKube skips authorizing kube role during prep-node. Not applicable to bootstrap command
+var SkipKube bool
 var HostDown bool
 var EBSPermissions []string
 var Route53Permissions []string
@@ -29,6 +34,7 @@ var SudoPassword string
 var RemoveExistingPkgs bool
 var InstallerErrors = make(map[int]string)
 var LogFileNamePath string
+var Node objects.Node
 
 const (
 
@@ -307,7 +313,7 @@ func init() {
 
 //These are the constants needed for everything version related
 const (
-	Version         string = "pf9ctl version: v1.15"
+	Version         string = "pf9ctl version: v1.16"
 	AWSBucketName   string = "pmkft-assets"
 	AWSBucketKey    string = "pf9ctl"
 	AWSBucketRegion string = "us-west-1"

@@ -7,7 +7,6 @@ import (
 
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
-	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -68,7 +67,7 @@ func checkGoogleProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("google.json", cfg, &objects.NodeConfig{})
+		err = config.GetConfigRecursive("google.json", cfg)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -89,7 +88,7 @@ func checkAmazonProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("amazon.json", cfg, &objects.NodeConfig{})
+		err = config.GetConfigRecursive("amazon.json", cfg)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n", err.Error())
@@ -109,7 +108,7 @@ func checkAzureProviderRun(cmd *cobra.Command, args []string) {
 			os.Exit(1)
 		}
 	} else {
-		err = config.GetConfigRecursive("azure.json", cfg, &objects.NodeConfig{})
+		err = config.GetConfigRecursive("azure.json", cfg)
 	}
 	if err != nil {
 		zap.S().Fatalf("Unable to load the context: %s\n")
