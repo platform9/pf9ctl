@@ -111,7 +111,6 @@ func DecommissionNode(cfg *objects.Config, nc *objects.NodeConfig, removePf9 boo
 		if nodeInfo.ClusterName == "" {
 			fmt.Println(color.Green("✓ ") + "Node is not connected to any cluster")
 			if nodeConnectedToDU {
-				fmt.Println("Deauthorizing node:", hostID[0])
 				err = c.Qbert.DeauthoriseNode(hostID[0], auth.Token)
 				if err != nil {
 					zap.S().Fatalf("Failed to deauthorize node")
@@ -138,13 +137,13 @@ func DecommissionNode(cfg *objects.Config, nc *objects.NodeConfig, removePf9 boo
 			if removePf9 {
 				removePf9Installation(c)
 			}
-			//fmt.Println("Node decommissioning started....This may take a few minutes....Check the latest status in UI")
-			s.Restart()
+
+			s.Start()
 			s.Suffix = " Node decommissioning started....This may take a few minutes....Check the latest status in UI"
-			//s.FinalMSG = color.Green("✓ ") + "Node decommission completed"
+			s.FinalMSG = color.Green("✓ ") + "Node decommission completed\n"
 			time.Sleep(50 * time.Second)
 			s.Stop()
-			fmt.Println(color.Green("✓ ") + "Node decommission completed")
+
 		} else {
 			//detach node from cluster
 			fmt.Printf(color.Green("✓ ")+"Node is connected to %s cluster\n", nodeInfo.ClusterName)
@@ -184,9 +183,9 @@ func DecommissionNode(cfg *objects.Config, nc *objects.NodeConfig, removePf9 boo
 			}
 			s.Restart()
 			s.Suffix = " Node decommissioning started....This may take a few minutes....Check the latest status in UI"
+			s.FinalMSG = color.Green("✓ ") + "Node decommission completed\n"
 			time.Sleep(50 * time.Second)
 			s.Stop()
-			fmt.Println(color.Green("✓ ") + "Node decommission completed")
 		}
 	} else {
 		fmt.Println("Host is not connected to Platform9 Management Plane")
