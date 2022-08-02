@@ -58,10 +58,12 @@ func init() {
 	prepNodeCmd.Flags().StringSliceVarP(&nodeConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
-	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
 	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
+	prepNodeCmd.Flags().StringVar(&nodeConfig.MFA, "mfa", "", "MFA token")
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	prepNodeCmd.Flags().BoolVarP(&nodeConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	prepNodeCmd.Flags().BoolVar(&util.SkipKube, "skip-kube", false, "Skip installing pf9-kube/nodelet on this host")
+	prepNodeCmd.Flags().MarkHidden("skip-kube")
 
 	rootCmd.AddCommand(prepNodeCmd)
 }

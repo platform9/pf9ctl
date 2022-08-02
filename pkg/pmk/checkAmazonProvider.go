@@ -170,7 +170,7 @@ func CheckAvailabilityZonesCount(awsID, awsSecret, awsRegion string) bool {
 
 	//checks if the user less than 2 availability zones
 	if len(resultAvalZones.AvailabilityZones) < 2 {
-		fmt.Println(color.Red("X ")+"Availability Zones error, Minimum 2 availabiliy zones required but found %d", len(resultAvalZones.AvailabilityZones))
+		fmt.Println(color.Red("X ")+"Availability Zones error, Minimum 2 availability zones required but found %d", len(resultAvalZones.AvailabilityZones))
 		return false
 	} else {
 		fmt.Println(color.Green("✓ ") + "Availability Zones success")

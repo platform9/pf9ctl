@@ -22,7 +22,7 @@ const (
 	env_path   = "PATH"
 )
 
-// Executor interace abstracts us from local or remote execution
+// Executor interface abstracts us from local or remote execution
 type Executor interface {
 	Run(name string, args ...string) error
 	RunWithStdout(name string, args ...string) (string, error)
@@ -186,4 +186,14 @@ func CheckRemote(nc objects.NodeConfig) bool {
 		}
 	}
 	return false
+}
+
+func ExitCodeChecker(err error) (string, int) {
+	var stderr string
+	var exitCode int
+	if exitError, ok := err.(*exec.ExitError); ok {
+		stderr = string(exitError.Stderr)
+		exitCode = exitError.ExitCode()
+	}
+	return stderr, exitCode
 }

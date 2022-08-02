@@ -246,8 +246,19 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 
 	} else {
 		// Generation of supportBundle in local host case.
-		_, errbundle := exec.RunWithStdout("bash", "-c", fmt.Sprintf("tar czf %s --directory=%s %s %s %s %s %s %s %s",
-			targetfile, util.Pf9DirLoc, util.Pf9LogLoc, util.VarDir, util.EtcDir, util.DmesgLog, msgfile, lockfile, util.OptDir))
+		var errbundle error
+		var allCLILogfiles string
+		if len(util.LogFileNamePath) != 0 {
+			allCLILogfiles = util.LogFileNamePath[:len(util.LogFileNamePath)-4] + "*"
+		}
+
+		var cmd string
+		if util.Pf9LogLoc != util.DefaultPf9LogLoc {
+			cmd = fmt.Sprintf("tar czf %s --directory=%s %s %s %s %s %s %s %s", targetfile, util.Pf9DirLoc, allCLILogfiles, util.VarDir, util.EtcDir, util.DmesgLog, msgfile, lockfile, util.OptDir)
+		} else {
+			cmd = fmt.Sprintf("tar czf %s --directory=%s %s %s %s %s %s %s %s", targetfile, util.Pf9DirLoc, util.Pf9LogLoc, util.VarDir, util.EtcDir, util.DmesgLog, msgfile, lockfile, util.OptDir)
+		}
+		_, errbundle = exec.RunWithStdout("bash", "-c", cmd)
 		if errbundle != nil {
 			zap.S().Debug("Failed to generate complete supportBundle, generated partial bundle", errbundle)
 			return targetfile, ErrPartialBundle

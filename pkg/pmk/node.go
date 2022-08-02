@@ -139,13 +139,18 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Stop()
 	fmt.Println(color.Green("✓ ") + "Initialised host successfully")
 	zap.S().Debug("Initialised host successfully")
+	if util.SkipKube {
+		zap.S().Debug("Skip authorizing host as --skip-kube flag is true")
+		sendSegmentEvent(allClients, "Successful", auth, false)
+		return nil
+	}
+
 	s.Restart()
 	s.Suffix = " Authorising host"
 	zap.S().Debug("Authorising host")
 	hostID := strings.TrimSuffix(output, "\n")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
-	sendSegmentEvent(allClients, "Authorising host - 4", auth, false)
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token); err != nil {
 		errStr := "Error: Unable to authorise host. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
@@ -285,7 +290,11 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 	removeTempDirAndInstaller(exec)
 
 	if err != nil {
-		return fmt.Errorf("Unable to run installer script")
+		_, exitCode := cmdexec.ExitCodeChecker(err)
+		fmt.Printf("\n")
+		fmt.Println("Error :", util.InstallerErrors[exitCode])
+		zap.S().Debugf("Error:%s", util.InstallerErrors[exitCode])
+		return fmt.Errorf("error while running installer script: %s", util.InstallerErrors[exitCode])
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
@@ -421,7 +430,11 @@ func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.
 	removeTempDirAndInstaller(exec)
 
 	if err != nil {
-		return err
+		_, exitCode := cmdexec.ExitCodeChecker(err)
+		fmt.Printf("\n")
+		zap.S().Debugf("Error:%s", util.InstallerErrors[exitCode])
+		fmt.Println("Error :", util.InstallerErrors[exitCode])
+		return fmt.Errorf("error while running installer script: %s", util.InstallerErrors[exitCode])
 	}
 
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
