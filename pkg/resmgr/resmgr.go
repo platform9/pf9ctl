@@ -67,7 +67,7 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Unable to send request to the client: %w", err)
+		return fmt.Errorf("Client is unable to send the request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -88,7 +88,7 @@ func (c *ResmgrImpl) GetHostId(token string, hostIPs []string) []string {
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		zap.S().Infof("Unable to send request to the client: %w", err)
+		zap.S().Infof("Client is unable to send the request: %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -131,7 +131,7 @@ func (c *ResmgrImpl) HostSatus(token string, hostID string) bool {
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		zap.S().Infof("Unable to send request to the client: %w", err)
+		zap.S().Infof("Client is unable to send the request: %w", err)
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
