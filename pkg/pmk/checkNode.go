@@ -4,6 +4,7 @@ package pmk
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/platform/centos"
 	"github.com/platform9/pf9ctl/pkg/platform/debian"
+	"github.com/platform9/pf9ctl/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -32,7 +34,9 @@ const (
 	CleanInstallFail CheckNodeResult = "cleanInstallFail"
 )
 
-/* This flag is set true, to have warning "!" message,
+/*
+	This flag is set true, to have warning "!" message,
+
 when user passes --skip-checks and optional checks fails.
 */
 var WarningOptionalChecks bool
@@ -49,13 +53,13 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	if !isSudo {
 		return RequiredFail, fmt.Errorf("User executing this CLI is not allowed to switch to privileged (sudo) mode")
 	}
-	os, err := ValidatePlatform(allClients.Executor)
+	hostOS, err := ValidatePlatform(allClients.Executor)
 	if err != nil {
 		return RequiredFail, err
 	}
 
 	var platform platform.Platform
-	switch os {
+	switch hostOS {
 	case "debian":
 		platform = debian.NewDebian(allClients.Executor)
 	case "redhat":
@@ -75,6 +79,54 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 	checks := platform.Check()
 	s.Stop()
 
+	if util.CheckIfOnboarded {
+		zap.S().Debug("Checking if node is already connected to DU")
+		for _, v := range checks {
+			if v.Name == "Existing Platform9 Packages Check" {
+				if !v.Result {
+					zap.S().Debug("Platform9 Packages are present")
+					zap.S().Debug("Checking if host is connected or not")
+					ip, err := allClients.Executor.RunWithStdout("bash", "-c", "hostname -I")
+					if err != nil {
+						zap.S().Debug("Failed to get host ip")
+					}
+					ip = strings.Split(ip, " ")[0]
+					ip = strings.TrimSpace(ip)
+					var add = []string{ip}
+					id := allClients.Resmgr.GetHostId(auth.Token, add)
+					//If node is already to connected then resmgr will return hostID
+					//If hostID is empty then host could be connected to other DU
+					var connected bool
+					if len(id) != 0 {
+						connected = allClients.Resmgr.HostSatus(auth.Token, id[0])
+					} else {
+						zap.S().Infof("Hostagent is installed on this host, but this host is not part of the DU %s specified in the config", ctx.Fqdn)
+						os.Exit(0)
+					}
+					if connected {
+						zap.S().Debug("Node is already connected")
+						zap.S().Info(color.Green("✓ ") + "Node is already connected\n")
+						os.Exit(0)
+					} else {
+						//case where hostagent is installed but host is in disconnected sate
+						zap.S().Debug("Hostagent is installed but host is not connected to DU, Trying to authorize")
+						if id[0] != "" {
+							err := allClients.Resmgr.AuthorizeHost(id[0], auth.Token)
+							if err != nil {
+								zap.S().Debug("Failed to authorize node, installing hostagent again")
+								nc.RemoveExistingPkgs = true
+							} else {
+								zap.S().Info(color.Green("✓ ") + "Node is already connected\n")
+								os.Exit(0)
+							}
+						}
+					}
+				} else {
+					zap.S().Debug("Node is not connected installing hostagent")
+				}
+			}
+		}
+	}
 	//We will print console if any missing os packages installed
 	if debian.MissingPkgsInstalledDebian || centos.MissingPkgsInstalledCentos {
 		fmt.Printf(color.Green("✓ ") + "Missing package(s) installed successfully\n")
