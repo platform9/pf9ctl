@@ -94,14 +94,13 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 					ip = strings.TrimSpace(ip)
 					var add = []string{ip}
 					id := allClients.Resmgr.GetHostId(auth.Token, add)
-					//If node is already to connected then resmgr will return hostID
+					//If node is already connected then resmgr will return hostID
 					//If hostID is empty then host could be connected to other DU
 					var connected bool
 					if len(id) != 0 {
 						connected = allClients.Resmgr.HostSatus(auth.Token, id[0])
 					} else {
-						zap.S().Infof("Hostagent is installed on this host, but this host is not part of the DU %s specified in the config", ctx.Fqdn)
-						os.Exit(0)
+						zap.S().Fatalf("Hostagent is installed on this host, but this host is not part of the DU %s specified in the config", ctx.Fqdn)
 					}
 					if connected {
 						zap.S().Debug("Node is already connected")
