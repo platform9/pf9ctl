@@ -13,6 +13,7 @@ var PortErr string
 var ProcessesList []string // Kubernetes clusters processes list
 var SwapOffDisabled bool   // If this is true the swapOff functionality will be disabled.
 var SkipPrepNode bool
+var CheckIfOnboarded bool
 
 // SkipKube skips authorizing kube role during prep-node. Not applicable to bootstrap command
 var SkipKube bool
@@ -298,7 +299,7 @@ func init() {
 
 }
 
-//These are the constants needed for everything version related
+// These are the constants needed for everything version related
 const (
 	Version         string = "pf9ctl version: v1.16"
 	AWSBucketName   string = "pmkft-assets"
