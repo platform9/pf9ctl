@@ -64,6 +64,7 @@ func init() {
 	prepNodeCmd.Flags().BoolVarP(&nodeConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 	prepNodeCmd.Flags().BoolVar(&util.SkipKube, "skip-kube", false, "Skip installing pf9-kube/nodelet on this host")
 	prepNodeCmd.Flags().MarkHidden("skip-kube")
+	prepNodeCmd.Flags().BoolVar(&util.CheckIfOnboarded, "skip-connected", false, "If the node is already connected to the PMK control plane, prep-node will be skipped")
 
 	rootCmd.AddCommand(prepNodeCmd)
 }
