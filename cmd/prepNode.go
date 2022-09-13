@@ -61,12 +61,15 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&node.Ip, "ip", "i", "", "IP address of host to be prepared")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
+	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
 	prepNodeCmd.Flags().StringVar(&util.MFA, "mfa", "", "MFA token")
 	prepNodeCmd.Flags().StringVar(&ConfigPath, "user-config", "", "Path of user-config file")
 	prepNodeCmd.Flags().StringVar(&NodeConfigPath, "node-config", "", "Path of node-config file")
-	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
 	prepNodeCmd.Flags().StringVarP(&util.SudoPassword, "sudo-pass", "e", "", "sudo password for user on remote host")
 	prepNodeCmd.Flags().BoolVarP(&util.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
+	prepNodeCmd.Flags().BoolVar(&util.SkipKube, "skip-kube", false, "Skip installing pf9-kube/nodelet on this host")
+	prepNodeCmd.Flags().MarkHidden("skip-kube")
+	prepNodeCmd.Flags().BoolVar(&util.CheckIfOnboarded, "skip-connected", false, "If the node is already connected to the PMK control plane, prep-node will be skipped")
 
 	nodeCmd.AddCommand(prepNodeCmd)
 }
