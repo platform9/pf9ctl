@@ -100,7 +100,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 					if len(id) != 0 {
 						connected = allClients.Resmgr.HostSatus(auth.Token, id[0])
 					} else {
-						zap.S().Fatalf("Hostagent is installed on this host, but this host is not part of the DU %s specified in the config", ctx.Fqdn)
+						zap.S().Fatalf("Hostagent is installed on this host, but this host is not part of the DU %s specified in the config", ctx.Spec.AccountUrl)
 					}
 					if connected {
 						zap.S().Debug("Node is already connected")
@@ -109,7 +109,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 					} else {
 						//case where hostagent is installed but host is in disconnected sate
 						zap.S().Debug("Hostagent is installed but host is not connected to DU. Installing hostagent again")
-						nc.RemoveExistingPkgs = true
+						util.RemoveExistingPkgs = true
 					}
 				} else {
 					zap.S().Debug("Node is not connected installing hostagent")
