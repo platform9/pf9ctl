@@ -2,9 +2,10 @@ package resmgr
 
 import (
 	"fmt"
+	"testing"
+
 	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/util"
-	"testing"
 )
 
 func TestRetryHTTP(t *testing.T) {
@@ -20,7 +21,7 @@ func TestRetryHTTP(t *testing.T) {
 	fmt.Printf("Send the request now")
 	resp, err := client.Do(req)
 	if err != nil {
-		t.Errorf("Unable to send request to the client: %s", err)
+		t.Errorf("Client is unable to send the request: %s", err)
 	}
 	defer resp.Body.Close()
 
