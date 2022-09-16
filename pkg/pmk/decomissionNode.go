@@ -134,6 +134,12 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 			fmt.Printf("Node is connected to %s cluster\n", nodeInfo.ClusterName)
 			fmt.Println("Detaching node from cluster...")
 			err = c.Qbert.DetachNode(nodeInfo.ClusterUuid, auth.ProjectID, auth.Token, hostID[0])
+			for {
+				nodeInfo := c.Resmgr.GetHostInfo(auth.Token, hostID[0])
+				if nodeInfo.Extensions.Pf9KubeStatus.Data.Pf9ClusterID == "" {
+					break
+				}
+			}
 			if err != nil {
 				zap.S().Fatalf("Failed to detach host from cluster")
 			} else {
