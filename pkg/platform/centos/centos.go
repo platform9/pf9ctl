@@ -318,9 +318,6 @@ func (c *CentOS) installOSPackages(p string) error {
 
 	zap.S().Debugf("Trying to install package %s", p)
 	_, err = c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("yum -q -y install %s", p))
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
