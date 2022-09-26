@@ -71,7 +71,7 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.checkFirewalldIsRunning()
 	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = c.startChoryd()
+	result, err = c.startChronyd()
 	checks = append(checks, platform.Check{"Checking if chronyd is running", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
@@ -363,7 +363,7 @@ func (c *CentOS) checkFirewalldIsRunning() (bool, error) {
 	}
 }
 
-func (c *CentOS) startChoryd() (bool, error) {
+func (c *CentOS) startChronyd() (bool, error) {
 	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active chronyd")
 	if err != nil {
 		zap.S().Debug("chronyd is not running, starting it")
