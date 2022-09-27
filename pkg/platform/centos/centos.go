@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	packages                   = []string{"chrony", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils", "net-tools"}
+	packages                   = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils", "net-tools"}
 	packageInstallError        = "Packages not found and could not be installed"
 	MissingPkgsInstalledCentos bool
 	centos                     bool
@@ -70,9 +70,6 @@ func (c *CentOS) Check() []platform.Check {
 
 	result, err = c.checkFirewalldIsRunning()
 	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
-
-	result, err = c.startChronyd()
-	checks = append(checks, platform.Check{"Checking if chronyd is running", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
 		result, err = c.disableSwap()
@@ -137,9 +134,11 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	rhel8, _ := regexp.MatchString(`.*8\.[5-6]\.*`, string(version))
 	for _, p := range packages {
 		if !centos && rhel8 {
-			if p == "policycoreutils-python" {
-				//This pkg name is different for RHEL8
+			switch p {
+			case "policycoreutils-python":
 				p = "policycoreutils-python3"
+			case "ntp":
+				p = "chrony"
 			}
 		}
 		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
@@ -333,6 +332,27 @@ func (c *CentOS) installOSPackages(p string) error {
 	if err != nil {
 		return err
 	}
+
+	switch p {
+	case "chrony":
+		{
+			_, err = c.exec.RunWithStdout("bash", "-c", "systemctl start chronyd")
+			if err != nil {
+				zap.S().Debug("Failed to start chronyd time sync service")
+			} else {
+				zap.S().Debug("chronyd time sync service started")
+			}
+		}
+	case "ntp":
+		{
+			_, err = c.exec.RunWithStdout("bash", "-c", "systemctl start ntpd")
+			if err != nil {
+				zap.S().Debug("Failed to start ntpd time sync service")
+			} else {
+				zap.S().Debug("ntpd time sync service started")
+			}
+		}
+	}
 	return nil
 }
 
@@ -360,22 +380,5 @@ func (c *CentOS) checkFirewalldIsRunning() (bool, error) {
 		return true, nil
 	} else {
 		return false, errors.New("firewalld service is running")
-	}
-}
-
-func (c *CentOS) startChronyd() (bool, error) {
-	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active chronyd")
-	if err != nil {
-		zap.S().Debug("chronyd is not running, starting it")
-		_, err := c.exec.RunWithStdout("bash", "-c", "systemctl start chronyd")
-		if err != nil {
-			return false, errors.New("faild to start chronyd")
-		} else {
-			zap.S().Debug("started chronyd")
-			return true, nil
-		}
-	} else {
-		zap.S().Debug("chronyd is active and running")
-		return true, nil
 	}
 }
