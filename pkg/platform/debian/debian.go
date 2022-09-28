@@ -317,6 +317,9 @@ func (d *Debian) installOSPackages(p string) error {
 
 	zap.S().Debugf("Trying to install package %s", p)
 	_, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("apt install -qq -y %s", p))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
