@@ -19,6 +19,8 @@ var (
 	packages                   = []string{"ntp", "curl", "policycoreutils", "policycoreutils-python", "selinux-policy", "selinux-policy-targeted", "libselinux-utils", "net-tools"}
 	packageInstallError        = "Packages not found and could not be installed"
 	MissingPkgsInstalledCentos bool
+	centos                     bool
+	version                    string
 	k8sPresentError            = errors.New("A Kubernetes cluster is already running on node")
 )
 
@@ -129,7 +131,16 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	errLines := []string{packageInstallError}
 	zap.S().Debug("Checking OS Packages")
 
+	rhel8, _ := regexp.MatchString(`.*8\.[5-6]\.*`, string(version))
 	for _, p := range packages {
+		if !centos && rhel8 {
+			switch p {
+			case "policycoreutils-python":
+				p = "policycoreutils-python3"
+			case "ntp":
+				p = "chrony"
+			}
+		}
 		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
 		if err != nil {
 			zap.S().Debug("Installing missing packages, this may take a few minutes")
@@ -283,7 +294,6 @@ func (c *CentOS) Version() (string, error) {
 	//using grep command os name and version are searched. e.g (CentOS Linux release 7.6.1810 (Core))
 	//using cut command required field (7.6.1810) is selected.
 	var cmd string
-	var centos bool
 	_, err := c.exec.RunWithStdout("bash", "-c", "grep -i 'centos' /etc/*release")
 	if err != nil {
 		cmd = fmt.Sprintf("grep -oP '(?<=^VERSION_ID=).+' /etc/os-release")
@@ -292,20 +302,20 @@ func (c *CentOS) Version() (string, error) {
 		cmd = fmt.Sprintf("cat /etc/*release | grep 'CentOS Linux release' -m 1 | cut -f4 -d ' '")
 	}
 
-	out, err := c.exec.RunWithStdout("bash", "-c", cmd)
+	version, err = c.exec.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
 	if centos {
 		//comparing because we are not supporting centos 8.5 and 8.6
-		if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(out)); match {
+		if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(version)); match {
 			return "redhat", nil
 		}
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-6]\.*`, string(out)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-6]\.*`, string(version)); match {
 		return "redhat", nil
 	}
-	return "", fmt.Errorf("Unable to determine OS type: %s", string(out))
+	return "", fmt.Errorf("Unable to determine OS type: %s", string(version))
 
 }
 
@@ -318,6 +328,30 @@ func (c *CentOS) installOSPackages(p string) error {
 
 	zap.S().Debugf("Trying to install package %s", p)
 	_, err = c.exec.RunWithStdout("bash", "-c", fmt.Sprintf("yum -q -y install %s", p))
+	if err != nil {
+		return err
+	}
+
+	switch p {
+	case "chrony":
+		{
+			_, err = c.exec.RunWithStdout("bash", "-c", "systemctl start chronyd")
+			if err != nil {
+				zap.S().Debug("Failed to start chronyd time sync service")
+			} else {
+				zap.S().Debug("chronyd time sync service started")
+			}
+		}
+	case "ntp":
+		{
+			_, err = c.exec.RunWithStdout("bash", "-c", "systemctl start ntpd")
+			if err != nil {
+				zap.S().Debug("Failed to start ntpd time sync service")
+			} else {
+				zap.S().Debug("ntpd time sync service started")
+			}
+		}
+	}
 	return nil
 }
 
