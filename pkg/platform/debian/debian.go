@@ -297,9 +297,7 @@ func (d *Debian) Version() (string, error) {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
 	var isVersionMatch bool
-	if strings.Contains(string(majorVersion), "16") && strings.Contains(string(minorVersion), "04") {
-		isVersionMatch = true
-	} else if strings.Contains(string(majorVersion), "18") && strings.Contains(string(minorVersion), "04") {
+	if strings.Contains(string(majorVersion), "18") && strings.Contains(string(minorVersion), "04") {
 		isVersionMatch = true
 	} else if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
 		isVersionMatch = true
@@ -319,6 +317,9 @@ func (d *Debian) installOSPackages(p string) error {
 
 	zap.S().Debugf("Trying to install package %s", p)
 	_, err = d.exec.RunWithStdout("bash", "-c", fmt.Sprintf("apt install -qq -y %s", p))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -469,31 +470,15 @@ func split(version, delimiter string) (string, string, string) {
 
 func (d *Debian) IsPresent(service string) error {
 	zap.S().Debugf("checking if %s is present", service)
-	var cmd string
-	majorVersion, minorVersion, _, err1 := d.getVersion()
-	if err1 != nil {
-		zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
-	}
-	if strings.Contains(string(majorVersion), "16") && strings.Contains(string(minorVersion), "04") {
-		cmd = fmt.Sprintf(`systemctl status %s | grep 'not-found'`, service)
-		_, err := d.exec.RunWithStdout("bash", "-c", cmd)
-		if err != nil {
-			zap.S().Debugf("%s is present", service)
-			return nil
-		} else {
-			zap.S().Debugf("%s is not present", service)
-			return fmt.Errorf("%s is not present", service)
-		}
+
+	cmd := fmt.Sprintf(`systemctl list-unit-files %s | grep '%s'`, service, service)
+	_, err := d.exec.RunWithStdout("bash", "-c", cmd)
+	if err != nil {
+		zap.S().Debugf("%s is not present", service)
+		return err
 	} else {
-		cmd = fmt.Sprintf(`systemctl list-unit-files %s | grep '%s'`, service, service)
-		_, err := d.exec.RunWithStdout("bash", "-c", cmd)
-		if err != nil {
-			zap.S().Debugf("%s is not present", service)
-			return err
-		} else {
-			zap.S().Debugf("%s is present", service)
-			return nil
-		}
+		zap.S().Debugf("%s is present", service)
+		return nil
 	}
 
 }
