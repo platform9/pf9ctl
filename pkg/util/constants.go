@@ -17,6 +17,10 @@ var CheckIfOnboarded bool
 
 // SkipKube skips authorizing kube role during prep-node. Not applicable to bootstrap command
 var SkipKube bool
+
+// KubeVersion allows specifying a role version when running prep-node command
+var KubeVersion string = ""
+
 var HostDown bool
 var EBSPermissions []string
 var Route53Permissions []string

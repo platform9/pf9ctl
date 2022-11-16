@@ -64,6 +64,9 @@ func init() {
 	prepNodeCmd.Flags().BoolVarP(&nodeConfig.RemoveExistingPkgs, "remove-existing-pkgs", "r", false, "Will remove previous installation if found (default false)")
 	prepNodeCmd.Flags().BoolVar(&util.SkipKube, "skip-kube", false, "Skip installing pf9-kube/nodelet on this host")
 	prepNodeCmd.Flags().MarkHidden("skip-kube")
+	// At the moment prep-node command only install the kube role. If this changes in future, this option can be changed to something more generic.
+	prepNodeCmd.Flags().StringVar(&util.KubeVersion, "kube-version", "", "Specific version of pf9-kube to install")
+	prepNodeCmd.Flags().MarkHidden("kube-version")
 	prepNodeCmd.Flags().BoolVar(&util.CheckIfOnboarded, "skip-connected", false, "If the node is already connected to the PMK control plane, prep-node will be skipped")
 
 	rootCmd.AddCommand(prepNodeCmd)
