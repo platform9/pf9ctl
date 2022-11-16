@@ -59,7 +59,7 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string, version string) 
 	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s/roles/pf9-kube", c.fqdn, hostID)
 	if len(version) != 0 {
 		// Only resmgr v2 APIs support specifying a specific version of the role to install
-		url = fmt.Sprintf("%s/resmgr/v2/hosts/%s/roles/pf9-kube/?version=%s", c.fqdn, hostID, version)
+		url = fmt.Sprintf("%s/resmgr/v2/hosts/%s/roles/pf9-kube/versions/%s", c.fqdn, hostID, version)
 	}
 	req, err := rhttp.NewRequest("PUT", url, nil)
 	if err != nil {
