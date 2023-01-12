@@ -131,7 +131,7 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	errLines := []string{packageInstallError}
 	zap.S().Debug("Checking OS Packages")
 
-	rhel8, _ := regexp.MatchString(`.*8\.[5-6]\.*`, string(version))
+	rhel8, _ := regexp.MatchString(`.*8\.[5-7]\.*`, string(version))
 	for _, p := range packages {
 		if !centos && rhel8 {
 			switch p {
@@ -308,12 +308,12 @@ func (c *CentOS) Version() (string, error) {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
 	if centos {
-		//comparing because we are not supporting centos 8.5 and 8.6
+		//comparing because we are not supporting centos 8.x
 		if match, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(version)); match {
 			return "redhat", nil
 		}
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-6]\.*`, string(version)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-7]\.*`, string(version)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(version))
