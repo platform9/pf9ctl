@@ -294,6 +294,9 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 	} else {
 		installOptions = fmt.Sprintf(`--no-project --controller=%s --username=%s --password='%s'`, regionURL, ctx.Username, ctx.Password)
 	}
+	if ctx.AllowInsecure {
+		installOptions = fmt.Sprintf("%s --insecure", installOptions)
+	}
 
 	changePermission := fmt.Sprintf("chmod +x %s/pf9/installer.sh", homeDir)
 	_, err = exec.RunWithStdout("bash", "-c", changePermission)
