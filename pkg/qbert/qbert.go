@@ -492,7 +492,7 @@ func (c QbertImpl) CheckClusterExistsWithUuid(uuid, projectID, token string) (st
 	return "", fmt.Errorf("error finding cluster with uuid %s", uuid)
 }
 
-//Function to Check status of attach-node API
+// Function to Check status of attach-node API
 func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Response, error) {
 	client := http.Client{}
 	req, err := http.NewRequest("POST", attachEndpoint, strings.NewReader(string(byt)))
@@ -513,7 +513,7 @@ func Attach_Status(attachEndpoint string, token string, byt []byte) (*http.Respo
 	return resp, nil
 }
 
-//There are two different payload structures based on pmk version
+// There are two different payload structures based on pmk version
 func updatePayload(p string) string {
 	var monitoringDetails string
 	var tagDetails string

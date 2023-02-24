@@ -18,7 +18,8 @@ import (
 type Resmgr interface {
 	AuthorizeHost(hostID, token string, version string) error
 	GetHostId(token string, hostIP []string) []string
-	HostSatus(token string, hostID string) bool
+	HostStatus(token string, hostID string) bool
+	GetHostInfo(token string, hostID string) Info
 }
 
 type ResmgrImpl struct {
@@ -36,6 +37,30 @@ type hostInfo []struct {
 		} `json:"ip_address,omitempty"`
 	} `json:"extensions,omitempty"`
 	ID string `json:"id,omitempty"`
+}
+
+type Info struct {
+	Extensions struct {
+		Pf9KubeStatus struct {
+			//Status string `json:"status"`
+			Data struct {
+				/*Pf9KubeServiceState   string   `json:"pf9_kube_service_state"`
+				Pf9KubeNodeState      string   `json:"pf9_kube_node_state"`
+				Pf9KubeStartAttempt   int      `json:"pf9_kube_start_attempt"`*/
+				Pf9ClusterID string `json:"pf9_cluster_id,omitempty"`
+				/*Pf9ClusterRole        string   `json:"pf9_cluster_role"`
+				AllStatusChecks       []string `json:"all_status_checks"`
+				AllTasks              []string `json:"all_tasks"`
+				CompletedTasks        []string `json:"completed_tasks"`
+				CurrentStatusCheck    string   `json:"current_status_check"`
+				CurrentTask           string   `json:"current_task"`
+				LastFailedStatusCheck string   `json:"last_failed_status_check"`
+				LastFailedStatusTime  int      `json:"last_failed_status_time"`
+				LastFailedTask        string   `json:"last_failed_task"`
+				StatusCheckTimestamp  int      `json:"status_check_timestamp"`*/
+			} `json:"data,omitempty"`
+		} `json:"pf9_kube_status,omitempty"`
+	} `json:"extensions,omitempty"`
 }
 
 func NewResmgr(fqdn string, maxHttpRetry int, minWait, maxWait time.Duration, allowInsecure bool) Resmgr {
@@ -124,7 +149,7 @@ func (c *ResmgrImpl) GetHostId(token string, hostIPs []string) []string {
 	return hostUUIDs
 }
 
-func (c *ResmgrImpl) HostSatus(token string, hostID string) bool {
+func (c *ResmgrImpl) HostStatus(token string, hostID string) bool {
 	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s", c.fqdn, hostID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -153,4 +178,31 @@ func (c *ResmgrImpl) HostSatus(token string, hostID string) bool {
 		zap.S().Debugf("Unable to unmarshal resp body to struct: %w", err)
 	}
 	return host.Info.Responding
+}
+
+func (c *ResmgrImpl) GetHostInfo(token string, hostID string) Info {
+	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s", c.fqdn, hostID)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		zap.S().Infof("Unable to create a new request: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		zap.S().Infof("Client is unable to send the request: %w", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		zap.S().Infof("Unable to read resp body: %w", err)
+	}
+
+	nodeInfo := Info{}
+	err = json.Unmarshal(body, &nodeInfo)
+	if err != nil {
+		zap.S().Debugf("Unable to unmarshal resp body to struct: %w", err)
+	}
+
+	return nodeInfo
 }

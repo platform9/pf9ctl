@@ -98,7 +98,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 					//If hostID is empty then host could be connected to other DU
 					var connected bool
 					if len(id) != 0 {
-						connected = allClients.Resmgr.HostSatus(auth.Token, id[0])
+						connected = allClients.Resmgr.HostStatus(auth.Token, id[0])
 					} else {
 						zap.S().Fatalf("Hostagent is installed on this host, but this host is not part of the DU %s specified in the config", ctx.Fqdn)
 					}

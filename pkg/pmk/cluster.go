@@ -71,7 +71,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 
 	LoopVariable := 1
 	for LoopVariable <= util.MaxLoopValue {
-		hostStatus := c.Resmgr.HostSatus(token, nodeID)
+		hostStatus := c.Resmgr.HostStatus(token, nodeID)
 		if !hostStatus {
 			zap.S().Debugf("Host is Down...Trying again")
 		} else {
@@ -150,7 +150,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	return nil
 }
 
-//Checks Prerequisites for Bootstrap Command
+// Checks Prerequisites for Bootstrap Command
 func PreReqBootstrap(executor cmdexec.Executor) (bool, bool, error) {
 
 	os, err := ValidatePlatform(executor)
@@ -183,7 +183,7 @@ func PreReqBootstrap(executor cmdexec.Executor) (bool, bool, error) {
 	return val, val1, nil
 }
 
-//Deleting the cluster if the node is not attached to the cluster
+// Deleting the cluster if the node is not attached to the cluster
 func DeleteClusterBootstrap(clusterID string, c client.Client, keystoneAuth keystone.KeystoneAuth, token string) {
 	err := c.Qbert.DeleteCluster(clusterID, keystoneAuth.ProjectID, token)
 
