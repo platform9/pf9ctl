@@ -365,7 +365,7 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 	}
 	var platform platform.Platform
 	switch {
-	case strings.Contains(strData, util.Centos) || strings.Contains(strData, util.Redhat):
+	case strings.Contains(strData, util.Centos) || strings.Contains(strData, util.Redhat) || strings.Contains(strData, util.Rocky):
 		platform = centos.NewCentOS(exec)
 		osVersion, err := platform.Version()
 		if err == nil {
