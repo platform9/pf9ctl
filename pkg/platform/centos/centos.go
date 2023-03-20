@@ -136,7 +136,7 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 		if !centos && rhel8 {
 			switch p {
 			case "policycoreutils-python":
-				p = "policycoreutils-python3"
+				p = "python3-policycoreutils"
 			case "ntp":
 				p = "chrony"
 			}
