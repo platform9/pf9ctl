@@ -313,7 +313,7 @@ func (c *CentOS) Version() (string, error) {
 			return "redhat", nil
 		}
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-7]\.*`, string(version)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-7]\.*|.*9\.1\.*`, string(version)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(version))
