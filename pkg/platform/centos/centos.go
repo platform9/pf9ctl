@@ -295,7 +295,7 @@ func (c *CentOS) Version() (string, error) {
 	//using cut command required field (7.6.1810) is selected.
 	var cmd string
 
-	_, err := c.exec.RunWithStdout("bash", "-c", "grep -i 'centos' /etc/*release")
+	_, err := c.exec.RunWithStdout("bash", "-c", "grep -i 'CentOS Linux' /etc/*release")
 	if err != nil {
 		cmd = fmt.Sprintf("grep -oP '(?<=^VERSION_ID=).+' /etc/os-release")
 	} else {
