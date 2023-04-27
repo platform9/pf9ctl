@@ -18,7 +18,7 @@ import (
 type Resmgr interface {
 	AuthorizeHost(hostID, token string, version string) error
 	GetHostId(token string, hostIP []string) []string
-	HostSatus(token string, hostID string) bool
+	HostStatus(token string, hostID string) bool
 }
 
 type ResmgrImpl struct {
@@ -124,7 +124,7 @@ func (c *ResmgrImpl) GetHostId(token string, hostIPs []string) []string {
 	return hostUUIDs
 }
 
-func (c *ResmgrImpl) HostSatus(token string, hostID string) bool {
+func (c *ResmgrImpl) HostStatus(token string, hostID string) bool {
 	url := fmt.Sprintf("%s/resmgr/v1/hosts/%s", c.fqdn, hostID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
