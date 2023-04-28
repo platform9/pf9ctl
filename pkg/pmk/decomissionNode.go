@@ -80,20 +80,20 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
 
-	ip, err := c.Executor.RunWithStdout("bash", "-c", "hostname -I")
-	//Handling case where host can have multiple IPs
-	ip = strings.Split(ip, " ")[0]
-	ip = strings.TrimSpace(ip)
+	// Directly use host_id instead of relying on IP to get host details
+	cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
+	hostID, err := c.Executor.RunWithStdout("bash", "-c", cmd)
 	if err != nil {
-		zap.S().Fatalf("ERROR : unable to get host ip")
+		zap.S().Fatalf("Unable to get host id %s", err.Error())
 	}
+	if len(hostID) == 0 {
+		zap.S().Fatalf("Invalid host id found")
+	}
+	hostID = strings.TrimSpace(hostID)
 	hostOS, err := ValidatePlatform(c.Executor)
 	if err != nil {
 		zap.S().Fatalf("Error getting OS version")
 	}
-	var nodeIPs []string
-	nodeIPs = append(nodeIPs, ip)
-	hostID := c.Resmgr.GetHostId(auth.Token, nodeIPs)
 	//check if hostagent is installed on host
 	if hostOS == "debian" {
 		_, err = c.Executor.RunWithStdout("bash", "-c", "dpkg -s pf9-hostagent")
@@ -106,13 +106,16 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 		var nodeConnectedToDU bool
 		if len(hostID) != 0 {
 			nodeConnectedToDU = true
-			nodeInfo = c.Qbert.GetNodeInfo(auth.Token, auth.ProjectID, hostID[0])
+			nodeInfo, err = c.Qbert.GetNodeInfo(auth.Token, auth.ProjectID, hostID)
+			if err != nil {
+				zap.S().Fatalf("Failed to get node info for host %s: %s", hostID, err.Error())
+			}
 		}
 
 		if nodeInfo.ClusterName == "" {
 			fmt.Println("Node is not connected to any cluster")
 			if nodeConnectedToDU {
-				err = c.Qbert.DeauthoriseNode(hostID[0], auth.Token)
+				err = c.Qbert.DeauthoriseNode(hostID, auth.Token)
 				if err != nil {
 					zap.S().Fatalf("Failed to deauthorize node")
 				} else {
@@ -133,7 +136,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 			//detach node from cluster
 			fmt.Printf("Node is connected to %s cluster\n", nodeInfo.ClusterName)
 			fmt.Println("Detaching node from cluster...")
-			err = c.Qbert.DetachNode(nodeInfo.ClusterUuid, auth.ProjectID, auth.Token, hostID[0])
+			err = c.Qbert.DetachNode(nodeInfo.ClusterUuid, auth.ProjectID, auth.Token, hostID)
 			if err != nil {
 				zap.S().Fatalf("Failed to detach host from cluster")
 			} else {
@@ -142,7 +145,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 
 			//deauthorize host from UI
 			fmt.Println("Deauthorizing node from UI...")
-			err = c.Qbert.DeauthoriseNode(hostID[0], auth.Token)
+			err = c.Qbert.DeauthoriseNode(hostID, auth.Token)
 			if err != nil {
 				zap.S().Fatalf("Failed to deauthorize node")
 			} else {

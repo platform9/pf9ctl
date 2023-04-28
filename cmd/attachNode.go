@@ -134,7 +134,10 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 			fmt.Printf("Attaching node to the cluster %s\n", clusterName)
 			var wokerids []string
 			for _, worker := range workerHostIDs {
-				if cname := c.Qbert.GetNodeInfo(token, projectId, worker); cname.ClusterName != "" {
+				cname, err := c.Qbert.GetNodeInfo(token, projectId, worker)
+				if err != nil {
+					zap.S().Debugf("Failed to get node info for host %s: %s", worker, err.Error())
+				} else if cname.ClusterName != "" {
 					zap.S().Infof("Node with host id %s is connected to %s cluster", worker, cname)
 				} else {
 					wokerids = append(wokerids, worker)
@@ -164,7 +167,10 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 			fmt.Printf("Attaching node to the cluster %s\n", clusterName)
 			var masterids []string
 			for _, master := range masterHostIDs {
-				if cname := c.Qbert.GetNodeInfo(token, projectId, master); cname.ClusterName != "" {
+				cname, err := c.Qbert.GetNodeInfo(token, projectId, master)
+				if err != nil {
+					zap.S().Debugf("Failed to get node info for host %s: %s", master, err.Error())
+				} else if cname.ClusterName != "" {
 					zap.S().Infof("Node with host id %s is connected to %s cluster", master, cname)
 				} else {
 					masterids = append(masterids, master)

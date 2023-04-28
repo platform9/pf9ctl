@@ -102,7 +102,11 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 	for i := range detachNodes {
 
-		isMaster := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
+		isMaster, err := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
+		if err != nil {
+			zap.S().Debugf("Failed to get node info for host %s: %s", nodeUuids[0], err.Error())
+			continue
+		}
 		clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
 
 		if len(clusterNodes) == 1 || isMaster.IsMaster == 1 {
