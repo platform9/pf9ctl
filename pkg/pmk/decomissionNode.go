@@ -106,7 +106,10 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 		var nodeConnectedToDU bool
 		if len(hostID) != 0 {
 			nodeConnectedToDU = true
-			nodeInfo = c.Qbert.GetNodeInfo(auth.Token, auth.ProjectID, hostID)
+			nodeInfo, err = c.Qbert.GetNodeInfo(auth.Token, auth.ProjectID, hostID)
+			if err != nil {
+				zap.S().Fatalf("Failed to get node info for host %s: %s", hostID, err.Error())
+			}
 		}
 
 		if nodeInfo.ClusterName == "" {

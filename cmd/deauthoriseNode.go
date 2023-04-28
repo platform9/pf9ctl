@@ -69,7 +69,7 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 
 	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
 	if err != nil {
-		zap.S().Debug("Failed to get keystone %s", err.Error())
+		zap.S().Debugf("Failed to get keystone %s", err.Error())
 	}
 
 	var nodeIPs []string
@@ -85,7 +85,10 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Could not find the node. Check if the node associated with this account")
 	}
 
-	isMaster := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
+	isMaster, err := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
+	if err != nil {
+		zap.S().Fatalf("Failed to get node info for host %s: %s", nodeUuids[0], err.Error())
+	}
 
 	if !detachedMode && isMaster.ClusterUuid != "" {
 
@@ -111,8 +114,10 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 	err = c.Qbert.DeauthoriseNode(isMaster.Uuid, token)
 
 	if err != nil {
-		node := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
-		if node.Uuid == "" {
+		node, err2 := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
+		if err2 != nil {
+			zap.S().Debugf("Failed to get node info for host %s: %s", nodeUuids[0], err2.Error())
+		} else if node.Uuid == "" {
 			zap.S().Infof("Node might be already deauthorized, please check in UI")
 		}
 		zap.S().Fatalf("Error deauthorising node ", err.Error())
