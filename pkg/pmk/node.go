@@ -129,12 +129,24 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	}
 	s.Restart()
 
-	_, e := allClients.Executor.RunWithStdout("bash", "-c", "cgexec --help")
-	if e != nil {
-		fmt.Println("cgexec present")
-	} else {
-		eStr := "cgexec not found" + e.Error()
-		fmt.Println(eStr)
+	if hostOS == "debian" {
+		var platform1 = debian.NewDebian(allClients.Executor)
+		osVersion, err := platform1.Version()
+		if err != nil {
+			zap.S().Debugf("Error : %s", err)
+		} else {
+			fmt.Println(osVersion)
+		}
+
+		if osVersion == "22.04" {
+			_, e := allClients.Executor.RunWithStdout("bash", "-c", "sudo chmod o+w /sys/fs/cgroup/cgroup.procs")
+			if e != nil {
+				fmt.Println("cgroup.procs done.")
+			} else {
+				eStr := "cgexec error" + e.Error()
+				fmt.Println(eStr)
+			}
+		}
 	}
 
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
