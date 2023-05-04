@@ -129,6 +129,14 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	}
 	s.Restart()
 
+	_, e := allClients.Executor.RunWithStdout("bash", "-c", "cgexec --help")
+	if e != nil {
+		fmt.Println("cgexec present")
+	} else {
+		eStr := "cgexec not found" + e.Error()
+		fmt.Println(eStr)
+	}
+
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
 	s.Suffix = " Initialising host"
 	zap.S().Debug("Initialising host")
