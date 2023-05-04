@@ -138,7 +138,16 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 			fmt.Println(osVersion)
 		}
 
-		if osVersion == "22.04" {
+		version, err := allClients.Executor.RunWithStdout("bash", "-c", "cat /etc/*os-release | grep -i pretty_name | cut -d ' ' -f 2")
+		if err != nil {
+			fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
+		}
+		versionArray := strings.Split(version, ".")
+		major, minor := versionArray[0], versionArray[1]
+
+		fmt.Println(major, minor)
+
+		if strings.Contains(string(major), "22") && strings.Contains(string(minor), "04") {
 			_, e := allClients.Executor.RunWithStdout("bash", "-c", "sudo chmod o+w /sys/fs/cgroup/cgroup.procs")
 			if e != nil {
 				fmt.Println("cgroup.procs done.")
