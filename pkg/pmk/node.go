@@ -152,8 +152,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 			if e != nil {
 				fmt.Println("cgroup.procs done.")
 			} else {
-				eStr := "cgexec error" + e.Error()
-				fmt.Println(eStr)
+				fmt.Println(e.Error())
 			}
 		}
 	}
