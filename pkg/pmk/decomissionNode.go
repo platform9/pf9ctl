@@ -80,16 +80,6 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
 
-	// Directly use host_id instead of relying on IP to get host details
-	cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
-	hostID, err := c.Executor.RunWithStdout("bash", "-c", cmd)
-	if err != nil {
-		zap.S().Fatalf("Unable to get host id %s", err.Error())
-	}
-	if len(hostID) == 0 {
-		zap.S().Fatalf("Invalid host id found")
-	}
-	hostID = strings.TrimSpace(hostID)
 	hostOS, err := ValidatePlatform(c.Executor)
 	if err != nil {
 		zap.S().Fatalf("Error getting OS version")
@@ -104,6 +94,13 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 		//check if node is connected to any cluster
 		var nodeInfo qbert.Node
 		var nodeConnectedToDU bool
+		// Directly use host_id instead of relying on IP to get host details
+		cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
+		hostID, err := c.Executor.RunWithStdout("bash", "-c", cmd)
+		if err != nil {
+			zap.S().Debugf("Unable to get host id %s", err.Error())
+		}
+		hostID = strings.TrimSpace(hostID)
 		if len(hostID) != 0 {
 			nodeConnectedToDU = true
 			nodeInfo, err = c.Qbert.GetNodeInfo(auth.Token, auth.ProjectID, hostID)

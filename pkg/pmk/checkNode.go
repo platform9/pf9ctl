@@ -86,21 +86,18 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 				if !v.Result {
 					zap.S().Debug("Platform9 Packages are present")
 					zap.S().Debug("Checking if host is connected or not")
-					ip, err := allClients.Executor.RunWithStdout("bash", "-c", "hostname -I")
+					// Directly use host_id instead of relying on IP to get host details
+					// host_id file is created as part hostagent installation. File missing should mean
+					// that installation was partial
+					cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
+					hostID, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 					if err != nil {
-						zap.S().Debug("Failed to get host ip")
+						zap.S().Debugf("Unable to get host id %s", err.Error())
 					}
-					ip = strings.Split(ip, " ")[0]
-					ip = strings.TrimSpace(ip)
-					var add = []string{ip}
-					id := allClients.Resmgr.GetHostId(auth.Token, add)
-					//If node is already connected then resmgr will return hostID
-					//If hostID is empty then host could be connected to other DU
-					var connected bool
-					if len(id) != 0 {
-						connected = allClients.Resmgr.HostStatus(auth.Token, id[0])
-					} else {
-						zap.S().Fatalf("Hostagent is installed on this host, but this host is not part of the DU %s specified in the config", ctx.Fqdn)
+					hostID = strings.TrimSpace(hostID)
+					connected := false
+					if len(hostID) != 0 {
+						connected = allClients.Resmgr.HostStatus(auth.Token, hostID)
 					}
 					if connected {
 						zap.S().Debug("Node is already connected")
