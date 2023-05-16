@@ -15,9 +15,9 @@ var (
 )
 
 var putNodeBehindProxycmd = &cobra.Command{
-	Use:     "put-node-behind-proxy",
+	Use:     "add-proxy",
 	Short:   "Put existing pmk node behind proxy",
-	Example: "sudo pf9ctl put-node-behind-proxy --protocol <http/https> --host-ip <proxyIP> --port <proxyPort> --proxy-user <proxyUsername> --proxy-pass <proxyPassword>",
+	Example: "pf9ctl add-proxy --protocol <http/https> --host-ip <proxyIP> --port <proxyPort> --proxy-user <proxyUsername> --proxy-pass <proxyPassword>",
 	Run:     putNodeBehindProxyRun,
 }
 
@@ -48,6 +48,9 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 		proxy_url = fmt.Sprintf("%s://%s:%s", proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port)
 	}
 
+	commsProxyFilePath := "/etc/pf9/comms_proxy_cfg.json"
+	hostAgentProxyFilePath := "/opt/pf9/hostagent/pf9-hostagent.env"
+
 	var envs = "export http_proxy=" + proxy_url + "\n" +
 		"export https_proxy=" + proxy_url + "\n" +
 		"export HTTP_PROXY=" + proxy_url + "\n" +
@@ -70,24 +73,24 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 
 	//If node is already onboarded this /opt/pf9/hostagent/pf9-hostagent.env file will present bydefault
 	//Append pf9-hostagent proxy settings
-	zap.S().Info("Writting pf9-hostagent proxy settngs to /opt/pf9/hostagent/pf9-hostagent.env")
-	cmd2 := fmt.Sprintf(`tee -a /opt/pf9/hostagent/pf9-hostagent.env >> /dev/null <<EOT 
+	zap.S().Infof("Adding proxy setting to %s", hostAgentProxyFilePath)
+	cmd2 := fmt.Sprintf(`tee -a %s >> /dev/null <<EOT 
 %s 
-EOT`, envs)
+EOT`, hostAgentProxyFilePath, envs)
 
 	_, err = executor.RunWithStdout("bash", "-c", cmd2)
 
 	if err != nil {
-		zap.S().Infof("Unable to write proxy setting to /opt/pf9/hostagent/pf9-hostagent.env")
+		zap.S().Infof("Unable to add proxy setting to %s ", hostAgentProxyFilePath)
 	} else {
-		zap.S().Info("pf9-hostagent proxy settngs written to /opt/pf9/hostagent/pf9-hostagent.env")
+		zap.S().Infof("pf9-hostagent proxy setting added to %s ", hostAgentProxyFilePath)
 	}
 
-	zap.S().Info("Writting pf9-comms proxy settngs to /etc/pf9/comms_proxy_cfg.json")
+	zap.S().Infof("Adding proxy setting to %s ", commsProxyFilePath)
 	//write pf9-comms proxy setting to /etc/pf9/comms_proxy_cfg.json
 	_, err = executor.RunWithStdout("bash", "-c", "touch /etc/pf9/comms_proxy_cfg.json")
 	if err != nil {
-		zap.S().Infof("Unable to create /etc/pf9/comms_proxy_cfg.json file")
+		zap.S().Infof("Unable to create %s file", commsProxyFilePath)
 	}
 
 	var json string
@@ -107,17 +110,17 @@ EOT`, envs)
 		}
 	}
 
-	cmd2 = fmt.Sprintf(`echo '%s' 2>&1 | tee /etc/pf9/comms_proxy_cfg.json`, json)
+	cmd2 = fmt.Sprintf(`echo '%s' 2>&1 | tee %s`, json, commsProxyFilePath)
 
 	_, err = executor.RunWithStdout("bash", "-c", cmd2)
 	if err != nil {
-		zap.S().Infof("Unable to write proxy settings to /etc/pf9/comms_proxy_cfg.json file")
+		zap.S().Infof("Unable to add proxy setting to %s file", commsProxyFilePath)
 	} else {
-		zap.S().Info("pf9-comms proxy settngs written to /etc/pf9/comms_proxy_cfg.json")
+		zap.S().Infof("pf9-comms proxy settng added to %s ", commsProxyFilePath)
 	}
 
 	//Restart pf9 services
-	zap.S().Info("Restaring pf9-services")
+	zap.S().Info("Restarting pf9-services")
 	_, err = executor.RunWithStdout("bash", "-c", "systemctl restart pf9-hostagent")
 	if err != nil {
 		zap.S().Infof("Unable to restart pf9-hostagent")

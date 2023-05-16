@@ -35,15 +35,3 @@ type NodeConfig struct {
 	SudoPassword       string
 	RemoveExistingPkgs bool
 }
-
-type HttpProxy struct {
-	Protocol string `json:"protocol"`
-	Host     string `json:"host"`
-	Port     string `json:"port"`
-	User     string `json:"user"`
-	Pass     string `json:"pass"`
-}
-
-type ProxySetting struct {
-	Proxy HttpProxy `json:"http_proxy"`
-}
