@@ -15,9 +15,9 @@ var (
 )
 
 var putNodeBehindProxycmd = &cobra.Command{
-	Use:     "add-proxy",
+	Use:     "set-proxy",
 	Short:   "Put existing pmk node behind proxy",
-	Example: "pf9ctl add-proxy --protocol <http/https> --host-ip <proxyIP> --port <proxyPort> --proxy-user <proxyUsername> --proxy-pass <proxyPassword>",
+	Example: "pf9ctl set-proxy --protocol <http/https> --host-ip <proxyIP> --port <proxyPort> --proxy-user <proxyUsername> --proxy-pass <proxyPassword>",
 	Run:     putNodeBehindProxyRun,
 }
 
@@ -49,7 +49,7 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 	}
 
 	commsProxyFilePath := "/etc/pf9/comms_proxy_cfg.json"
-	hostAgentProxyFilePath := "/opt/pf9/hostagent/pf9-hostagent.env"
+	hostAgentEnvFile := "/opt/pf9/hostagent/pf9-hostagent.env"
 
 	var envs = "export http_proxy=" + proxy_url + "\n" +
 		"export https_proxy=" + proxy_url + "\n" +
@@ -73,17 +73,17 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 
 	//If node is already onboarded this /opt/pf9/hostagent/pf9-hostagent.env file will present bydefault
 	//Append pf9-hostagent proxy settings
-	zap.S().Infof("Adding proxy setting to %s", hostAgentProxyFilePath)
+	zap.S().Infof("Adding proxy setting to %s", hostAgentEnvFile)
 	cmd2 := fmt.Sprintf(`tee -a %s >> /dev/null <<EOT 
 %s 
-EOT`, hostAgentProxyFilePath, envs)
+EOT`, hostAgentEnvFile, envs)
 
 	_, err = executor.RunWithStdout("bash", "-c", cmd2)
 
 	if err != nil {
-		zap.S().Infof("Unable to add proxy setting to %s ", hostAgentProxyFilePath)
+		zap.S().Infof("Unable to add proxy setting to %s ", hostAgentEnvFile)
 	} else {
-		zap.S().Infof("pf9-hostagent proxy setting added to %s ", hostAgentProxyFilePath)
+		zap.S().Infof("pf9-hostagent proxy setting added to %s ", hostAgentEnvFile)
 	}
 
 	zap.S().Infof("Adding proxy setting to %s ", commsProxyFilePath)
