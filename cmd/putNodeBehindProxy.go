@@ -73,15 +73,21 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 
 	//If node is already onboarded this /opt/pf9/hostagent/pf9-hostagent.env file will present bydefault
 	//Append pf9-hostagent proxy settings
+
+	cmd1 := fmt.Sprintf("-f %s", hostAgentEnvFile)
+	_, err = executor.RunWithStdout("bash", "-c", cmd1)
+	if err != nil {
+		zap.S().Fatalf("HostAgentEnv %s file is not present.", hostAgentEnvFile)
+	}
+
 	zap.S().Infof("Adding proxy setting to %s", hostAgentEnvFile)
 	cmd2 := fmt.Sprintf(`tee -a %s >> /dev/null <<EOT 
 %s 
 EOT`, hostAgentEnvFile, envs)
 
 	_, err = executor.RunWithStdout("bash", "-c", cmd2)
-
 	if err != nil {
-		zap.S().Infof("Unable to add proxy setting to %s ", hostAgentEnvFile)
+		zap.S().Fatalf("Unable to add proxy setting to %s ", hostAgentEnvFile)
 	} else {
 		zap.S().Infof("pf9-hostagent proxy setting added to %s ", hostAgentEnvFile)
 	}
@@ -90,7 +96,7 @@ EOT`, hostAgentEnvFile, envs)
 	//write pf9-comms proxy setting to /etc/pf9/comms_proxy_cfg.json
 	_, err = executor.RunWithStdout("bash", "-c", "touch /etc/pf9/comms_proxy_cfg.json")
 	if err != nil {
-		zap.S().Infof("Unable to create %s file", commsProxyFilePath)
+		zap.S().Fatalf("Unable to create %s file", commsProxyFilePath)
 	}
 
 	var json string
@@ -114,23 +120,30 @@ EOT`, hostAgentEnvFile, envs)
 
 	_, err = executor.RunWithStdout("bash", "-c", cmd2)
 	if err != nil {
-		zap.S().Infof("Unable to add proxy setting to %s file", commsProxyFilePath)
+		zap.S().Fatalf("Unable to add proxy setting to %s file", commsProxyFilePath)
 	} else {
 		zap.S().Infof("pf9-comms proxy settng added to %s ", commsProxyFilePath)
 	}
 
+	//change file ownership to pf9 group
+	cmd2 = fmt.Sprintf("chown pf9:pf9group %s", commsProxyFilePath)
+	_, err = executor.RunWithStdout("bash", "-c", cmd2)
+	if err != nil {
+		zap.S().Infof("Unable to change ownership of %s file", commsProxyFilePath)
+	}
+
 	//Restart pf9 services
-	zap.S().Info("Restarting pf9-services")
+	zap.S().Info("Restarting Platform9 services")
 	_, err = executor.RunWithStdout("bash", "-c", "systemctl restart pf9-hostagent")
 	if err != nil {
-		zap.S().Infof("Unable to restart pf9-hostagent")
+		zap.S().Fatalf("Unable to restart pf9-hostagent")
 	} else {
 		zap.S().Infof("pf9-hostagent is restarted")
 	}
 
 	_, err = executor.RunWithStdout("bash", "-c", "systemctl restart pf9-comms")
 	if err != nil {
-		zap.S().Infof("Unable to restart pf9-comms")
+		zap.S().Fatalf("Unable to restart pf9-comms")
 	} else {
 		zap.S().Infof("pf9-comms is restarted")
 	}
