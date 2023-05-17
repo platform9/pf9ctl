@@ -74,7 +74,7 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 	//If node is already onboarded this /opt/pf9/hostagent/pf9-hostagent.env file will present bydefault
 	//Append pf9-hostagent proxy settings
 
-	cmd1 := fmt.Sprintf("-f %s", hostAgentEnvFile)
+	cmd1 := fmt.Sprintf("ls %s", hostAgentEnvFile)
 	_, err = executor.RunWithStdout("bash", "-c", cmd1)
 	if err != nil {
 		zap.S().Fatalf("HostAgentEnv %s file is not present.", hostAgentEnvFile)
