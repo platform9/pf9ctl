@@ -74,7 +74,35 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 	//If node is already onboarded this /opt/pf9/hostagent/pf9-hostagent.env file will present bydefault
 	//Append pf9-hostagent proxy settings
 
-	cmd1 := fmt.Sprintf("ls %s", hostAgentEnvFile)
+	//Handle rerun
+	cmd1 := fmt.Sprintf("cat /opt/pf9/hostagent/pf9-hostagent.env | grep http_proxy")
+	_, err = executor.RunWithStdout("bash", "-c", cmd1)
+	if err == nil {
+		//Remove existing proxy settings
+		zap.S().Debugf("Removing exising proxy envs")
+		//Move required lines to temp file
+		cmd1 = fmt.Sprintf("head -3 %s > /opt/pf9/hostagent/pf9-hostagent.env.tmp", hostAgentEnvFile)
+		_, err = executor.RunWithStdout("bash", "-c", cmd1)
+		if err != nil {
+			zap.S().Debugf("Failed while removing existing proxy from %s ", hostAgentEnvFile)
+			zap.S().Fatalf("Unable to remove existing proxy from %s ", hostAgentEnvFile)
+		}
+		//Move temp file back to original file
+		cmd1 = fmt.Sprintf("mv %s{.tmp,}", hostAgentEnvFile)
+		_, err = executor.RunWithStdout("bash", "-c", cmd1)
+		if err != nil {
+			zap.S().Debugf("Failed while moving temp file back to original file %s ", hostAgentEnvFile)
+			zap.S().Fatalf("Unable to remove existing proxy from %s ", hostAgentEnvFile)
+		}
+		//Remove temp file
+		cmd1 = fmt.Sprintf("rm -rf /opt/pf9/hostagent/pf9-hostagent.env.tmp")
+		_, err = executor.RunWithStdout("bash", "-c", cmd1)
+		if err != nil {
+			zap.S().Debugf("File %s.tmp not removed", hostAgentEnvFile)
+		}
+	}
+
+	cmd1 = fmt.Sprintf("ls %s", hostAgentEnvFile)
 	_, err = executor.RunWithStdout("bash", "-c", cmd1)
 	if err != nil {
 		zap.S().Fatalf("HostAgentEnv %s file is not present.", hostAgentEnvFile)
