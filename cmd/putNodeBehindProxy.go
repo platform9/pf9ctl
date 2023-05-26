@@ -12,6 +12,7 @@ import (
 
 var (
 	proxySetting objects.ProxySetting
+	noProxy      = "localhost,127.0.0.1,::1,localhost.localdomain,localhost4,localhost6,localhost,127.0.0.1"
 )
 
 var putNodeBehindProxycmd = &cobra.Command{
@@ -55,8 +56,8 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 		"export https_proxy=" + proxy_url + "\n" +
 		"export HTTP_PROXY=" + proxy_url + "\n" +
 		"export HTTPS_PROXY=" + proxy_url + "\n" +
-		"export no_proxy=" + "localhost,127.0.0.1,::1,localhost.localdomain,localhost4,localhost6,localhost,127.0.0.1" + "\n" +
-		"export NO_PROXY=" + "localhost,127.0.0.1,::1,localhost.localdomain,localhost4,localhost6,localhost,127.0.0.1"
+		"export no_proxy=" + noProxy + "\n" +
+		"export NO_PROXY=" + noProxy
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
@@ -75,45 +76,43 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 	//Append pf9-hostagent proxy settings
 
 	//Handle rerun
-	cmd1 := fmt.Sprintf("cat /opt/pf9/hostagent/pf9-hostagent.env | grep http_proxy")
-	_, err = executor.RunWithStdout("bash", "-c", cmd1)
+	cmnd := fmt.Sprintf("grep http_proxy %s", hostAgentEnvFile)
+	_, err = executor.RunWithStdout("bash", "-c", cmnd)
 	if err == nil {
 		//Remove existing proxy settings
-		zap.S().Debugf("Removing exising proxy envs")
+		zap.S().Debugf("Removing existing proxy envs")
 		//Move required lines to temp file
-		cmd1 = fmt.Sprintf("head -3 %s > /opt/pf9/hostagent/pf9-hostagent.env.tmp", hostAgentEnvFile)
-		_, err = executor.RunWithStdout("bash", "-c", cmd1)
+		cmnd = fmt.Sprintf("grep -iv _proxy %s > %s.tmp", hostAgentEnvFile, hostAgentEnvFile)
+		_, err = executor.RunWithStdout("bash", "-c", cmnd)
 		if err != nil {
-			zap.S().Debugf("Failed while removing existing proxy from %s ", hostAgentEnvFile)
 			zap.S().Fatalf("Unable to remove existing proxy from %s ", hostAgentEnvFile)
 		}
 		//Move temp file back to original file
-		cmd1 = fmt.Sprintf("mv %s{.tmp,}", hostAgentEnvFile)
-		_, err = executor.RunWithStdout("bash", "-c", cmd1)
+		cmnd = fmt.Sprintf("mv %s{.tmp,}", hostAgentEnvFile)
+		_, err = executor.RunWithStdout("bash", "-c", cmnd)
 		if err != nil {
-			zap.S().Debugf("Failed while moving temp file back to original file %s ", hostAgentEnvFile)
-			zap.S().Fatalf("Unable to remove existing proxy from %s ", hostAgentEnvFile)
+			zap.S().Fatalf("Failed while moving temp file back to original file %s ", hostAgentEnvFile)
 		}
 		//Remove temp file
-		cmd1 = fmt.Sprintf("rm -rf /opt/pf9/hostagent/pf9-hostagent.env.tmp")
-		_, err = executor.RunWithStdout("bash", "-c", cmd1)
+		cmnd = fmt.Sprintf("rm -rf /opt/pf9/hostagent/pf9-hostagent.env.tmp")
+		_, err = executor.RunWithStdout("bash", "-c", cmnd)
 		if err != nil {
 			zap.S().Debugf("File %s.tmp not removed", hostAgentEnvFile)
 		}
 	}
 
-	cmd1 = fmt.Sprintf("ls %s", hostAgentEnvFile)
-	_, err = executor.RunWithStdout("bash", "-c", cmd1)
+	cmnd = fmt.Sprintf("ls %s", hostAgentEnvFile)
+	_, err = executor.RunWithStdout("bash", "-c", cmnd)
 	if err != nil {
-		zap.S().Fatalf("HostAgentEnv %s file is not present.", hostAgentEnvFile)
+		zap.S().Fatalf("HostAgentEnv %s file is not present", hostAgentEnvFile)
 	}
 
 	zap.S().Infof("Adding proxy setting to %s", hostAgentEnvFile)
-	cmd2 := fmt.Sprintf(`tee -a %s >> /dev/null <<EOT 
+	cmnd = fmt.Sprintf(`tee -a %s >> /dev/null <<EOT 
 %s 
 EOT`, hostAgentEnvFile, envs)
 
-	_, err = executor.RunWithStdout("bash", "-c", cmd2)
+	_, err = executor.RunWithStdout("bash", "-c", cmnd)
 	if err != nil {
 		zap.S().Fatalf("Unable to add proxy setting to %s ", hostAgentEnvFile)
 	} else {
@@ -144,9 +143,9 @@ EOT`, hostAgentEnvFile, envs)
 		}
 	}
 
-	cmd2 = fmt.Sprintf(`echo '%s' 2>&1 | tee %s`, json, commsProxyFilePath)
+	cmnd = fmt.Sprintf(`echo '%s' 2>&1 | tee %s`, json, commsProxyFilePath)
 
-	_, err = executor.RunWithStdout("bash", "-c", cmd2)
+	_, err = executor.RunWithStdout("bash", "-c", cmnd)
 	if err != nil {
 		zap.S().Fatalf("Unable to add proxy setting to %s file", commsProxyFilePath)
 	} else {
@@ -154,10 +153,12 @@ EOT`, hostAgentEnvFile, envs)
 	}
 
 	//change file ownership to pf9 group
-	cmd2 = fmt.Sprintf("chown pf9:pf9group %s", commsProxyFilePath)
-	_, err = executor.RunWithStdout("bash", "-c", cmd2)
+	cmnd = fmt.Sprintf("chown pf9:pf9group %s", commsProxyFilePath)
+	_, err = executor.RunWithStdout("bash", "-c", cmnd)
 	if err != nil {
-		zap.S().Infof("Unable to change ownership of %s file", commsProxyFilePath)
+		zap.S().Errorf("Unable to change ownership of %s file", commsProxyFilePath)
+	} else {
+		zap.S().Infof("Changed ownership of %s file to pf9:pf9group", commsProxyFilePath)
 	}
 
 	//Restart pf9 services
