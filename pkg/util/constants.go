@@ -83,6 +83,7 @@ var (
 	Centos         = "centos"
 	Redhat         = "red hat"
 	Ubuntu         = "ubuntu"
+	Rocky          = "rocky"
 	CertsExpireErr = "certificate has expired or is not yet valid"
 
 	//Pf9Dir is the base pf9dir

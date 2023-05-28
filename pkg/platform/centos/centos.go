@@ -132,15 +132,22 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	zap.S().Debug("Checking OS Packages")
 
 	rhel8, _ := regexp.MatchString(`.*8\.[5-7]\.*`, string(version))
+	rocky9, _ := regexp.MatchString(`.*9\.1\.*`, string(version))
 	for _, p := range packages {
-		if !centos && rhel8 {
+		if !centos && (rhel8 || rocky9) {
 			switch p {
 			case "policycoreutils-python":
-				p = "python3-policycoreutils"
+				if rhel8 {
+					p = "python3-policycoreutils"
+				} else if rocky9 {
+					p = "policycoreutils-python-utils"
+				}
+
 			case "ntp":
 				p = "chrony"
 			}
 		}
+
 		err := c.exec.Run("bash", "-c", fmt.Sprintf("yum list installed %s", p))
 		if err != nil {
 			zap.S().Debug("Installing missing packages, this may take a few minutes")
@@ -295,7 +302,7 @@ func (c *CentOS) Version() (string, error) {
 	//using cut command required field (7.6.1810) is selected.
 	var cmd string
 
-	_, err := c.exec.RunWithStdout("bash", "-c", "grep -i 'centos' /etc/*release")
+	_, err := c.exec.RunWithStdout("bash", "-c", "grep -i 'CentOS Linux' /etc/*release")
 	if err != nil {
 		cmd = fmt.Sprintf("grep -oP '(?<=^VERSION_ID=).+' /etc/os-release")
 	} else {
@@ -313,7 +320,7 @@ func (c *CentOS) Version() (string, error) {
 			return "redhat", nil
 		}
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-7]\.*`, string(version)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-7]\.*|.*9\.1\.*`, string(version)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(version))
