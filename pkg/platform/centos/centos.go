@@ -50,6 +50,9 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", true, result, err, util.SudoErr})
 
+	result, err = c.checkEnabledRepos()
+	checks = append(checks, platform.Check{"Required Enabled Repositories Check", true, result, err, fmt.Sprintf("%s", err)})
+
 	result, err = c.checkCPU()
 	checks = append(checks, platform.Check{"CPUCheck", false, result, err, fmt.Sprintf("%s %s", util.CPUErr, err)})
 
@@ -165,6 +168,52 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	if len(errLines) > 1 {
 		return false, fmt.Errorf(strings.Join(errLines, " "))
 	}
+	return true, nil
+}
+
+func (c *CentOS) checkEnabledRepos() (bool, error) {
+
+	centos, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(version))
+	rhel8, _ := regexp.MatchString(`.*8\.[5-7]\.*`, string(version))
+
+	output, err := c.exec.RunWithStdout("bash", "-c", "yum repolist")
+	if err != nil {
+		zap.S().Debug("Error executing 'yum repolist' command:", err)
+		return false, err
+	}
+
+	var enable_repos []string
+	var command string
+
+	if centos {
+		command = "yum-config-manager --enable %s"
+		if !strings.Contains(string(output), "base/") {
+			enable_repos = append(enable_repos, "base")
+		}
+		if !strings.Contains(string(output), "extras/") {
+			enable_repos = append(enable_repos, "extras")
+		}
+	}
+
+	if rhel8 {
+		command = "subscription-manager repos --enable %s"
+		if !strings.Contains(string(output), "BaseOS") {
+			enable_repos = append(enable_repos, "rhel-8-for-x86_64-baseos-rpms")
+		}
+		if !strings.Contains(string(output), "AppStream") {
+			enable_repos = append(enable_repos, "rhel-8-for-x86_64-appstream-rpms")
+		}
+	}
+
+	for _, r := range enable_repos {
+		err := c.exec.Run("bash", "-c", fmt.Sprintf(command, r))
+		zap.S().Debug("Ran command sudo ", `"bash" "-c" `, fmt.Sprintf(command, r))
+		if err != nil {
+			zap.S().Debug("Error enabling repository: ", r)
+			return false, err
+		}
+	}
+	zap.S().Debug("Required repositories are enabled")
 	return true, nil
 }
 
