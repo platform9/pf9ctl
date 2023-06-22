@@ -193,9 +193,7 @@ func (c *CentOS) checkEnabledRepos() (bool, error) {
 		if !strings.Contains(string(output), "extras/") {
 			enable_repos = append(enable_repos, "extras")
 		}
-	}
-
-	if rhel8 {
+	} else if rhel8 {
 		command = "subscription-manager repos --enable %s"
 		if !strings.Contains(string(output), "BaseOS") {
 			enable_repos = append(enable_repos, "rhel-8-for-x86_64-baseos-rpms")
