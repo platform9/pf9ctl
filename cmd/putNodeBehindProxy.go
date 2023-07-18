@@ -12,7 +12,8 @@ import (
 
 var (
 	proxySetting objects.ProxySetting
-	noProxy      = "localhost,127.0.0.1,::1,localhost.localdomain,localhost4,localhost6,localhost,127.0.0.1"
+	noProxy      = "localhost,127.0.0.1,::1,localhost.localdomain,localhost4,localhost6"
+	noProxyList  string
 )
 
 var putNodeBehindProxycmd = &cobra.Command{
@@ -28,6 +29,7 @@ func init() {
 	putNodeBehindProxycmd.Flags().StringVar(&proxySetting.Proxy.Port, "port", "", "Proxy port")
 	putNodeBehindProxycmd.Flags().StringVar(&proxySetting.Proxy.User, "proxy-user", "", "Proxy username")
 	putNodeBehindProxycmd.Flags().StringVar(&proxySetting.Proxy.Pass, "proxy-password", "", "Proxy password")
+	putNodeBehindProxycmd.Flags().StringVar(&noProxyList, "no-proxy", "", "comma seperated list of IPs or domain names")
 	putNodeBehindProxycmd.MarkFlagRequired("protocol")
 	putNodeBehindProxycmd.MarkFlagRequired("host-ip")
 	putNodeBehindProxycmd.MarkFlagRequired("port")
@@ -127,8 +129,10 @@ EOT`, hostAgentEnvFile, envs)
 	}
 
 	var json string
-	if proxySetting.Proxy.User != "" && proxySetting.Proxy.Pass != "" {
-		json = fmt.Sprintf(`{"http_proxy":{"protocol":"%s", "host":"%s", "port":%s, "user":"%s", "pass":"%s"}}`, proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port, proxySetting.Proxy.User, proxySetting.Proxy.Pass)
+	if proxySetting.Proxy.User != "" && proxySetting.Proxy.Pass != "" && noProxyList != "" {
+		json = fmt.Sprintf(`{"http_proxy":{"protocol":"%s", "host":"%s", "port":%s, "user":"%s", "pass":"%s","no_proxy":"%s"}}`, proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port, proxySetting.Proxy.User, proxySetting.Proxy.Pass, noProxyList)
+	} else if noProxyList != "" {
+		json = fmt.Sprintf(`{"http_proxy":{"protocol":"%s", "host":"%s", "port":%s,"no_proxy":"%s"}}`, proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port, noProxyList)
 	} else {
 		json = fmt.Sprintf(`{"http_proxy":{"protocol":"%s", "host":"%s", "port":%s}}`, proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port)
 	}
@@ -136,8 +140,10 @@ EOT`, hostAgentEnvFile, envs)
 	isRemote := cmdexec.CheckRemote(nodeConfig)
 
 	if isRemote {
-		if proxySetting.Proxy.User != "" && proxySetting.Proxy.Pass != "" {
-			json = fmt.Sprintf(`{\"http_proxy\":{\"protocol\":\"%s\", \"host\":\"%s\", \"port\":%s, \"user\":\"%s\", \"pass\":\"%s\"}}`, proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port, proxySetting.Proxy.User, proxySetting.Proxy.Pass)
+		if proxySetting.Proxy.User != "" && proxySetting.Proxy.Pass != "" && noProxyList != "" {
+			json = fmt.Sprintf(`{\"http_proxy\":{\"protocol\":\"%s\", \"host\":\"%s\", \"port\":%s, \"user\":\"%s\", \"pass\":\"%s\", \"no_proxy\":\"%s\"}}`, proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port, proxySetting.Proxy.User, proxySetting.Proxy.Pass, noProxyList)
+		} else if noProxyList != "" {
+			json = fmt.Sprintf(`{\"http_proxy\":{\"protocol\":\"%s\", \"host\":\"%s\", \"port\":%s, \"no_proxy\":\"%s\"}}`, proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port, noProxyList)
 		} else {
 			json = fmt.Sprintf(`{\"http_proxy\":{\"protocol\":\"%s\", \"host\":\"%s\", \"port\":%s}}`, proxySetting.Proxy.Protocol, proxySetting.Proxy.Host, proxySetting.Proxy.Port)
 		}
