@@ -19,7 +19,7 @@ var (
 var putNodeBehindProxycmd = &cobra.Command{
 	Use:     "set-proxy",
 	Short:   "Put existing pmk node behind proxy",
-	Example: "pf9ctl set-proxy --protocol <http/https> --host-ip <proxyIP> --port <proxyPort> --proxy-user <proxyUsername> --proxy-pass <proxyPassword>",
+	Example: "pf9ctl set-proxy --protocol <http/https> --host-ip <proxyIP> --port <proxyPort> --proxy-user <proxyUsername> --proxy-password <proxyPassword> --no-proxy <comma seperated string>",
 	Run:     putNodeBehindProxyRun,
 }
 
