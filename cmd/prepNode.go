@@ -68,7 +68,8 @@ func init() {
 	prepNodeCmd.Flags().StringVar(&util.KubeVersion, "kube-version", "", "Specific version of pf9-kube to install")
 	prepNodeCmd.Flags().MarkHidden("kube-version")
 	prepNodeCmd.Flags().BoolVar(&util.CheckIfOnboarded, "skip-connected", false, "If the node is already connected to the PMK control plane, prep-node will be skipped")
-
+	prepNodeCmd.Flags().BoolVar(&util.SkipInstallerDownload, "skip-installer-download", false, "If set then installer will not be downloaded")
+	prepNodeCmd.Flags().MarkHidden("skip-installer-download")
 	rootCmd.AddCommand(prepNodeCmd)
 }
 

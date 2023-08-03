@@ -14,6 +14,7 @@ var ProcessesList []string // Kubernetes clusters processes list
 var SwapOffDisabled bool   // If this is true the swapOff functionality will be disabled.
 var SkipPrepNode bool
 var CheckIfOnboarded bool
+var SkipInstallerDownload bool
 
 // SkipKube skips authorizing kube role during prep-node. Not applicable to bootstrap command
 var SkipKube bool
