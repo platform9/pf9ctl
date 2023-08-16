@@ -132,6 +132,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 		} else {
 			//detach node from cluster
 			fmt.Printf("Node is connected to %s cluster\n", nodeInfo.ClusterName)
+			zap.S().Fatalf("Please run detach-node command first and wait for node to completely remove from cluster and then run decommision-node command")
 			fmt.Println("Detaching node from cluster...")
 			err = c.Qbert.DetachNode(nodeInfo.ClusterUuid, auth.ProjectID, auth.Token, hostID)
 			if err != nil {
