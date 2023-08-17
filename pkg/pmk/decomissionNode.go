@@ -130,9 +130,15 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 			fmt.Println("Node decommissioning started....This may take a few minutes....Check the latest status in UI")
 			time.Sleep(50 * time.Second)
 		} else {
-			//detach node from cluster
+			// If node is connected to cluster exit, because need to redesign detach and deauthorize flows
 			fmt.Printf("Node is connected to %s cluster\n", nodeInfo.ClusterName)
-			fmt.Println("Detaching node from cluster...")
+			zap.S().Fatalf("Node is still attached to a cluster. Please run detach-node command first and wait for the node to be completely removed from the cluster and only then run decommision-node command")
+
+			//This code will not be called since we are exiting if node is attached to cluster
+			//TODO : https://platform9.atlassian.net/browse/PMK-5938 https://platform9.atlassian.net/browse/PMK-5784
+
+			//detach node from cluster
+			/*fmt.Println("Detaching node from cluster...")
 			err = c.Qbert.DetachNode(nodeInfo.ClusterUuid, auth.ProjectID, auth.Token, hostID)
 			if err != nil {
 				zap.S().Fatalf("Failed to detach host from cluster")
@@ -155,7 +161,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 				removePf9Installation(c)
 			}
 			fmt.Println("Node decommissioning started....This may take a few minutes....Check the latest status in UI")
-			time.Sleep(50 * time.Second)
+			time.Sleep(50 * time.Second)*/
 		}
 	} else {
 		fmt.Println("Host is not connected to Platform9 Management Plane")
