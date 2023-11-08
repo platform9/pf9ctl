@@ -14,14 +14,8 @@ import (
 )
 
 func removePf9Installation(c client.Client) {
-	fmt.Println("Removing /etc/pf9 logs")
-	cmd := fmt.Sprintf("rm -rf %s", util.EtcDir)
-	c.Executor.RunCommandWait(cmd)
-	fmt.Println("Removing /var/opt/pf9 logs")
-	cmd = fmt.Sprintf("rm -rf %s", util.OptDir)
-	c.Executor.RunCommandWait(cmd)
 	fmt.Println("Removing pf9 HOME dir")
-	cmd = fmt.Sprintf("rm -rf $HOME/pf9")
+	cmd := fmt.Sprintf("rm -rf $HOME/pf9")
 	c.Executor.RunCommandWait(cmd)
 }
 
@@ -54,6 +48,15 @@ func removeHostagent(c client.Client, hostOS string) {
 		cmd := fmt.Sprintf("rm -rf %s", file)
 		c.Executor.RunCommandWait(cmd)
 	}
+	fmt.Println("Running clean all")
+	if hostOS == "debian" {
+		cmd := fmt.Sprintf("apt-get clean all")
+		c.Executor.RunCommandWait(cmd)
+	} else {
+		cmd := fmt.Sprintf("yum clean all")
+		c.Executor.RunCommandWait(cmd)
+	}
+
 }
 
 func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool) {
