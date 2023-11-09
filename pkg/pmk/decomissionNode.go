@@ -2,6 +2,8 @@ package pmk
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -15,7 +17,12 @@ import (
 
 func removePf9Installation(c client.Client) {
 	fmt.Println("Removing pf9 HOME dir")
-	cmd := fmt.Sprintf("rm -rf $HOME/pf9")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		zap.S().Debugf("Failed to get home dir, could not delete pf9Home dir")
+	}
+	pf9Home := path.Join(homeDir, "pf9")
+	cmd := fmt.Sprintf("rm -rf %s", pf9Home)
 	c.Executor.RunCommandWait(cmd)
 }
 
