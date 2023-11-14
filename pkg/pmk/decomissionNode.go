@@ -19,7 +19,7 @@ func removePf9Installation(c client.Client) {
 	fmt.Println("Removing pf9 HOME dir")
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		zap.S().Debugf("Failed to get home dir, could not delete pf9Home dir")
+		zap.S().Fatalf("Failed to get home dir, could not delete pf9Home dir")
 	}
 	pf9Home := path.Join(homeDir, "pf9")
 	cmd := fmt.Sprintf("rm -rf %s", pf9Home)
