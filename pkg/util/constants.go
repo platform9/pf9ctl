@@ -124,7 +124,7 @@ func init() {
 	RequiredPorts = []string{"443", "2379", "2380", "8285", "10250", "10255", "4194", "3306", "8158", "5672", "5673", "8023", "9080", "6264", "5395", "8558"}
 	ProcessesList = []string{"kubelet", "kube-proxy", "kube-apiserver", "kube-scheduler", "kube-controller", "etcd"}
 	Pf9Packages = []string{"pf9-hostagent", "pf9-comms", "pf9-kube", "pf9-muster"}
-	Files = []string{"/opt/pf9", "/etc/pf9", "/var/opt/pf9", "/var/log/pf9", "/tmp/*", "/var/spool/mail/pf9", "/opt/cni", "/etc/cni", "/var/log/messages-*", "/var/lib/docker", "/run/containerd", "/opt/containerd", "/var/lib/containerd", "/var/lib/nerdctl"}
+	Files = []string{"/opt/pf9", "/etc/pf9", "/var/opt/pf9", "/var/log/pf9", "/tmp/*", "/var/spool/mail/pf9", "/opt/cni", "/etc/cni", "/var/lib/docker", "/run/containerd", "/opt/containerd", "/var/lib/containerd", "/var/lib/nerdctl"}
 
 	AzureContributorID = "b24988ac-6180-42a0-ab88-20f7382dd24c"
 
