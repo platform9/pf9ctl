@@ -2,6 +2,8 @@ package pmk
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -14,14 +16,13 @@ import (
 )
 
 func removePf9Installation(c client.Client) {
-	fmt.Println("Removing /etc/pf9 logs")
-	cmd := fmt.Sprintf("rm -rf %s", util.EtcDir)
-	c.Executor.RunCommandWait(cmd)
-	fmt.Println("Removing /var/opt/pf9 logs")
-	cmd = fmt.Sprintf("rm -rf %s", util.OptDir)
-	c.Executor.RunCommandWait(cmd)
 	fmt.Println("Removing pf9 HOME dir")
-	cmd = fmt.Sprintf("rm -rf $HOME/pf9")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		zap.S().Fatalf("Failed to get home dir, could not delete pf9Home dir")
+	}
+	pf9Home := path.Join(homeDir, "pf9")
+	cmd := fmt.Sprintf("rm -rf %s", pf9Home)
 	c.Executor.RunCommandWait(cmd)
 }
 
@@ -54,6 +55,15 @@ func removeHostagent(c client.Client, hostOS string) {
 		cmd := fmt.Sprintf("rm -rf %s", file)
 		c.Executor.RunCommandWait(cmd)
 	}
+	fmt.Println("Running clean all")
+	if hostOS == "debian" {
+		cmd := fmt.Sprintf("apt-get clean all")
+		c.Executor.RunCommandWait(cmd)
+	} else {
+		cmd := fmt.Sprintf("yum clean all")
+		c.Executor.RunCommandWait(cmd)
+	}
+
 }
 
 func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool) {
