@@ -235,7 +235,7 @@ func EnableUnattendedUpdates(allClients client.Client) {
 
 func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading the Hostagent (this might take a few minutes...)")
-
+	fmt.Println(" SUPPP: In installHostAgent, starting download of Hostagent")
 	regionURL, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
 	if err != nil {
 		return fmt.Errorf("Unable to fetch URL: %w", err)
@@ -265,7 +265,7 @@ func installHostAgent(ctx objects.Config, auth keystone.KeystoneAuth, hostOS str
 
 func installHostAgentCertless(ctx objects.Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading the installer (this might take a few minutes...)")
-
+	fmt.Println(" SUPPP: In installHostAgentCertless, starting download of hostagent")
 	url := fmt.Sprintf(
 		"https://%s/clarity/platform9-install-%s.sh",
 		regionURL, hostOS)
@@ -284,6 +284,8 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 	if err != nil {
 		return err
 	}
+
+	fmt.Println(" SUPPP: In installHostAgentCertless, Hostagent download completed successfully")
 	zap.S().Debug("Hostagent download completed successfully")
 
 	var installOptions string
@@ -310,6 +312,7 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 		cmd = fmt.Sprintf(`%s/pf9/installer.sh --no-proxy --skip-os-check --no-ntp`, homeDir)
 	}
 
+	fmt.Println(" SUPPP: In installHostAgentCertless, running hostagent install")
 	if IsRemoteExecutor {
 		cmd = fmt.Sprintf(`bash %s %s`, cmd, installOptions)
 		_, err = exec.RunWithStdout(cmd)
@@ -328,6 +331,7 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 		return fmt.Errorf("error while running installer script: %s", util.InstallerErrors[exitCode])
 	}
 
+	fmt.Println(" SUPPP: In installHostAgentCertless, hostagent install complete")
 	// TODO: here we actually need additional validation by checking /tmp/agent_install. log
 	zap.S().Debug("Platform9 packages installed successfully")
 	return nil
@@ -421,7 +425,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 
 func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
 	zap.S().Debug("Downloading Hostagent Installer Legacy")
-
+	fmt.Println(" SUPPP: In installHostAgentLegacy, starting download")
 	url := fmt.Sprintf("https://%s/private/platform9-install-%s.sh", regionURL, hostOS)
 
 	homeDir, err := createDirToDownloadInstaller(exec)
@@ -437,6 +441,7 @@ func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.
 		return err
 	}
 
+	fmt.Println(" SUPPP: In installHostAgentLegacy, Hostagent download completed successfully")
 	zap.S().Debug("Hostagent download completed successfully")
 	changePermission := fmt.Sprintf("chmod +x %s/pf9/installer.sh", homeDir)
 	_, err = exec.RunWithStdout("bash", "-c", changePermission)
@@ -450,6 +455,7 @@ func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.
 		cmd = fmt.Sprintf(`%s/pf9/installer.sh --no-proxy --skip-os-check --no-ntp`, homeDir)
 	}
 
+	fmt.Println(" SUPPP: In installHostAgentLegacy, running hostagent install")
 	if IsRemoteExecutor {
 		cmd = fmt.Sprintf(`bash %s %s`, cmd, installOptions)
 		_, err = exec.RunWithStdout(cmd)
@@ -458,6 +464,7 @@ func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.
 		_, err = exec.RunWithStdout("bash", "-c", cmd)
 	}
 
+	fmt.Println(" SUPPP: In installHostAgentLegacy, hostagent install done")
 	removeTempDirAndInstaller(exec)
 
 	if err != nil {
