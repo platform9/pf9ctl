@@ -4,6 +4,7 @@ package pmk
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -98,8 +99,11 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		}
 	}
 
-	present := pf9PackagesPresent(hostOS, allClients.Executor)
-	if present {
+	token := auth.Token
+	fqdn := ctx.Fqdn
+	packagesPresent, newPackagesPresent := pf9PackagesPresent(hostOS, allClients.Executor, token, fqdn)
+	//pf9ctl errors out if old packages are present
+	if packagesPresent && !newPackagesPresent {
 		errStr := "\n\nPlatform9 packages already present on the host." +
 			"\nPlease uninstall these packages if you want to prep the node again.\n" +
 			"Instructions to uninstall these are at:" +
@@ -108,26 +112,29 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf(errStr)
 	}
 
-	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
-	s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
-	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
-		errStr := "Error: Unable to install hostagent. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth, true)
-		return fmt.Errorf(errStr)
-	}
+	//If new packages are not present, download and install them
+	if !newPackagesPresent {
+		sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
+		s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
+		if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
+			errStr := "Error: Unable to install hostagent. " + err.Error()
+			sendSegmentEvent(allClients, errStr, auth, true)
+			return fmt.Errorf(errStr)
+		}
 
-	s.Suffix = " Platform9 packages installed successfully"
-
-	if HostAgent == HostAgentCertless {
 		s.Suffix = " Platform9 packages installed successfully"
-		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
-	} else if HostAgent == HostAgentLegacy {
-		s.Suffix = " Hostagent installed successfully"
-		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
+
+		if HostAgent == HostAgentCertless {
+			s.Suffix = " Platform9 packages installed successfully"
+			s.Stop()
+			fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
+		} else if HostAgent == HostAgentLegacy {
+			s.Suffix = " Hostagent installed successfully"
+			s.Stop()
+			fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
+		}
+		s.Restart()
 	}
-	s.Restart()
 
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
 	s.Suffix = " Initialising host"
@@ -394,14 +401,40 @@ func OpenOSReleaseFile(exec cmdexec.Executor) (string, error) {
 	return strings.ToLower(string(data)), nil
 }
 
-func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
-	var out string
+func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn string) (bool, bool) {
+	var packagesPresent, newPackagesPresent bool = false, false
+
+	pattern := `-(\d+\.\d+\.\d+-\d+)`
+	reg := regexp.MustCompile(pattern)
 	if hostOS == "debian" {
 		for _, p := range util.Pf9Packages {
 			cmd := fmt.Sprintf("dpkg -l | { grep -i '%s' || true; }", p)
-			out, _ = exec.RunWithStdout("bash", "-c", cmd)
+			out, _ := exec.RunWithStdout("bash", "-c", cmd)
 			if out != "" {
-				return true
+				packagesPresent = true
+				break
+			}
+		}
+		//check version of existing pkgs, if present
+		if packagesPresent {
+			cmd := fmt.Sprintf(`curl --retry 5 --show-error  -f -H "X-Auth-Token: %s" "https://%s/protected/nocert-packagelist.deb`, token, fqdn)
+			out, err := exec.RunWithStdout("bash", "-c", cmd)
+			if err != nil {
+				fmt.Errorf("error while listing packages: %s", err)
+			}
+			for _, line := range out {
+				lineStr := string(line)
+				fmt.Println("lineStr ", lineStr)
+				if strings.Contains(lineStr, ".deb") {
+					match := reg.FindStringSubmatch(lineStr)
+					fmt.Println("version ", match[1])
+					cmd := fmt.Sprintf("dpkg -l | { grep -i '%s' || true; }", match[1]) //len(match) check karna hai
+					out, _ = exec.RunWithStdout("bash", "-c", cmd)
+					if out != "" {
+						newPackagesPresent = true
+						return packagesPresent, true
+					}
+				}
 			}
 		}
 	} else {
@@ -409,14 +442,36 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
 		// it must be either debian or redhat based
 		for _, p := range util.Pf9Packages {
 			cmd := fmt.Sprintf("yum list installed | { grep -i '%s' || true; }", p)
-			out, _ = exec.RunWithStdout("bash", "-c", cmd)
+			out, _ := exec.RunWithStdout("bash", "-c", cmd)
 			if out != "" {
-				return true
+				packagesPresent = true
+				break
+			}
+		}
+		if packagesPresent {
+			cmd := fmt.Sprintf(`curl --retry 5 --show-error  -f -H "X-Auth-Token: %s" "https://%s/protected/nocert-packagelist.rpm`, token, fqdn)
+			out, err := exec.RunWithStdout("bash", "-c", cmd)
+			if err != nil {
+				fmt.Errorf("error while listing packages: %s", err)
+			}
+			for _, line := range out {
+				lineStr := string(line)
+				fmt.Println("lineStr ", lineStr)
+				if strings.Contains(lineStr, ".rpm") {
+					match := reg.FindStringSubmatch(lineStr)
+					fmt.Println("version ", match[1])
+					cmd := fmt.Sprintf("yum list installed | { grep -i '%s' || true; }", match[1]) //len(match) check karna hai
+					out, _ = exec.RunWithStdout("bash", "-c", cmd)
+					if out != "" {
+						newPackagesPresent = true
+						return packagesPresent, true
+					}
+				}
 			}
 		}
 	}
 
-	return !(out == "")
+	return packagesPresent, newPackagesPresent
 }
 
 func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
