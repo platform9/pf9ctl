@@ -99,10 +99,12 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		}
 	}
 
+	zap.S().Debug("BEFORE ANY PACKAGE CHECK STARTS")
 	token := auth.Token
 	fqdn := ctx.Fqdn
 	packagesPresent, newPackagesPresent := pf9PackagesPresent(hostOS, allClients.Executor, token, fqdn)
 	//pf9ctl errors out if old packages are present
+	zap.S().Debugf("Values of packagesPresent, newPackagesPresent ", packagesPresent, newPackagesPresent)
 	if packagesPresent && !newPackagesPresent {
 		errStr := "\n\nPlatform9 packages already present on the host." +
 			"\nPlease uninstall these packages if you want to prep the node again.\n" +
@@ -417,20 +419,23 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn
 		}
 		//check version of existing pkgs, if present
 		if packagesPresent {
-			cmd := fmt.Sprintf(`curl --retry 5 --show-error  -f -H "X-Auth-Token: %s" "https://%s/protected/nocert-packagelist.deb`, token, fqdn)
+			zap.S().Debug("Packages present")
+			cmd := fmt.Sprintf(`curl --retry 5 --show-error  -f -H "X-Auth-Token: %s" "%s/protected/nocert-packagelist.deb"`, token, fqdn)
 			out, err := exec.RunWithStdout("bash", "-c", cmd)
 			if err != nil {
-				fmt.Errorf("error while listing packages: %s", err)
+				zap.S().Debugf("error while listing packages: %s", err)
 			}
-			for _, line := range out {
-				lineStr := string(line)
-				fmt.Println("lineStr ", lineStr)
-				if strings.Contains(lineStr, ".deb") {
-					match := reg.FindStringSubmatch(lineStr)
-					fmt.Println("version ", match[1])
+			lines := strings.Split(string(out), "\n")
+			for _, line := range lines {
+				//lineStr := string(line)
+				zap.S().Debug("lineStr ", line)
+				if strings.Contains(line, ".deb") {
+					match := reg.FindStringSubmatch(line)
+					zap.S().Debug("version extracted", match[1])
 					cmd := fmt.Sprintf("dpkg -l | { grep -i '%s' || true; }", match[1]) //len(match) check karna hai
 					out, _ = exec.RunWithStdout("bash", "-c", cmd)
 					if out != "" {
+						zap.S().Debug("Output of version check", out)
 						newPackagesPresent = true
 						return packagesPresent, true
 					}
@@ -449,7 +454,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn
 			}
 		}
 		if packagesPresent {
-			cmd := fmt.Sprintf(`curl --retry 5 --show-error  -f -H "X-Auth-Token: %s" "https://%s/protected/nocert-packagelist.rpm`, token, fqdn)
+			cmd := fmt.Sprintf(`curl --retry 5 --show-error  -f -H "X-Auth-Token: %s" "https://%s/protected/nocert-packagelist.rpm"`, token, fqdn)
 			out, err := exec.RunWithStdout("bash", "-c", cmd)
 			if err != nil {
 				fmt.Errorf("error while listing packages: %s", err)
