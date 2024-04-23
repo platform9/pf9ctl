@@ -181,7 +181,7 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 			return CleanInstallFail, nil
 		}
 
-		return RequiredFail, nil
+		return OptionalFail, nil
 
 	}
 
