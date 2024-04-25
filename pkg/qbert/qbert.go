@@ -602,17 +602,17 @@ func (c QbertImpl) GetAllNodes(token, projectID string) []Node {
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		zap.S().Infof("Unable to send request to qbert: %w", err)
+		zap.S().Fatalf("Unable to send request to qbert: %w", err)
 	}
 
 	var nodes []Node
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		zap.S().Infof("Unable to read resp body of node info: %w", err)
+		zap.S().Fatalf("Unable to read resp body of node info: %w", err)
 	}
 	err = json.Unmarshal(body, &nodes)
 	if err != nil {
-		zap.S().Infof("Unable to unmarshal node info: %w", err)
+		zap.S().Fatalf("Unable to unmarshal node info: %w", err)
 	}
 	return nodes
 }
@@ -621,25 +621,25 @@ func (c QbertImpl) GetPMKVersions(token, projectID string) PMKVersions {
 	url := fmt.Sprintf("%s/qbert/v4/%s/clusters/supportedRoleVersions", c.fqdn, projectID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		zap.S().Infof("Unable to create request to get pmk versions: %w", err)
+		zap.S().Fatalf("Unable to create request to get pmk versions: %w", err)
 	}
 	req.Header.Set("X-Auth-Token", token)
 	req.Header.Set("Content-Type", "application/json")
 	client := http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		zap.S().Infof("Unable to send request to qbert: %w", err)
+		zap.S().Fatalf("Unable to send request to qbert: %w", err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		zap.S().Infof("Unable to read resp body: %w", err)
+		zap.S().Fatalf("Unable to read resp body: %w", err)
 	}
 
 	pmkVersions := PMKVersions{}
 	err = json.Unmarshal(body, &pmkVersions)
 	if err != nil {
-		zap.S().Infof("Unable to unmarshal resp body: %w", err)
+		zap.S().Fatalf("Unable to unmarshal resp body: %w", err)
 	}
 	return pmkVersions
 }

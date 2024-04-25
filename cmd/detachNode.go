@@ -76,7 +76,7 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
 	if err != nil {
-		zap.S().Debug("Failed to get keystone %s", err.Error())
+		zap.S().Fatalf("Failed to get keystone %s", err.Error())
 	}
 	projectId := auth.ProjectID
 	token := auth.Token
@@ -104,8 +104,8 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 		isMaster, err := c.Qbert.GetNodeInfo(token, projectId, nodeUuids[0])
 		if err != nil {
-			zap.S().Debugf("Failed to get node info for host %s: %s", nodeUuids[0], err.Error())
-			continue
+			zap.S().Fatalf("Failed to get node info for host %s: %s", nodeUuids[0], err.Error())
+			//continue
 		}
 		clusterNodes := getAllClusterNodes(projectNodes, []string{isMaster.ClusterUuid})
 
@@ -119,7 +119,7 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 			if err := c.Segment.SendEvent("Detaching-node", auth, "Failed to detach node", ""); err != nil {
 				zap.S().Debugf("Unable to send Segment event for detach node. Error: %s", err.Error())
 			}
-			zap.S().Info("Encountered an error while detaching the", detachNodes[i].PrimaryIp, " node from a Kubernetes cluster : ", err1)
+			zap.S().Fatalf("Encountered an error while detaching the", detachNodes[i].PrimaryIp, " node from a Kubernetes cluster : ", err1)
 		} else {
 			if err := c.Segment.SendEvent("Detaching-node", detachNodes[i].PrimaryIp, "Node detached", ""); err != nil {
 				zap.S().Debugf("Unable to send Segment event for detach node. Error: %s", err.Error())

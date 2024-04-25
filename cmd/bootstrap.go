@@ -256,6 +256,9 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		cfg.Tenant,
 		cfg.MfaToken,
 	)
+	if err != nil {
+		zap.S().Fatalf("Unable to fetch keystone token: %s", err.Error())
+	}
 
 	//Getting all pmk versions
 	pmkRoles := c.Qbert.GetPMKVersions(auth.Token, auth.ProjectID)
@@ -365,7 +368,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			}
 
 			zap.S().Debugf("Unable to prep node: %s\n", err.Error())
-			zap.S().Fatalf("\nFailed to prepare node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
+			zap.S().Fatalf("\nFailed to prepare node, error: %s. See %s or use --verbose for logs\n", err.Error(), log.GetLogLocation(util.Pf9Log))
 		}
 
 		zap.S().Debug("==========Finished running prep-node==========")
@@ -441,7 +444,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		}
 
 		zap.S().Debugf("Unable to bootstrap node: %s\n", err.Error())
-		zap.S().Fatalf("Failed to bootstrap node. See %s or use --verbose for logs\n", log.GetLogLocation(util.Pf9Log))
+		zap.S().Fatalf("Failed to bootstrap node, error: %s. See %s or use --verbose for logs\n", err.Error(), log.GetLogLocation(util.Pf9Log))
 	}
 	zap.S().Debug("==========Finished running bootstrap==========")
 }
