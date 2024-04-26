@@ -170,19 +170,19 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 
 	removeCurrentInstallation := ""
 	if !cleanInstallCheck {
-		fmt.Println(color.Yellow("\nPrevious installation found"))
-		if !nc.RemoveExistingPkgs {
-			fmt.Println(color.Yellow("Reinstall Required..."))
-			fmt.Print("Remove Current Installation Type ('yes'/'no'):")
-			fmt.Scanf("%s", &removeCurrentInstallation)
+		if !WarningOptionalChecks {
+			fmt.Println(color.Yellow("\nPrevious installation found"))
+			if !nc.RemoveExistingPkgs {
+				fmt.Println(color.Yellow("Reinstall Required..."))
+				fmt.Print("Remove Current Installation Type ('yes'/'no'):")
+				fmt.Scanf("%s", &removeCurrentInstallation)
+			}
+			if nc.RemoveExistingPkgs || strings.ToLower(removeCurrentInstallation) == "yes" {
+				DecommissionNode(&ctx, nc, false)
+				return CleanInstallFail, nil
+			}
 		}
-		if nc.RemoveExistingPkgs || strings.ToLower(removeCurrentInstallation) == "yes" {
-			DecommissionNode(&ctx, nc, false)
-			return CleanInstallFail, nil
-		}
-
 		return OptionalFail, nil
-
 	}
 
 	if !mandatoryCheck {
