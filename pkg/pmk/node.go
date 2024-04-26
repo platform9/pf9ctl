@@ -3,6 +3,7 @@ package pmk
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
@@ -404,71 +405,60 @@ func OpenOSReleaseFile(exec cmdexec.Executor) (string, error) {
 
 func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn string) (bool, bool, error) {
 	var packagesPresent, newPackagesPresent bool = false, false
-
-	pattern := `-(\d+\.\d+\.\d+-\d+)`
+	var pkgCheckCommand, ext string
+	pattern := `([^-\d]+)-(\d+\.\d+\.\d+-\d+)`
 	reg := regexp.MustCompile(pattern)
+
 	if hostOS == "debian" {
-		for _, p := range util.Pf9Packages {
-			cmd := fmt.Sprintf("dpkg -l | { grep -i '%s' || true; }", p)
-			out, _ := exec.RunWithStdout("bash", "-c", cmd)
-			if out != "" {
-				packagesPresent = true
-				break
-			}
-		}
-		//check version of existing pkgs, if present
-		if packagesPresent {
-			cmd := fmt.Sprintf(`curl --retry 5 --show-error  -f -H "X-Auth-Token: %s" "%s/protected/nocert-packagelist.deb"`, token, fqdn)
-			out, err := exec.RunWithStdout("bash", "-c", cmd)
-			if err != nil {
-				return packagesPresent, newPackagesPresent, fmt.Errorf("error in running curl command to list packages")
-			}
-			lines := strings.Split(string(out), "\n")
-			for _, line := range lines {
-				if strings.Contains(line, ".deb") {
-					match := reg.FindStringSubmatch(line)
-					if len(match) <= 1 {
-						return packagesPresent, newPackagesPresent, fmt.Errorf("error in extracting version from packages")
-					}
-					cmd := fmt.Sprintf("dpkg -l | { grep -i '%s' || true; }", match[1])
-					out, _ = exec.RunWithStdout("bash", "-c", cmd)
-					if out != "" {
-						newPackagesPresent = true
-						return packagesPresent, true, nil
-					}
-				}
-			}
-		}
+		pkgCheckCommand = "dpkg -l"
+		ext = ".deb"
 	} else {
-		// not checking for redhat because if it has already passed validation
-		// it must be either debian or redhat based
-		for _, p := range util.Pf9Packages {
-			cmd := fmt.Sprintf("yum list installed | { grep -i '%s' || true; }", p)
-			out, _ := exec.RunWithStdout("bash", "-c", cmd)
-			if out != "" {
-				packagesPresent = true
-				break
-			}
+		pkgCheckCommand = "yum list installed"
+		ext = ".rpm"
+	}
+
+	for _, p := range util.Pf9Packages {
+		cmd := fmt.Sprintf("%s | { grep -i '%s' || true; }", pkgCheckCommand, p)
+		out, _ := exec.RunWithStdout("bash", "-c", cmd)
+		if out != "" {
+			packagesPresent = true
+			break
 		}
-		if packagesPresent {
-			cmd := fmt.Sprintf(`curl --retry 5 --show-error  -f -H "X-Auth-Token: %s" "%s/protected/nocert-packagelist.rpm"`, token, fqdn)
-			out, err := exec.RunWithStdout("bash", "-c", cmd)
-			if err != nil {
-				return packagesPresent, newPackagesPresent, fmt.Errorf("error in running curl command to list packages")
-			}
-			lines := strings.Split(string(out), "\n")
-			for _, line := range lines {
-				if strings.Contains(line, ".rpm") {
-					match := reg.FindStringSubmatch(line)
-					if len(match) <= 1 {
-						return packagesPresent, newPackagesPresent, fmt.Errorf("error in extracting version from packages")
-					}
-					cmd := fmt.Sprintf("yum list installed | { grep -i '%s' || true; }", match[1])
-					out, _ = exec.RunWithStdout("bash", "-c", cmd)
-					if out != "" {
-						newPackagesPresent = true
-						return packagesPresent, true, nil
-					}
+	}
+	//check version of existing pkgs, if present
+	if packagesPresent {
+		url := fmt.Sprintf("%s/protected/nocert-packagelist%s", fqdn, ext)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return packagesPresent, newPackagesPresent, fmt.Errorf("Unable to create a http request to list packages: %w", err)
+		}
+		req.Header.Set("X-Auth-Token", token)
+		client := http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return true, false, fmt.Errorf("Unable to send a request to client %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return true, false, fmt.Errorf("Error: List packages request returned status code: %d", resp.StatusCode)
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return true, false, fmt.Errorf("Error reading response body: %w", err)
+		}
+		lines := strings.Split(string(body), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, ext) {
+				match := reg.FindStringSubmatch(line)
+				if len(match) <= 2 {
+					return packagesPresent, newPackagesPresent, fmt.Errorf("error in extracting version from packages")
+				}
+				cmd := fmt.Sprintf("%s | { grep -i '%s.*%s' || true; }", pkgCheckCommand, match[1], match[2])
+				out, _ := exec.RunWithStdout("bash", "-c", cmd)
+				if out != "" {
+					newPackagesPresent = true
+					return packagesPresent, true, nil
 				}
 			}
 		}
