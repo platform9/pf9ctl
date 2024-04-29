@@ -444,7 +444,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		}
 
 		zap.S().Debugf("Unable to bootstrap node: %s\n", err.Error())
-		zap.S().Fatalf("Failed to bootstrap node, error: %s. See %s or use --verbose for logs\n", err.Error(), log.GetLogLocation(util.Pf9Log))
+		zap.S().Fatalf("Failed to bootstrap node. %s. See %s or use --verbose for logs\n", err.Error(), log.GetLogLocation(util.Pf9Log))
 	}
 	zap.S().Debug("==========Finished running bootstrap==========")
 }
