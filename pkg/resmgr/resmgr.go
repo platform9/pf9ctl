@@ -107,7 +107,7 @@ func (c *ResmgrImpl) GetHostId(token string, hostIPs []string) []string {
 	nodeData := hostInfo{}
 	err = json.Unmarshal(body, &nodeData)
 	if err != nil {
-		zap.S().Fatalf("Unable to unmarshal resp body to struct: %w", err)
+		zap.S().Debugf("Unable to unmarshal resp body to struct: %w", err)
 	}
 	var hostUUIDs []string
 
