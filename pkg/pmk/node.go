@@ -26,6 +26,7 @@ import (
 var HostAgent int
 var IsRemoteExecutor bool
 var homeDir string
+var isCDU bool
 
 const (
 	// Response Status Codes
@@ -61,6 +62,7 @@ func sendSegmentEvent(allClients client.Client, eventStr string, auth keystone.K
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth) error {
 	// Building our new spinner
+	isCDU = false
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
 
@@ -105,7 +107,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf("error while checking pf9 packages: %w", errStr)
 	}
 	//pf9ctl errors out if old packages are present
-	if packagesPresent && !newPackagesPresent {
+	if packagesPresent && (!newPackagesPresent || isCDU) {
 		errStr := "\n\nOld Platform9 packages already present on the host." +
 			"\nPlease uninstall these packages if you want to prep the node again.\n" +
 			"Instructions to uninstall these are at:" +
@@ -441,6 +443,10 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
+			if resp.StatusCode == 302 {
+				isCDU = true
+				return true, false, nil
+			}
 			return true, false, fmt.Errorf("Error: List packages request returned status code: %d", resp.StatusCode)
 		}
 		body, err := ioutil.ReadAll(resp.Body)
