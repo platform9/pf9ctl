@@ -99,45 +99,43 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 			return fmt.Errorf("Dpkg is under lock")
 		}
 	}
-	if !WarningOptionalChecks {
-		packagesPresent, newPackagesPresent, errStr := pf9PackagesPresent(hostOS, allClients.Executor, auth.Token, ctx.Fqdn)
-		if errStr != nil {
-			return fmt.Errorf("error while checking pf9 packages: %w", errStr)
-		}
-		//pf9ctl errors out if old packages are present
-		if packagesPresent && !newPackagesPresent {
-			errStr := "\n\nOld Platform9 packages already present on the host." +
-				"\nPlease uninstall these packages if you want to prep the node again.\n" +
-				"Instructions to uninstall these are at:" +
-				"\nhttps://docs.platform9.com/kubernetes/pmk-cli-unistall-hostagent"
-			sendSegmentEvent(allClients, "Error: Platform9 packages already present.", auth, true)
+
+	packagesPresent, newPackagesPresent, errStr := pf9PackagesPresent(hostOS, allClients.Executor, auth.Token, ctx.Fqdn)
+	if errStr != nil {
+		return fmt.Errorf("error while checking pf9 packages: %w", errStr)
+	}
+	//pf9ctl errors out if old packages are present
+	if packagesPresent && !newPackagesPresent {
+		errStr := "\n\nOld Platform9 packages already present on the host." +
+			"\nPlease uninstall these packages if you want to prep the node again.\n" +
+			"Instructions to uninstall these are at:" +
+			"\nhttps://docs.platform9.com/kubernetes/pmk-cli-unistall-hostagent"
+		sendSegmentEvent(allClients, "Error: Platform9 packages already present.", auth, true)
+		return fmt.Errorf(errStr)
+	}
+
+	//If new packages are not present, download and install them
+	if !newPackagesPresent {
+		sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
+		s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
+		if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
+			errStr := "Error: Unable to install hostagent. " + err.Error()
+			sendSegmentEvent(allClients, errStr, auth, true)
 			return fmt.Errorf(errStr)
 		}
 
-		//If new packages are not present, download and install them
-		if !newPackagesPresent {
-			sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
-			s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
-			if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
-				errStr := "Error: Unable to install hostagent. " + err.Error()
-				sendSegmentEvent(allClients, errStr, auth, true)
-				return fmt.Errorf(errStr)
-			}
+		s.Suffix = " Platform9 packages installed successfully"
 
+		if HostAgent == HostAgentCertless {
 			s.Suffix = " Platform9 packages installed successfully"
-
-			if HostAgent == HostAgentCertless {
-				s.Suffix = " Platform9 packages installed successfully"
-				s.Stop()
-				fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
-			} else if HostAgent == HostAgentLegacy {
-				s.Suffix = " Hostagent installed successfully"
-				s.Stop()
-				fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
-			}
-			s.Restart()
+			s.Stop()
+			fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
+		} else if HostAgent == HostAgentLegacy {
+			s.Suffix = " Hostagent installed successfully"
+			s.Stop()
+			fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
 		}
-
+		s.Restart()
 	}
 
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
