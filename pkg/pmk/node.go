@@ -427,28 +427,25 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn
 			break
 		}
 	}
-	//check version of existing pkgs, if present
-	if packagesPresent {
-		url := fmt.Sprintf("%s/protected/nocert-packagelist%s", fqdn, ext)
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			return packagesPresent, newPackagesPresent, fmt.Errorf("Unable to create a http request to list packages: %w", err)
-		}
-		req.Header.Set("X-Auth-Token", token)
-		client := http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			return true, false, fmt.Errorf("Unable to send a request to client %w", err)
-		}
-		defer resp.Body.Close()
 
-		if resp.StatusCode != http.StatusOK {
-			if resp.StatusCode == 302 {
-				isCDU = true
-				return true, false, nil
-			}
-			return true, false, fmt.Errorf("Error: List packages request returned status code: %d", resp.StatusCode)
-		}
+	if !packagesPresent {
+		return false, false, nil
+	}
+	//If pkgs are present, check version
+	url := fmt.Sprintf("%s/protected/nocert-packagelist%s", fqdn, ext)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return true, false, fmt.Errorf("Unable to create a http request to list packages: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return true, false, fmt.Errorf("Unable to send a request to client %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return true, false, fmt.Errorf("error reading response body: %w", err)
@@ -458,7 +455,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn
 			if strings.Contains(line, ext) {
 				match := reg.FindStringSubmatch(line)
 				if len(match) <= 2 {
-					return packagesPresent, newPackagesPresent, fmt.Errorf("error in extracting version from packages")
+					return true, false, fmt.Errorf("error in extracting version from packages")
 				}
 				cmd := fmt.Sprintf("%s | { grep -i '%s.*%s' || true; }", pkgCheckCommand, match[1], match[2])
 				out, _ := exec.RunWithStdout("bash", "-c", cmd)
@@ -468,6 +465,13 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn
 				}
 			}
 		}
+	}
+
+	if resp.StatusCode == http.StatusFound {
+		isCDU = true
+		return true, false, nil
+	} else {
+		return true, false, fmt.Errorf("Error: List packages request returned status code: %d", resp.StatusCode)
 	}
 
 	return packagesPresent, newPackagesPresent, nil
