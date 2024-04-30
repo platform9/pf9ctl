@@ -429,6 +429,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn
 	}
 
 	if !packagesPresent {
+		zap.S().Infof("Pf9 packages are not present")
 		return false, false, nil
 	}
 	//If pkgs are present, check version
