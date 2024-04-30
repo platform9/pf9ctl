@@ -639,7 +639,7 @@ func (c QbertImpl) GetPMKVersions(token, projectID string) PMKVersions {
 	pmkVersions := PMKVersions{}
 	err = json.Unmarshal(body, &pmkVersions)
 	if err != nil {
-		zap.S().Fatalf("Unable to unmarshal resp body: %w", err)
+		zap.S().Infof("Unable to unmarshal resp body: %w", err)
 	}
 	return pmkVersions
 }
