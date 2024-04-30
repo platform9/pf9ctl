@@ -39,7 +39,7 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
 	result, err = d.CheckExistingInstallation()
-	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", true, result, err, util.ExisitngInstallationErr})
+	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", false, result, err, util.ExisitngInstallationErr})
 
 	result, err = d.checkOSPackages()
 	checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
@@ -57,10 +57,10 @@ func (d *Debian) Check() []platform.Check {
 	checks = append(checks, platform.Check{"MemoryCheck", false, result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
 
 	result, err = d.checkPort()
-	checks = append(checks, platform.Check{"PortCheck", true, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"PortCheck", false, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.CheckKubernetesCluster()
-	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", true, result, err, fmt.Sprintf("%s", err)})
+	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", false, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = d.CheckIfdpkgISLock()
 	checks = append(checks, platform.Check{"Check lock on dpkg", true, result, err, fmt.Sprintf("%s", err)})
