@@ -119,7 +119,7 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 			if err := c.Segment.SendEvent("Detaching-node", auth, "Failed to detach node", ""); err != nil {
 				zap.S().Debugf("Unable to send Segment event for detach node. Error: %s", err.Error())
 			}
-			zap.S().Fatalf("Encountered an error while detaching the", detachNodes[i].PrimaryIp, " node from a Kubernetes cluster : ", err1)
+			zap.S().Fatal("Encountered an error while detaching the", detachNodes[i].PrimaryIp, " node from a Kubernetes cluster : ", err1)
 		} else {
 			if err := c.Segment.SendEvent("Detaching-node", detachNodes[i].PrimaryIp, "Node detached", ""); err != nil {
 				zap.S().Debugf("Unable to send Segment event for detach node. Error: %s", err.Error())
