@@ -78,7 +78,7 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string, version string) 
 	if resp.StatusCode != 200 {
 		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("Url %s returned status code: %d. Unable to read response body", url, resp.StatusCode)
+			return fmt.Errorf("url %s returned status code: %d. Unable to read response body", url, resp.StatusCode)
 		}
 		return fmt.Errorf("Url %s returned status code: %d, error: %s", url, resp.StatusCode, string(bodyBytes))
 	}
