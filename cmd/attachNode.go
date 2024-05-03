@@ -107,15 +107,10 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		} else if clusterName == "" {
 			zap.S().Fatalf("cluster with given uuid does not exist")
 		}
-	} else {
-		_, clusterUuid, _, err = c.Qbert.CheckClusterExists(clusterName, projectId, token)
-		if err != nil {
-			zap.S().Fatalf("unable to fetch clusterUuid from cluster-name. Error: %s", err.Error())
-		}
 	}
-	_, _, clusterStatus, err := c.Qbert.CheckClusterExists(clusterName, projectId, token)
+	_, clusterUuid, clusterStatus, err := c.Qbert.CheckClusterExists(clusterName, projectId, token)
 	if err != nil {
-		zap.S().Fatalf("unable to fetch cluster status from cluster-name. Error: %s", err.Error())
+		zap.S().Fatalf("unable to fetch cluster-uuid and cluster-status from cluster-name. Error: %s", err.Error())
 	}
 
 	if clusterStatus == "ok" {

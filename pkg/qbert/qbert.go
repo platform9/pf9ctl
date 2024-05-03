@@ -612,7 +612,7 @@ func (c QbertImpl) GetAllNodes(token, projectID string) []Node {
 	}
 	err = json.Unmarshal(body, &nodes)
 	if err != nil {
-		zap.S().Fatalf("Unable to unmarshal node info: %w", err)
+		zap.S().Infof("Unable to unmarshal node info: %w", err)
 	}
 	return nodes
 }
