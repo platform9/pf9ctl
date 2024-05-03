@@ -556,23 +556,26 @@ Global Flags:
       --verbose          print verbose logs
 ```
 
+When node is connected to a cluster:
 ```sh
 #pf9ctl decommission-node
 ✓ Loaded Config Successfully
-Node is connected to fivefiveBareOS cluster
-Detaching node from cluster...
-Detached node from cluster
-Deauthorizing node from UI...
+Node is attached to test-2 cluster
+2024-05-03T08:58:57.4328Z	FATAL	Node is still attached to a cluster. Please run detach-node command first and wait for the node to be completely removed from the cluster and only then run decommision-node command
+```
+
+When node is not connected to any cluster:
+```sh
+#pf9ctl decommission-node
+✓ Loaded Config Successfully
 Deauthorized node from UI
 Removing pf9-hostagent (this might take a few minutes...)
 Removed hostagent
 Removing logs...
-Removing /etc/pf9 logs
-Removing /var/opt/pf9 logs
+Running clean all
 Removing pf9 HOME dir
 Node decommissioning started....This may take a few minutes....Check the latest status in UI
 ```
-
 
   **check-amazon-provider**
 ```sh

@@ -466,6 +466,7 @@ func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn
 				}
 			}
 		}
+		return packagesPresent, false, nil
 	}
 
 	if resp.StatusCode == http.StatusFound {
