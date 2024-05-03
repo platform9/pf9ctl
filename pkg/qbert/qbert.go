@@ -612,7 +612,7 @@ func (c QbertImpl) GetAllNodes(token, projectID string) []Node {
 	}
 	err = json.Unmarshal(body, &nodes)
 	if err != nil {
-		zap.S().Infof("Unable to unmarshal node info: %w", err)
+		zap.S().Debugf("Unable to unmarshal node info: %w", err)
 	}
 	return nodes
 }
@@ -639,7 +639,7 @@ func (c QbertImpl) GetPMKVersions(token, projectID string) PMKVersions {
 	pmkVersions := PMKVersions{}
 	err = json.Unmarshal(body, &pmkVersions)
 	if err != nil {
-		zap.S().Infof("Unable to unmarshal resp body: %w", err)
+		zap.S().Debugf("Unable to unmarshal resp body: %w", err)
 	}
 	return pmkVersions
 }
