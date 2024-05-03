@@ -3,7 +3,9 @@ package pmk
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -24,6 +26,7 @@ import (
 var HostAgent int
 var IsRemoteExecutor bool
 var homeDir string
+var isCDU bool
 
 const (
 	// Response Status Codes
@@ -59,6 +62,7 @@ func sendSegmentEvent(allClients client.Client, eventStr string, auth keystone.K
 // PrepNode sets up prerequisites for k8s stack
 func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.KeystoneAuth) error {
 	// Building our new spinner
+	isCDU = false
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
 
@@ -98,9 +102,13 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		}
 	}
 
-	present := pf9PackagesPresent(hostOS, allClients.Executor)
-	if present {
-		errStr := "\n\nPlatform9 packages already present on the host." +
+	packagesPresent, newPackagesPresent, errStr := pf9PackagesPresent(hostOS, allClients.Executor, auth.Token, ctx.Fqdn)
+	if errStr != nil {
+		return fmt.Errorf("error while checking pf9 packages: %w", errStr)
+	}
+	//pf9ctl errors out if old packages are present
+	if packagesPresent && (!newPackagesPresent || isCDU) {
+		errStr := "\n\nOld Platform9 packages already present on the host." +
 			"\nPlease uninstall these packages if you want to prep the node again.\n" +
 			"Instructions to uninstall these are at:" +
 			"\nhttps://docs.platform9.com/kubernetes/pmk-cli-unistall-hostagent"
@@ -108,26 +116,29 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf(errStr)
 	}
 
-	sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
-	s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
-	if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
-		errStr := "Error: Unable to install hostagent. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth, true)
-		return fmt.Errorf(errStr)
-	}
+	//If new packages are not present, download and install them
+	if !newPackagesPresent {
+		sendSegmentEvent(allClients, "Installing hostagent - 2", auth, false)
+		s.Suffix = " Downloading the Hostagent (this might take a few minutes...)"
+		if err := installHostAgent(ctx, auth, hostOS, allClients.Executor); err != nil {
+			errStr := "Error: Unable to install hostagent. " + err.Error()
+			sendSegmentEvent(allClients, errStr, auth, true)
+			return fmt.Errorf(errStr)
+		}
 
-	s.Suffix = " Platform9 packages installed successfully"
-
-	if HostAgent == HostAgentCertless {
 		s.Suffix = " Platform9 packages installed successfully"
-		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
-	} else if HostAgent == HostAgentLegacy {
-		s.Suffix = " Hostagent installed successfully"
-		s.Stop()
-		fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
+
+		if HostAgent == HostAgentCertless {
+			s.Suffix = " Platform9 packages installed successfully"
+			s.Stop()
+			fmt.Println(color.Green("✓ ") + "Platform9 packages installed successfully")
+		} else if HostAgent == HostAgentLegacy {
+			s.Suffix = " Hostagent installed successfully"
+			s.Stop()
+			fmt.Println(color.Green("✓ ") + "Hostagent installed successfully")
+		}
+		s.Restart()
 	}
-	s.Restart()
 
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
 	s.Suffix = " Initialising host"
@@ -394,29 +405,77 @@ func OpenOSReleaseFile(exec cmdexec.Executor) (string, error) {
 	return strings.ToLower(string(data)), nil
 }
 
-func pf9PackagesPresent(hostOS string, exec cmdexec.Executor) bool {
-	var out string
+func pf9PackagesPresent(hostOS string, exec cmdexec.Executor, token string, fqdn string) (bool, bool, error) {
+	var packagesPresent, newPackagesPresent bool = false, false
+	var pkgCheckCommand, ext string
+	pattern := `([^-\d]+)-(\d+\.\d+\.\d+-\d+)`
+	reg := regexp.MustCompile(pattern)
+
 	if hostOS == "debian" {
-		for _, p := range util.Pf9Packages {
-			cmd := fmt.Sprintf("dpkg -l | { grep -i '%s' || true; }", p)
-			out, _ = exec.RunWithStdout("bash", "-c", cmd)
-			if out != "" {
-				return true
-			}
-		}
+		pkgCheckCommand = "dpkg -l"
+		ext = ".deb"
 	} else {
-		// not checking for redhat because if it has already passed validation
-		// it must be either debian or redhat based
-		for _, p := range util.Pf9Packages {
-			cmd := fmt.Sprintf("yum list installed | { grep -i '%s' || true; }", p)
-			out, _ = exec.RunWithStdout("bash", "-c", cmd)
-			if out != "" {
-				return true
+		pkgCheckCommand = "yum list installed"
+		ext = ".rpm"
+	}
+
+	for _, p := range util.Pf9Packages {
+		cmd := fmt.Sprintf("%s | { grep -i '%s' || true; }", pkgCheckCommand, p)
+		out, _ := exec.RunWithStdout("bash", "-c", cmd)
+		if out != "" {
+			packagesPresent = true
+			break
+		}
+	}
+
+	if !packagesPresent {
+		zap.S().Infof("Pf9 packages are not present")
+		return false, false, nil
+	}
+	//If pkgs are present, check version
+	url := fmt.Sprintf("%s/protected/nocert-packagelist%s", fqdn, ext)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return true, false, fmt.Errorf("Unable to create a http request to list packages: %w", err)
+	}
+	req.Header.Set("X-Auth-Token", token)
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return true, false, fmt.Errorf("Unable to send a request to client %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusOK {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return true, false, fmt.Errorf("error reading response body: %w", err)
+		}
+		lines := strings.Split(string(body), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, ext) {
+				match := reg.FindStringSubmatch(line)
+				if len(match) <= 2 {
+					return true, false, fmt.Errorf("error in extracting version from packages")
+				}
+				cmd := fmt.Sprintf("%s | { grep -i '%s.*%s' || true; }", pkgCheckCommand, match[1], match[2])
+				out, _ := exec.RunWithStdout("bash", "-c", cmd)
+				if out != "" {
+					newPackagesPresent = true
+					return packagesPresent, true, nil
+				}
 			}
 		}
 	}
 
-	return !(out == "")
+	if resp.StatusCode == http.StatusFound {
+		isCDU = true
+		return true, false, nil
+	} else {
+		return true, false, fmt.Errorf("Error: List packages request returned status code: %d", resp.StatusCode)
+	}
+
+	return packagesPresent, newPackagesPresent, nil
 }
 
 func installHostAgentLegacy(ctx objects.Config, regionURL string, auth keystone.KeystoneAuth, hostOS string, exec cmdexec.Executor) error {
