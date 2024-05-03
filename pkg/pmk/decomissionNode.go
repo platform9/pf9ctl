@@ -120,7 +120,6 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 		}
 
 		if nodeInfo.ClusterName == "" {
-			fmt.Println("Node is not connected to any cluster")
 			if nodeConnectedToDU {
 				err = c.Qbert.DeauthoriseNode(hostID, auth.Token)
 				if err != nil {
