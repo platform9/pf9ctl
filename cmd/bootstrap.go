@@ -257,7 +257,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		cfg.MfaToken,
 	)
 	if err != nil {
-		zap.S().Fatalf("Unable to fetch keystone token: %s", err.Error())
+		zap.S().Fatalf("Failed to get keystone %s", err.Error())
 	}
 
 	//Getting all pmk versions
