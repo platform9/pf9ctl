@@ -83,10 +83,6 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 	projectNodes := c.Qbert.GetAllNodes(token, projectId)
 	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
-	if err != nil {
-		zap.S().Fatalf("%v", err)
-		return
-	}
 
 	detachNodes, err := getNodesFromUuids(nodeUuids, projectNodes)
 

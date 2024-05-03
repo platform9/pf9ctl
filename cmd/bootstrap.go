@@ -368,7 +368,7 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 			}
 
 			zap.S().Debugf("Unable to prep node: %s\n", err.Error())
-			zap.S().Fatalf("\nFailed to prepare node, error: %s. See %s or use --verbose for logs\n", err.Error(), log.GetLogLocation(util.Pf9Log))
+			zap.S().Fatalf("\nFailed to prepare node. %s. See %s or use --verbose for logs\n", err.Error(), log.GetLogLocation(util.Pf9Log))
 		}
 
 		zap.S().Debug("==========Finished running prep-node==========")
