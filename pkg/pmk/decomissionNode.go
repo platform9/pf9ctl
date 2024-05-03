@@ -140,7 +140,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 			time.Sleep(50 * time.Second)
 		} else {
 			// If node is connected to cluster exit, because need to redesign detach and deauthorize flows
-			fmt.Printf("Node is connected to %s cluster\n", nodeInfo.ClusterName)
+			fmt.Printf("Node is attached to %s cluster\n", nodeInfo.ClusterName)
 			zap.S().Fatalf("Node is still attached to a cluster. Please run detach-node command first and wait for the node to be completely removed from the cluster and only then run decommision-node command")
 
 			//This code will not be called since we are exiting if node is attached to cluster

@@ -560,7 +560,7 @@ When node is connected to a cluster:
 ```sh
 #pf9ctl decommission-node
 ✓ Loaded Config Successfully
-Node is connected to test-2 cluster
+Node is attached to test-2 cluster
 2024-05-03T08:58:57.4328Z	FATAL	Node is still attached to a cluster. Please run detach-node command first and wait for the node to be completely removed from the cluster and only then run decommision-node command
 ```
 
