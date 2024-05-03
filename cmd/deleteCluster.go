@@ -100,7 +100,7 @@ func deleteClusterRun(cmd *cobra.Command, args []string) {
 	nodeUuids := c.Resmgr.GetHostId(token, nodeIPs)
 	localNode, err := getNodesFromUuids(nodeUuids, projectNodes)
 	if err != nil {
-		zap.S().Fatalf("Could not delete cluster, error %s", err.Error())
+		zap.S().Fatalf("Could not delete cluster, error while fetch nodes info: %s", err.Error())
 	}
 
 	if len(localNode) == 1 && localNode[0].ClusterUuid == clusterUuid {
