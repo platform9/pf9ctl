@@ -382,7 +382,7 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 		if err == nil {
 			return osVersion, nil
 		} else {
-			zap.S().Debugf("Error : %s", err)
+			return "", fmt.Errorf("error in fetching OS version: %s", err.Error())
 		}
 	case strings.Contains(strData, util.Ubuntu):
 		platform = debian.NewDebian(exec)
@@ -390,7 +390,7 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 		if err == nil {
 			return osVersion, nil
 		} else {
-			zap.S().Debugf("Error : %s", err)
+			return "", fmt.Errorf("error in fetching OS version: %s", err.Error())
 		}
 	}
 

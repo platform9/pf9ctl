@@ -69,7 +69,7 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 
 	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
 	if err != nil {
-		zap.S().Debugf("Failed to get keystone %s", err.Error())
+		zap.S().Fatalf("Failed to get keystone %s", err.Error())
 	}
 
 	var nodeIPs []string

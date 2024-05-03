@@ -97,7 +97,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 
 	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
 	if err != nil {
-		zap.S().Debug("Failed to get keystone %s", err.Error())
+		zap.S().Fatalf("Failed to get keystone %s", err.Error())
 	}
 	projectId := auth.ProjectID
 	token := auth.Token
@@ -107,10 +107,11 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		} else if clusterName == "" {
 			zap.S().Fatalf("cluster with given uuid does not exist")
 		}
-	} else {
-		_, clusterUuid, _, _ = c.Qbert.CheckClusterExists(clusterName, projectId, token)
 	}
-	_, _, clusterStatus, _ := c.Qbert.CheckClusterExists(clusterName, projectId, token)
+	_, clusterUuid, clusterStatus, err := c.Qbert.CheckClusterExists(clusterName, projectId, token)
+	if err != nil {
+		zap.S().Fatalf("unable to fetch cluster-uuid and cluster-status from cluster-name. Error: %s", err.Error())
+	}
 
 	if clusterStatus == "ok" {
 
@@ -136,7 +137,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 			for _, worker := range workerHostIDs {
 				cname, err := c.Qbert.GetNodeInfo(token, projectId, worker)
 				if err != nil {
-					zap.S().Debugf("Failed to get node info for host %s: %s", worker, err.Error())
+					zap.S().Fatalf("Failed to get node info for host %s: %s", worker, err.Error())
 				} else if cname.ClusterName != "" {
 					zap.S().Infof("Node with host id %s is connected to %s cluster", worker, cname)
 				} else {
@@ -150,7 +151,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 					if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach worker node", ""); err != nil {
 						zap.S().Debugf("Unable to send Segment event for attach node. Error: %s", err.Error())
 					}
-					zap.S().Info("Encountered an error while attaching worker node to a Kubernetes cluster : ", err1)
+					zap.S().Fatal("Encountered an error while attaching worker node to a Kubernetes cluster : ", err1)
 				} else {
 					if err := c.Segment.SendEvent("Attaching-node", auth, "Worker node attached", ""); err != nil {
 						zap.S().Debugf("Unable to send Segment event for attach node. Error: %s", err.Error())
@@ -169,7 +170,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 			for _, master := range masterHostIDs {
 				cname, err := c.Qbert.GetNodeInfo(token, projectId, master)
 				if err != nil {
-					zap.S().Debugf("Failed to get node info for host %s: %s", master, err.Error())
+					zap.S().Fatalf("Failed to get node info for host %s: %s", master, err.Error())
 				} else if cname.ClusterName != "" {
 					zap.S().Infof("Node with host id %s is connected to %s cluster", master, cname)
 				} else {
@@ -183,7 +184,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 					if err := c.Segment.SendEvent("Attaching-node", auth, "Failed to attach master node", ""); err != nil {
 						zap.S().Debugf("Unable to send Segment event for attach node. Error: %s", err.Error())
 					}
-					zap.S().Info("Encountered an error while attaching master node to a Kubernetes cluster : ", err1)
+					zap.S().Fatal("Encountered an error while attaching master node to a Kubernetes cluster : ", err1)
 				} else {
 					if err := c.Segment.SendEvent("Attaching-node", auth, "Master node attached", ""); err != nil {
 						zap.S().Debugf("Unable to send Segment event for attach node. Error: %s", err.Error())
