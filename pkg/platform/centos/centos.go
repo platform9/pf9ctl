@@ -172,9 +172,22 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 }
 
 func (c *CentOS) checkEnabledRepos() (bool, error) {
-
-	centos, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(version))
+	version7, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(version))
 	rhel8, _ := regexp.MatchString(`.*8\.[5-9]\.*`, string(version))
+	var rhel7, centos bool = false, false
+
+	if version7 {
+		output, err := c.exec.RunWithStdout("bash", "-c", "cat /etc/os-release | grep 'Red Hat Enterprise Linux'")
+		if err != nil {
+			zap.S().Debug("Error checking the contents of /etc/os-release:", err)
+			return false, err
+		}
+		if output != "" {
+			rhel7 = true
+		} else {
+			centos = true
+		}
+	}
 
 	output, err := c.exec.RunWithStdout("bash", "-c", "yum repolist")
 	if err != nil {
@@ -192,6 +205,11 @@ func (c *CentOS) checkEnabledRepos() (bool, error) {
 		}
 		if !strings.Contains(string(output), "extras/") {
 			enable_repos = append(enable_repos, "extras")
+		}
+	} else if rhel7 {
+		command = "subscription-manager repos --enable %s"
+		if !strings.Contains(string(output), "rhel-7-server-extras-rpms") {
+			enable_repos = append(enable_repos, "rhel-7-server-extras-rpms")
 		}
 	} else if rhel8 {
 		command = "subscription-manager repos --enable %s"
