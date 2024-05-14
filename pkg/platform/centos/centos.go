@@ -177,15 +177,11 @@ func (c *CentOS) checkEnabledRepos() (bool, error) {
 	var rhel7, centos bool = false, false
 
 	if version7 {
-		output, err := c.exec.RunWithStdout("bash", "-c", "cat /etc/os-release | grep 'Red Hat Enterprise Linux'")
+		_, err := c.exec.RunWithStdout("bash", "-c", "grep -i 'Red Hat Enterprise Linux' /etc/*release")
 		if err != nil {
-			zap.S().Debug("Error checking the contents of /etc/os-release:", err)
-			return false, err
-		}
-		if output != "" {
-			rhel7 = true
-		} else {
 			centos = true
+		} else {
+			rhel7 = true
 		}
 	}
 
