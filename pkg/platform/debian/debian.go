@@ -41,10 +41,8 @@ func (d *Debian) Check() []platform.Check {
 	result, err = d.CheckExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", false, result, err, util.ExisitngInstallationErr})
 
-	if !platform.SkipOSChecks {
-		result, err = d.checkOSPackages()
-		checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
-	}
+	result, err = d.checkOSPackages()
+	checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
 
 	result, err = d.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", true, result, err, util.SudoErr})

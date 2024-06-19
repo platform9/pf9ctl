@@ -44,10 +44,8 @@ func (c *CentOS) Check() []platform.Check {
 	result, err = c.CheckExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", false, result, err, util.ExisitngInstallationErr})
 
-	if !platform.SkipOSChecks {
-		result, err = c.checkOSPackages()
-		checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
-	}
+	result, err = c.checkOSPackages()
+	checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
 
 	result, err = c.checkSudo()
 	checks = append(checks, platform.Check{"SudoCheck", true, result, err, util.SudoErr})

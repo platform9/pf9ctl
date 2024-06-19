@@ -64,6 +64,12 @@ func CheckNode(ctx objects.Config, allClients client.Client, auth keystone.Keyst
 		platform = debian.NewDebian(allClients.Executor)
 	case "redhat":
 		platform = centos.NewCentOS(allClients.Executor)
+	case "debianOther":
+		zap.S().Info("This OS version is not supported. Continuing as --skip-os-checks flag was used")
+		platform = debian.NewDebian(allClients.Executor)
+	case "redhatOther":
+		zap.S().Info("This OS version is not supported. Continuing as --skip-os-checks flag was used")
+		platform = centos.NewCentOS(allClients.Executor)
 	default:
 		return RequiredFail, fmt.Errorf("This OS is not supported. Supported operating systems are: Ubuntu (18.04, 20.04, 22.04), CentOS 7.[3-9], RHEL 7.[3-9] & RHEL 8.[5-9] & Rocky 9.[1-2]")
 	}

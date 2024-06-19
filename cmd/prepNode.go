@@ -58,7 +58,7 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	prepNodeCmd.Flags().StringSliceVarP(&nodeConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
-	prepNodeCmd.Flags().BoolVarP(&skipOSChecks, "skip-os-checks", "o", false, "Will skip os checks if true")
+	prepNodeCmd.Flags().BoolVarP(&skipOSChecks, "skip-os-checks", "o", false, "Will continue prep-node even if os version checks fail")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
 	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
