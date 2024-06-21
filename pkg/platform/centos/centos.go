@@ -131,11 +131,17 @@ func (c *CentOS) CheckExistingInstallation() (bool, error) {
 
 func (c *CentOS) checkOSPackages() (bool, error) {
 
+	var rhel8, rocky9 bool
 	errLines := []string{packageInstallError}
 	zap.S().Debug("Checking OS Packages")
 
-	rhel8, _ := regexp.MatchString(`.*8\.[5-9]\.*`, string(version))
-	rocky9, _ := regexp.MatchString(`.*9\.[1-2]\.*`, string(version))
+	rhel8, _ = regexp.MatchString(`.*8\.[5-9]\.*`, string(version))
+	rocky9, _ = regexp.MatchString(`.*9\.[1-2]\.*`, string(version))
+
+	if platform.SkipOSChecks {
+		rhel8, _ = regexp.MatchString(`8\.\d{1,2}`, string(version))
+		rocky9, _ = regexp.MatchString(`9\.\d{1,2}`, string(version))
+	}
 	for _, p := range packages {
 		if !centos && (rhel8 || rocky9) {
 			switch p {
@@ -173,8 +179,14 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 
 func (c *CentOS) checkEnabledRepos() (bool, error) {
 
-	centos, _ := regexp.MatchString(`.*7\.[3-9]\.*`, string(version))
-	rhel8, _ := regexp.MatchString(`.*8\.[5-9]\.*`, string(version))
+	var centos, rhel8 bool
+	centos, _ = regexp.MatchString(`.*7\.[3-9]\.*`, string(version))
+	rhel8, _ = regexp.MatchString(`.*8\.[5-9]\.*`, string(version))
+
+	if platform.SkipOSChecks {
+		centos, _ = regexp.MatchString(`7\.\d{1,2}`, string(version))
+		rhel8, _ = regexp.MatchString(`8\.\d{1,2}`, string(version))
+	}
 
 	output, err := c.exec.RunWithStdout("bash", "-c", "yum repolist")
 	if err != nil {
