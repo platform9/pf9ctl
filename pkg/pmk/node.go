@@ -79,12 +79,6 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf(errStr)
 	}
 
-	if hostOS == "debianOther" {
-		hostOS = "debian"
-	} else if hostOS == "redhatOther" {
-		hostOS = "redhat"
-	}
-
 	if hostOS == "debian" {
 
 		platform := debian.NewDebian(allClients.Executor)
@@ -389,7 +383,8 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 			return osVersion, nil
 		} else if platform.SkipOSChecks && strings.Contains(err.Error(), "Unable to determine OS type") {
 			zap.S().Info(err.Error())
-			return "redhatOther", nil
+			zap.S().Info("This OS version is not supported. Continuing as --skip-os-checks flag was used")
+			return "redhat", nil
 		} else {
 			return "", fmt.Errorf("error in fetching OS version: %s", err.Error())
 		}
@@ -400,7 +395,8 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 			return osVersion, nil
 		} else if platform.SkipOSChecks && strings.Contains(err.Error(), "Unable to determine OS type") {
 			zap.S().Info(err.Error())
-			return "debianOther", nil
+			zap.S().Info("This OS version is not supported. Continuing as --skip-os-checks flag was used")
+			return "debian", nil
 		} else {
 			return "", fmt.Errorf("error in fetching OS version: %s", err.Error())
 		}
