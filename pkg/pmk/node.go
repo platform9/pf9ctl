@@ -374,21 +374,29 @@ func ValidatePlatform(exec cmdexec.Executor) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed reading data from file: %s", err)
 	}
-	var platform platform.Platform
+	var osplatform platform.Platform
 	switch {
 	case strings.Contains(strData, util.Centos) || strings.Contains(strData, util.Redhat) || strings.Contains(strData, util.Rocky):
-		platform = centos.NewCentOS(exec)
-		osVersion, err := platform.Version()
+		osplatform = centos.NewCentOS(exec)
+		osVersion, err := osplatform.Version()
 		if err == nil {
 			return osVersion, nil
+		} else if platform.SkipOSChecks && strings.Contains(err.Error(), "Unable to determine OS type") {
+			zap.S().Info(err.Error())
+			zap.S().Info("This OS version is not supported. Continuing as --skip-os-checks flag was used")
+			return "redhat", nil
 		} else {
 			return "", fmt.Errorf("error in fetching OS version: %s", err.Error())
 		}
 	case strings.Contains(strData, util.Ubuntu):
-		platform = debian.NewDebian(exec)
-		osVersion, err := platform.Version()
+		osplatform = debian.NewDebian(exec)
+		osVersion, err := osplatform.Version()
 		if err == nil {
 			return osVersion, nil
+		} else if platform.SkipOSChecks && strings.Contains(err.Error(), "Unable to determine OS type") {
+			zap.S().Info(err.Error())
+			zap.S().Info("This OS version is not supported. Continuing as --skip-os-checks flag was used")
+			return "debian", nil
 		} else {
 			return "", fmt.Errorf("error in fetching OS version: %s", err.Error())
 		}

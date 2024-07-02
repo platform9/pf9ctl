@@ -16,6 +16,7 @@ import (
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/log"
 	"github.com/platform9/pf9ctl/pkg/objects"
+	"github.com/platform9/pf9ctl/pkg/platform"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/ssh"
 	"github.com/platform9/pf9ctl/pkg/supportBundle"
@@ -45,6 +46,7 @@ var (
 	password       string
 	sshKey         string
 	ips            []string
+	skipOSChecks   bool
 	skipChecks     bool
 	disableSwapOff bool
 )
@@ -56,6 +58,7 @@ func init() {
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
 	prepNodeCmd.Flags().StringVarP(&nodeConfig.SshKey, "ssh-key", "s", "", "ssh key file for connecting to the nodes")
 	prepNodeCmd.Flags().StringSliceVarP(&nodeConfig.IPs, "ip", "i", []string{}, "IP address of host to be prepared")
+	prepNodeCmd.Flags().BoolVarP(&skipOSChecks, "skip-os-checks", "o", false, "Will continue prep-node even if os version checks fail")
 	prepNodeCmd.Flags().BoolVarP(&skipChecks, "skip-checks", "c", false, "Will skip optional checks if true")
 	prepNodeCmd.Flags().BoolVarP(&disableSwapOff, "disable-swapoff", "d", false, "Will skip swapoff")
 	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
@@ -77,6 +80,9 @@ func prepNodeRun(cmd *cobra.Command, args []string) {
 
 	if skipChecks {
 		pmk.WarningOptionalChecks = true
+	}
+	if skipOSChecks {
+		platform.SkipOSChecks = true
 	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
