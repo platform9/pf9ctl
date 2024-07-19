@@ -9,7 +9,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
-	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -33,11 +32,11 @@ var (
 	hostOS      string
 
 	//Errors returned from the functions
-	ErrHostIP        = fmt.Errorf("Host IP not found")
-	ErrRemove        = fmt.Errorf("Unable to remove bundle")
-	ErrGenBundle     = fmt.Errorf("Unable to generate supportBundle in remote host")
-	ErrUpload        = fmt.Errorf("Unable to upload supportBundle to S3")
-	ErrPartialBundle = fmt.Errorf("Failed to generate complete supportBundle, generated partial bundle")
+	ErrHostIP        = fmt.Errorf("host IP not found")
+	ErrRemove        = fmt.Errorf("unable to remove bundle")
+	ErrGenBundle     = fmt.Errorf("unable to generate supportBundle in remote host")
+	ErrUpload        = fmt.Errorf("unable to upload supportBundle to S3")
+	ErrPartialBundle = fmt.Errorf("failed to generate complete supportBundle, generated partial bundle")
 
 	//Timestamp used for generating targetfile
 	Timestamp = time.Now()
@@ -54,7 +53,7 @@ func HostOS(exec cmdexec.Executor) {
 // To get the Host IP address
 func HostIP(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Fetching HostIP")
-	host, err := exec.RunWithStdout("bash", "-c", fmt.Sprintf("hostname -I"))
+	host, err := exec.RunWithStdout("bash", "-c", "hostname -I")
 	if err != nil {
 		zap.S().Error("Host IP Not found", err)
 		return host, ErrHostIP
@@ -79,38 +78,38 @@ func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote 
 	}
 
 	// To get the HostIP
-	hostIP, err := HostIP(allClients.Executor)
-	if err != nil {
-		zap.S().Debug("Unable to fetch Host IP")
-	}
+	// hostIP, err := HostIP(allClients.Executor)
+	// if err != nil {
+	// 	zap.S().Debug("Unable to fetch Host IP")
+	// }
 
 	//To remove extra spaces and lines after the IP
-	hostIP = strings.TrimSpace(strings.Trim(hostIP, "\n"))
+	// hostIP = strings.TrimSpace(strings.Trim(hostIP, "\n"))
 
 	// Fetch the keystone token.
 	// This is used as a reference to the segment event.
-	auth, err := allClients.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-		ctx.MfaToken,
-	)
-	if err != nil {
-		zap.S().Debug("Unable to locate keystone credentials: %s\n", err.Error())
-		return fmt.Errorf("Unable to locate keystone credentials: %s\n", err.Error())
-	}
+	// auth, err := allClients.Keystone.GetAuth(
+	// 	ctx.Username,
+	// 	ctx.Password,
+	// 	ctx.Tenant,
+	// 	ctx.MfaToken,
+	// )
+	// if err != nil {
+	// 	zap.S().Debug("Unable to locate keystone credentials: %s\n", err.Error())
+	// 	return fmt.Errorf("Unable to locate keystone credentials: %s\n", err.Error())
+	// }
 
 	// To Fetch FQDN
-	FQDN, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
-	if err != nil {
-		zap.S().Debug("unable to fetch fqdn: %w")
-		return fmt.Errorf("unable to fetch fqdn: %w", err)
-	}
+	// FQDN, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
+	// if err != nil {
+	// 	zap.S().Debug("unable to fetch fqdn: %w")
+	// 	return fmt.Errorf("unable to fetch fqdn: %w", err)
+	// }
 	//To fetch FQDN from config if region given is invalid
-	if FQDN == "" {
-		FQDN = ctx.Fqdn
-		FQDN = strings.Replace(FQDN, "https://", "", 1)
-	}
+	// if FQDN == "" {
+	// 	FQDN = ctx.Fqdn
+	// 	FQDN = strings.Replace(FQDN, "https://", "", 1)
+	// }
 
 	// Commenting out the auto upload of the support bundle in favour of #incident351
 
@@ -217,7 +216,7 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 	statPaths(exec, util.DmesgLog, msgfile, lockfile)
 
 	// To fetch the hostname of remote node
-	hostname, err := exec.RunWithStdout("bash", "-c", fmt.Sprintf("hostname"))
+	hostname, err := exec.RunWithStdout("bash", "-c", "hostname")
 	if err != nil {
 		zap.S().Debug("Failed to fetch hostname ", err)
 	}
