@@ -112,36 +112,38 @@ func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote 
 		FQDN = strings.Replace(FQDN, "https://", "", 1)
 	}
 
+	// Commenting out the auto upload of the support bundle in favour of #incident351
+
 	// S3 location to upload the file
-	S3_Location = S3_Loc + "/" + FQDN + "/" + hostIP + "/"
+	// S3_Location = S3_Loc + "/" + FQDN + "/" + hostIP + "/"
 
 	// To upload the pf9cli log bundle to S3 bucket
-	errUpload := S3Upload(allClients.Executor)
-	if errUpload != nil {
-		zap.S().Debugf("Failed to upload pf9ctl supportBundle to %s bucket!! ", S3_BUCKET_NAME, errUpload)
+	// errUpload := S3Upload(allClients.Executor)
+	// if errUpload != nil {
+	// 	zap.S().Debugf("Failed to upload pf9ctl supportBundle to %s bucket!! ", S3_BUCKET_NAME, errUpload)
 
-		if err := allClients.Segment.SendEvent("supportBundle upload Failed", auth, "Failed", ""); err != nil {
-			zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
-		}
+	// 	if err := allClients.Segment.SendEvent("supportBundle upload Failed", auth, "Failed", ""); err != nil {
+	// 		zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
+	// 	}
 
-	} else {
-		zap.S().Debugf("Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
-			S3_BUCKET_NAME, S3_Location)
-		if err := allClients.Segment.SendEvent("supportBundle upload Success", auth, "Success", ""); err != nil {
-			zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
-		}
-	}
+	// } else {
+	// 	zap.S().Debugf("Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
+	// 		S3_BUCKET_NAME, S3_Location)
+	// 	if err := allClients.Segment.SendEvent("supportBundle upload Success", auth, "Success", ""); err != nil {
+	// 		zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
+	// 	}
+	// }
 
 	// Remove the supportbundle after uploading to S3
-	errremove := RemoveBundle(allClients.Executor)
-	if errremove != nil {
-		zap.S().Debug("Error removing generated bundle", errremove)
-	}
+	// errremove := RemoveBundle(allClients.Executor)
+	// if errremove != nil {
+	// 	zap.S().Debug("Error removing generated bundle", errremove)
+	// }
 
 	return nil
 }
 
-//To generate the targetfile name including the hostname and the timestamp
+// To generate the targetfile name including the hostname and the timestamp
 func GenTargetFilename(timestamp time.Time, hostname string) string {
 
 	//timestamp format for the archive file(Note:UTC Time is taken)
@@ -157,7 +159,7 @@ func GenTargetFilename(timestamp time.Time, hostname string) string {
 	return targetfile
 }
 
-//To upload supportBundle to the S3 location
+// To upload supportBundle to the S3 location
 func S3Upload(exec cmdexec.Executor) error {
 	errUpload := exec.Run("bash", "-c", fmt.Sprintf("curl -T %s -H %s %s", fileloc,
 		S3_ACL, S3_Location))
@@ -167,7 +169,7 @@ func S3Upload(exec cmdexec.Executor) error {
 	return nil
 }
 
-//To remove the supportBundle
+// To remove the supportBundle
 func RemoveBundle(exec cmdexec.Executor) error {
 	errremove := exec.Run("bash", "-c", fmt.Sprintf("rm -rf %s", fileloc))
 	if errremove != nil {
@@ -189,8 +191,8 @@ func statPaths(exec cmdexec.Executor, paths ...string) bool {
 	return couldStatAll
 }
 
-//This function is used to generate the support bundles.
-//It copies all the log files specified into a directory and archives that given directory.
+// This function is used to generate the support bundles.
+// It copies all the log files specified into a directory and archives that given directory.
 func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool) (string, error) {
 
 	//Check whether the source directories exist in remote node.
