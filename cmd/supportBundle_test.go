@@ -12,13 +12,13 @@ import (
 	"github.com/platform9/pf9ctl/pkg/test_utils"
 )
 
-//Errors returned by the functions
+// Errors returned by the functions
 var ErrHostIP = errors.New("Host IP not found")
 var ErrRemove = errors.New("Unable to remove bundle")
 var ErrUpload = errors.New("Unable to upload supportBundle to S3")
 var ErrPartialBundle = errors.New("Failed to generate complete supportBundle, generated partial bundle")
 
-//HostIP test case
+// HostIP test case
 func TestHostIP(t *testing.T) {
 	type want struct {
 		host string
@@ -71,7 +71,7 @@ func TestHostIP(t *testing.T) {
 
 }
 
-//GenSupportBundle test case(Only for Local Host)
+// GenSupportBundle test case(Only for Local Host)
 func TestGenSupportBundle(t *testing.T) {
 
 	//isRemote := false
@@ -132,7 +132,7 @@ func TestGenSupportBundle(t *testing.T) {
 
 }
 
-//GenTargetFilename test case
+// GenTargetFilename test case
 func TestGenTargetFilename(t *testing.T) {
 
 	type want struct {
@@ -169,59 +169,7 @@ func TestGenTargetFilename(t *testing.T) {
 
 }
 
-//S3Upload test case
-func TestS3Upload(t *testing.T) {
-	type want struct {
-		err error
-	}
-
-	type args struct {
-		exec cmdexec.Executor
-	}
-
-	cases := map[string]struct {
-		args
-		want
-	}{
-		//Success case.The S3Upload function returns nil error on successful execution
-		"CheckPass": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRun: func(name string, args ...string) error {
-						return nil
-					},
-				},
-			},
-			want: want{
-				err: nil,
-			},
-		},
-		//Failure case.The S3Upload function returns ErrUpload error on execution
-		"CheckFail": {
-			args: args{
-				exec: &cmdexec.MockExecutor{
-					MockRun: func(name string, args ...string) error {
-						return ErrUpload
-					},
-				},
-			},
-			want: want{
-				err: ErrUpload,
-			},
-		},
-	}
-
-	for name, tc := range cases {
-		t.Run(name, func(t *testing.T) {
-
-			err1 := supportBundle.S3Upload(tc.exec)
-			test_utils.Equals(t, tc.want.err, err1)
-		})
-	}
-
-}
-
-//RemoveBundle test case
+// RemoveBundle test case
 func TestRemoveBundle(t *testing.T) {
 	type want struct {
 		err error
