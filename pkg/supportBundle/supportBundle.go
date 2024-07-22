@@ -63,10 +63,10 @@ func HostIP(exec cmdexec.Executor) (string, error) {
 	return host, nil
 }
 
-// To upload pf9ctl log bundle to S3 bucket
+// Generate support bundle and not upload
 func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote bool) error {
 
-	zap.S().Debugf("Received a call to upload pf9ctl supportBundle to %s bucket.\n", S3_BUCKET_NAME)
+	zap.S().Debugf("Received a call to generate pf9ctl supportBundle\n")
 	HostOS(allClients.Executor)
 	fileloc, err = GenSupportBundle(allClients.Executor, Timestamp, isRemote)
 	if err != nil && err != ErrPartialBundle {
@@ -76,68 +76,6 @@ func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote 
 		}
 		zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
 	}
-
-	// To get the HostIP
-	// hostIP, err := HostIP(allClients.Executor)
-	// if err != nil {
-	// 	zap.S().Debug("Unable to fetch Host IP")
-	// }
-
-	//To remove extra spaces and lines after the IP
-	// hostIP = strings.TrimSpace(strings.Trim(hostIP, "\n"))
-
-	// Fetch the keystone token.
-	// This is used as a reference to the segment event.
-	// auth, err := allClients.Keystone.GetAuth(
-	// 	ctx.Username,
-	// 	ctx.Password,
-	// 	ctx.Tenant,
-	// 	ctx.MfaToken,
-	// )
-	// if err != nil {
-	// 	zap.S().Debug("Unable to locate keystone credentials: %s\n", err.Error())
-	// 	return fmt.Errorf("Unable to locate keystone credentials: %s\n", err.Error())
-	// }
-
-	// To Fetch FQDN
-	// FQDN, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
-	// if err != nil {
-	// 	zap.S().Debug("unable to fetch fqdn: %w")
-	// 	return fmt.Errorf("unable to fetch fqdn: %w", err)
-	// }
-	//To fetch FQDN from config if region given is invalid
-	// if FQDN == "" {
-	// 	FQDN = ctx.Fqdn
-	// 	FQDN = strings.Replace(FQDN, "https://", "", 1)
-	// }
-
-	// Commenting out the auto upload of the support bundle in favour of #incident351
-
-	// S3 location to upload the file
-	// S3_Location = S3_Loc + "/" + FQDN + "/" + hostIP + "/"
-
-	// To upload the pf9cli log bundle to S3 bucket
-	// errUpload := S3Upload(allClients.Executor)
-	// if errUpload != nil {
-	// 	zap.S().Debugf("Failed to upload pf9ctl supportBundle to %s bucket!! ", S3_BUCKET_NAME, errUpload)
-
-	// 	if err := allClients.Segment.SendEvent("supportBundle upload Failed", auth, "Failed", ""); err != nil {
-	// 		zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
-	// 	}
-
-	// } else {
-	// 	zap.S().Debugf("Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
-	// 		S3_BUCKET_NAME, S3_Location)
-	// 	if err := allClients.Segment.SendEvent("supportBundle upload Success", auth, "Success", ""); err != nil {
-	// 		zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
-	// 	}
-	// }
-
-	// Remove the supportbundle after uploading to S3
-	// errremove := RemoveBundle(allClients.Executor)
-	// if errremove != nil {
-	// 	zap.S().Debug("Error removing generated bundle", errremove)
-	// }
 
 	return nil
 }
