@@ -13,16 +13,16 @@ import (
 )
 
 // Errors returned by the functions
-var ErrHostIP = errors.New("Host IP not found")
-var ErrRemove = errors.New("Unable to remove bundle")
-var ErrUpload = errors.New("Unable to upload supportBundle to S3")
-var ErrPartialBundle = errors.New("Failed to generate complete supportBundle, generated partial bundle")
+var ErrHostIP = errors.New("host IP not found")
+var ErrRemove = errors.New("unable to remove bundle")
+var ErrUpload = errors.New("unable to upload supportBundle to S3")
+var ErrPartialBundle = errors.New("failed to generate complete supportBundle, generated partial bundle")
 
 // HostIP test case
 func TestHostIP(t *testing.T) {
 	type want struct {
-		host string
-		err  error
+		// host string
+		err error
 	}
 
 	type args struct {
@@ -78,14 +78,14 @@ func TestGenSupportBundle(t *testing.T) {
 
 	timestamp := time.Now()
 	type want struct {
-		targetfile string
-		err        error
+		// targetfile string
+		err error
 	}
 
 	type args struct {
-		exec      cmdexec.Executor
-		timestamp time.Time
-		isRemote  bool
+		exec cmdexec.Executor
+		// timestamp time.Time
+		// isRemote  bool
 	}
 
 	cases := map[string]struct {
