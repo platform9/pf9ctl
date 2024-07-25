@@ -9,7 +9,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/client"
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
 	"github.com/platform9/pf9ctl/pkg/color"
-	"github.com/platform9/pf9ctl/pkg/keystone"
 	"github.com/platform9/pf9ctl/pkg/objects"
 	"github.com/platform9/pf9ctl/pkg/pmk"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -33,11 +32,11 @@ var (
 	hostOS      string
 
 	//Errors returned from the functions
-	ErrHostIP        = fmt.Errorf("Host IP not found")
-	ErrRemove        = fmt.Errorf("Unable to remove bundle")
-	ErrGenBundle     = fmt.Errorf("Unable to generate supportBundle in remote host")
-	ErrUpload        = fmt.Errorf("Unable to upload supportBundle to S3")
-	ErrPartialBundle = fmt.Errorf("Failed to generate complete supportBundle, generated partial bundle")
+	ErrHostIP        = fmt.Errorf("host IP not found")
+	ErrRemove        = fmt.Errorf("unable to remove bundle")
+	ErrGenBundle     = fmt.Errorf("unable to generate supportBundle in remote host")
+	ErrUpload        = fmt.Errorf("unable to upload supportBundle to S3")
+	ErrPartialBundle = fmt.Errorf("failed to generate complete supportBundle, generated partial bundle")
 
 	//Timestamp used for generating targetfile
 	Timestamp = time.Now()
@@ -54,7 +53,7 @@ func HostOS(exec cmdexec.Executor) {
 // To get the Host IP address
 func HostIP(exec cmdexec.Executor) (string, error) {
 	zap.S().Debug("Fetching HostIP")
-	host, err := exec.RunWithStdout("bash", "-c", fmt.Sprintf("hostname -I"))
+	host, err := exec.RunWithStdout("bash", "-c", "hostname -I")
 	if err != nil {
 		zap.S().Error("Host IP Not found", err)
 		return host, ErrHostIP
@@ -64,10 +63,10 @@ func HostIP(exec cmdexec.Executor) (string, error) {
 	return host, nil
 }
 
-// To upload pf9ctl log bundle to S3 bucket
+// Generate support bundle and not upload
 func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote bool) error {
 
-	zap.S().Debugf("Received a call to upload pf9ctl supportBundle to %s bucket.\n", S3_BUCKET_NAME)
+	zap.S().Debugf("Received a call to generate pf9ctl supportBundle\n")
 	HostOS(allClients.Executor)
 	fileloc, err = GenSupportBundle(allClients.Executor, Timestamp, isRemote)
 	if err != nil && err != ErrPartialBundle {
@@ -78,70 +77,10 @@ func SupportBundleUpload(ctx objects.Config, allClients client.Client, isRemote 
 		zap.S().Debugf(color.Red("x ")+"Failed to generate supportBundle\n", err.Error())
 	}
 
-	// To get the HostIP
-	hostIP, err := HostIP(allClients.Executor)
-	if err != nil {
-		zap.S().Debug("Unable to fetch Host IP")
-	}
-
-	//To remove extra spaces and lines after the IP
-	hostIP = strings.TrimSpace(strings.Trim(hostIP, "\n"))
-
-	// Fetch the keystone token.
-	// This is used as a reference to the segment event.
-	auth, err := allClients.Keystone.GetAuth(
-		ctx.Username,
-		ctx.Password,
-		ctx.Tenant,
-		ctx.MfaToken,
-	)
-	if err != nil {
-		zap.S().Debug("Unable to locate keystone credentials: %s\n", err.Error())
-		return fmt.Errorf("Unable to locate keystone credentials: %s\n", err.Error())
-	}
-
-	// To Fetch FQDN
-	FQDN, err := keystone.FetchRegionFQDN(ctx.Fqdn, ctx.Region, auth)
-	if err != nil {
-		zap.S().Debug("unable to fetch fqdn: %w")
-		return fmt.Errorf("unable to fetch fqdn: %w", err)
-	}
-	//To fetch FQDN from config if region given is invalid
-	if FQDN == "" {
-		FQDN = ctx.Fqdn
-		FQDN = strings.Replace(FQDN, "https://", "", 1)
-	}
-
-	// S3 location to upload the file
-	S3_Location = S3_Loc + "/" + FQDN + "/" + hostIP + "/"
-
-	// To upload the pf9cli log bundle to S3 bucket
-	errUpload := S3Upload(allClients.Executor)
-	if errUpload != nil {
-		zap.S().Debugf("Failed to upload pf9ctl supportBundle to %s bucket!! ", S3_BUCKET_NAME, errUpload)
-
-		if err := allClients.Segment.SendEvent("supportBundle upload Failed", auth, "Failed", ""); err != nil {
-			zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
-		}
-
-	} else {
-		zap.S().Debugf("Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
-			S3_BUCKET_NAME, S3_Location)
-		if err := allClients.Segment.SendEvent("supportBundle upload Success", auth, "Success", ""); err != nil {
-			zap.S().Debugf("Unable to send Segment event for supportBundle. Error: %s", err.Error())
-		}
-	}
-
-	// Remove the supportbundle after uploading to S3
-	errremove := RemoveBundle(allClients.Executor)
-	if errremove != nil {
-		zap.S().Debug("Error removing generated bundle", errremove)
-	}
-
 	return nil
 }
 
-//To generate the targetfile name including the hostname and the timestamp
+// To generate the targetfile name including the hostname and the timestamp
 func GenTargetFilename(timestamp time.Time, hostname string) string {
 
 	//timestamp format for the archive file(Note:UTC Time is taken)
@@ -157,7 +96,7 @@ func GenTargetFilename(timestamp time.Time, hostname string) string {
 	return targetfile
 }
 
-//To upload supportBundle to the S3 location
+// To upload supportBundle to the S3 location
 func S3Upload(exec cmdexec.Executor) error {
 	errUpload := exec.Run("bash", "-c", fmt.Sprintf("curl -T %s -H %s %s", fileloc,
 		S3_ACL, S3_Location))
@@ -167,7 +106,7 @@ func S3Upload(exec cmdexec.Executor) error {
 	return nil
 }
 
-//To remove the supportBundle
+// To remove the supportBundle
 func RemoveBundle(exec cmdexec.Executor) error {
 	errremove := exec.Run("bash", "-c", fmt.Sprintf("rm -rf %s", fileloc))
 	if errremove != nil {
@@ -189,8 +128,8 @@ func statPaths(exec cmdexec.Executor, paths ...string) bool {
 	return couldStatAll
 }
 
-//This function is used to generate the support bundles.
-//It copies all the log files specified into a directory and archives that given directory.
+// This function is used to generate the support bundles.
+// It copies all the log files specified into a directory and archives that given directory.
 func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool) (string, error) {
 
 	//Check whether the source directories exist in remote node.
@@ -215,7 +154,7 @@ func GenSupportBundle(exec cmdexec.Executor, timestamp time.Time, isRemote bool)
 	statPaths(exec, util.DmesgLog, msgfile, lockfile)
 
 	// To fetch the hostname of remote node
-	hostname, err := exec.RunWithStdout("bash", "-c", fmt.Sprintf("hostname"))
+	hostname, err := exec.RunWithStdout("bash", "-c", "hostname")
 	if err != nil {
 		zap.S().Debug("Failed to fetch hostname ", err)
 	}
