@@ -11,7 +11,6 @@ import (
 	"github.com/platform9/pf9ctl/pkg/color"
 	"github.com/platform9/pf9ctl/pkg/config"
 	"github.com/platform9/pf9ctl/pkg/objects"
-	"github.com/platform9/pf9ctl/pkg/supportBundle"
 	"github.com/platform9/pf9ctl/pkg/util"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
@@ -21,7 +20,7 @@ import (
 var (
 	supportBundleCmd = &cobra.Command{
 		Use:   "bundle",
-		Short: "Gathers the support bundle and uploads it to S3",
+		Short: "Gathers the support bundle and uploads it to S3 (## command not supported now!)",
 		Long:  `Gathers support bundle that includes logs for pf9 services and pf9ctl, uploads to S3 `,
 		Run:   supportBundleUpload,
 	}
@@ -29,7 +28,7 @@ var (
 	bundleConfig objects.NodeConfig
 )
 
-//This initialization is using create commands which is not in use for now.
+// This initialization is using create commands which is not in use for now.
 func init() {
 	supportBundleCmd.Flags().StringVarP(&bundleConfig.User, "user", "u", "", "ssh username for the nodes")
 	supportBundleCmd.Flags().StringVarP(&bundleConfig.Password, "password", "p", "", "ssh password for the nodes (use 'single quotes' to pass password)")
@@ -83,15 +82,15 @@ func supportBundleUpload(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	zap.S().Info("==========Uploading supportBundle to S3 bucket==========")
-	err = supportBundle.SupportBundleUpload(*cfg, c, isRemote)
-	if err != nil {
-		zap.S().Infof("Failed to upload pf9ctl supportBundle to %s bucket!!", supportBundle.S3_BUCKET_NAME)
-	} else {
+	// zap.S().Info("==========Uploading supportBundle to S3 bucket==========")
+	// err = supportBundle.SupportBundleUpload(*cfg, c, isRemote)
+	// if err != nil {
+	// 	zap.S().Infof("Failed to upload pf9ctl supportBundle to %s bucket!!", supportBundle.S3_BUCKET_NAME)
+	// } else {
 
-		fmt.Printf(color.Green("✓ ")+"Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
-			supportBundle.S3_BUCKET_NAME, supportBundle.S3_Location)
-	}
+	// 	fmt.Printf(color.Green("✓ ")+"Succesfully uploaded pf9ctl supportBundle to %s bucket at %s location \n",
+	// 		supportBundle.S3_BUCKET_NAME, supportBundle.S3_Location)
+	// }
 
 	zap.S().Debug("==========Finished running supportBundleupload==========")
 }
