@@ -112,11 +112,6 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 
 	result, err := pmk.CheckNode(*cfg, c, auth, nc)
 	if err != nil {
-		// Uploads pf9cli log bundle if checknode fails
-		// errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
-		// if errbundle != nil {
-		// 	zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
-		// }
 		zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
 	}
 

@@ -327,11 +327,6 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 		result, err := pmk.CheckNode(*cfg, c, auth, bootConfig)
 		if err != nil {
-			// Uploads pf9cli log bundle if checknode fails
-			// errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
-			// if errbundle != nil {
-			// 	zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
-			// }
 			zap.S().Fatalf("Unable to perform pre-requisite checks on this node: %s", err.Error())
 		}
 
@@ -359,13 +354,6 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 
 		zap.S().Debug("========== Running prep-node as a part of bootstrap ==========")
 		if err := pmk.PrepNode(*cfg, c, auth); err != nil {
-
-			// Uploads pf9cli log bundle if prepnode failed to get prepared
-			// errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
-			// if errbundle != nil {
-			// 	zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
-			// }
-
 			zap.S().Debugf("Unable to prep node: %s\n", err.Error())
 			zap.S().Fatalf("\nFailed to prepare node. %s. See %s or use --verbose for logs\n", err.Error(), log.GetLogLocation(util.Pf9Log))
 		}
@@ -435,13 +423,6 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 	}
 
 	if err := pmk.Bootstrap(*cfg, c, payload, auth, bootConfig); err != nil {
-
-		// Uploads pf9cli log bundle if bootstrap command fails
-		// errbundle := supportBundle.SupportBundleUpload(*cfg, c, isRemote)
-		// if errbundle != nil {
-		// 	zap.S().Debugf("Unable to upload supportbundle to s3 bucket %s", errbundle.Error())
-		// }
-
 		zap.S().Debugf("Unable to bootstrap node: %s\n", err.Error())
 		zap.S().Fatalf("Failed to bootstrap node. %s. See %s or use --verbose for logs\n", err.Error(), log.GetLogLocation(util.Pf9Log))
 	}
