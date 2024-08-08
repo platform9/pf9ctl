@@ -29,7 +29,7 @@ GOFLAGS ?= ""
 default: $(BIN)
 
 container-build:
-	docker run --rm --env XDG_CACHE_HOME=$(XDG_CACHE_HOME) --env SEGMENT_KEY_PRD_PMKFT=$(SEGMENT_KEY_PRD_PMKFT) --env VERSION_OVERRIDE=${VERSION_OVERRIDE} --env GOPATH=/tmp --env GOFLAGS=$(GOFLAGS) --user $(CONT_USER):$(CONT_GRP) --volume $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) --workdir $(PACKAGE_GOPATH) golang:1.21 make
+	docker run --rm --env XDG_CACHE_HOME=$(XDG_CACHE_HOME) --env SEGMENT_KEY_PRD_PMKFT=$(SEGMENT_KEY_PRD_PMKFT) --env VERSION_OVERRIDE=${VERSION_OVERRIDE} --env GOPATH=/tmp --env GOFLAGS=$(GOFLAGS) --user $(CONT_USER):$(CONT_GRP) --volume $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) --workdir $(PACKAGE_GOPATH) golang:1.18 make
 
 $(BIN): test
 	go build -o $(BIN_DIR)/$(BIN) -ldflags "$(LDFLAGS) -X github.com/platform9/pf9ctl/pkg/client.SegmentWriteKey=$(SEGMENT_KEY_PRD_PMKFT) -s -w"
