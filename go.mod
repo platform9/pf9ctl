@@ -1,6 +1,6 @@
 module github.com/platform9/pf9ctl
 
-go 1.14
+go 1.21
 
 require (
 	github.com/Azure/azure-sdk-for-go v57.2.0+incompatible
