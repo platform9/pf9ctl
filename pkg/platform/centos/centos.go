@@ -136,7 +136,7 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	zap.S().Debug("Checking OS Packages")
 
 	rhel8, _ = regexp.MatchString(`.*8\.[5-9]\.*`, string(version))
-	rocky9, _ = regexp.MatchString(`.*9\.[1-2]\.*`, string(version))
+	rocky9, _ = regexp.MatchString(`.*9\.[1-2,4]\.*`, string(version))
 
 	if platform.SkipOSChecks {
 		rhel8, _ = regexp.MatchString(`8\.\d{1,2}`, string(version))
