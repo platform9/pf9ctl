@@ -4,3 +4,5 @@ build
 .env
 pf9ctl
 .DS_Store
+
+/vendor
