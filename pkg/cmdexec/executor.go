@@ -33,6 +33,7 @@ type Executor interface {
 	Run(name string, args ...string) error
 	RunWithStdout(name string, args ...string) (string, error)
 	RunCommandWait(command string) string
+	RunWithProgressStages(name string, args ...string) (string, error)
 }
 
 // LocalExecutor as the name implies executes commands locally
@@ -104,7 +105,7 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 	return string(byt), err
 }
 
-// RunWithProgressBar runs a command locally displaying the progress
+// RunWithProgressBar runs a command locally displaying the progress status along with stdout and err
 func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (string, error) {
 	if c.ProxyUrl != "" {
 		args = append([]string{httpsProxy + "=" + c.ProxyUrl, name}, args...)
@@ -258,6 +259,12 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 
 	zap.S().Debug("Running command ", command, "stdout:", string(stdout), "stderr:", string(stderr))
 	return string(stdout), err
+}
+
+// RunWithProgressBar runs a command remote host displaying the progress status along with stdout
+func (r *RemoteExecutor) RunWithProgressStages(name string, args ...string) (string, error) {
+	//******to-do******
+	return "", nil
 }
 
 // NewRemoteExecutor create an Executor interface to execute commands remotely
