@@ -3,6 +3,7 @@ package util
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"time"
 )
 
@@ -118,6 +119,20 @@ var (
 	LockRed  = "/var/log/yum.log"
 
 	Confidential = []string{"--password", "--user-token"}
+)
+
+var (
+	//constants to check for cloud-ctl hostagent progress status
+	HostAgentProgressBarStages = []*regexp.Regexp{
+		regexp.MustCompile(`.*/etc/pf9/certs/hostagent/cert\.pem`),
+		regexp.MustCompile(`.*/etc/pf9/certs/hostagent/key\.pem`),
+		regexp.MustCompile(`.*/etc/pf9/certs/ca/cert\.pem`),
+		regexp.MustCompile(`.*/etc/pf9/hostagent\.conf`),
+		regexp.MustCompile(`.*pf9-hostagent-.*\.x86_64\.deb`),
+		regexp.MustCompile(`.*pf9-comms-.*\.x86_64\.deb`),
+		regexp.MustCompile(`.*download_nocert_routine executed successfully.*`),
+	}
+	HostAgentprogressPercentage = []int{5, 10, 15, 20, 25, 75, 100}
 )
 
 func init() {
