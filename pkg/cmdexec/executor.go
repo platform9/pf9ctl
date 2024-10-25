@@ -123,7 +123,8 @@ func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (strin
 	var stdout string = ""
 
 	stdoutScanner := bufio.NewScanner(stdoutPipe)
-
+	
+	// Configurations for progressbar
 	bar := progressbar.NewOptions(100,
 		progressbar.OptionSetDescription("Downloading Hostagent...	"),
 		progressbar.OptionClearOnFinish(),
@@ -133,6 +134,7 @@ func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (strin
 			fmt.Println(color.Green("✓ ") + "Hostagent download complete")
 		}),
 	)
+
 	currentProgress := 0
 	nextStageProgress := util.HostAgentprogressPercentage[0]
 
@@ -145,6 +147,7 @@ func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (strin
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
 	s.Color("red")
 
+	//pre-install checks
 	s.Start()
 	s.Suffix = "Setting Up Required Components..."
 	for stdoutScanner.Scan() {
@@ -157,6 +160,7 @@ func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (strin
 		}
 	}
 
+	//Hostagent Download progressbar incrementation(Fake progress)
 	var wg sync.WaitGroup
 	quit := make(chan bool)
 	wg.Add(1)
@@ -176,6 +180,7 @@ func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (strin
 		}
 	}()
 
+	//Hostagent Download progressbar incrementation(based on download stages)
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -197,6 +202,7 @@ func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (strin
 			stdout += outputLine + "\n"
 		}
 
+		//Check for Hostagent installation
 		s.Start()
 		s.Suffix = "Installing Platform9 hostagent..."
 		for stdoutScanner.Scan() {
@@ -264,6 +270,7 @@ func (r *RemoteExecutor) RunWithStdout(name string, args ...string) (string, err
 // RunWithProgressBar runs a command remote host displaying the progress status along with stdout
 func (r *RemoteExecutor) RunWithProgressStages(name string, args ...string) (string, error) {
 	//******to-do******
+	//this is a placeholder function, to be implemented
 	return "", nil
 }
 
