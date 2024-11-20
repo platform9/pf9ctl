@@ -321,17 +321,17 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 		cfg.Password = string(passwordBytes)
 		fmt.Println()
 	}
-	var region string
-	if cfg.Region == "" {
-		fmt.Printf("Region [RegionOne]: ")
-		region, _ = reader.ReadString('\n')
-		cfg.Region = strings.TrimSuffix(region, "\n")
-	}
 	var service string
 	if cfg.Tenant == "" {
 		fmt.Printf("Tenant [service]: ")
 		service, _ = reader.ReadString('\n')
 		cfg.Tenant = strings.TrimSuffix(service, "\n")
+	}
+	var region string
+	if cfg.Region == "" {
+		fmt.Printf("Region [RegionOne]: ")
+		region, _ = reader.ReadString('\n')
+		cfg.Region = strings.TrimSuffix(region, "\n")
 	}
 	var proxyURL string
 	if cfg.ProxyURL == "" {
@@ -369,7 +369,7 @@ func createClient(cfg *objects.Config, nc objects.NodeConfig) (client.Client, er
 	return client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false)
 }
 
-//This function clears the context if it is invalid. Before storing it.
+// This function clears the context if it is invalid. Before storing it.
 func clearContext(v interface{}) {
 	p := reflect.ValueOf(v).Elem()
 	p.Set(reflect.Zero(p.Type()))
