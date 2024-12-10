@@ -165,7 +165,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Restart()
 	s.Suffix = " Authorising host"
 	zap.S().Debug("Authorising host")
-	hostID := strings.TrimSuffix(output, "\n")
+	hostID := strings.TrimSpace(output)
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token, util.KubeVersion); err != nil {

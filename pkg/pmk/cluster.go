@@ -67,7 +67,7 @@ func Bootstrap(ctx objects.Config, c client.Client, req qbert.ClusterCreateReque
 	if err != nil {
 		return fmt.Errorf("Unable to execute command: %w", err)
 	}
-	nodeID := strings.TrimSuffix(string(output), "\n")
+	nodeID := strings.TrimSpace(string(output))
 
 	LoopVariable := 1
 	for LoopVariable <= util.MaxLoopValue {
