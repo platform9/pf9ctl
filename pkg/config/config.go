@@ -204,7 +204,7 @@ func ConfigCmdCreateAmazonRun(cfg *objects.Config) error {
 	if cfg.AwsIamUsername == "" {
 		fmt.Printf("Amazon IAM User: ")
 		awsIamUsername, _ := reader.ReadString('\n')
-		cfg.AwsIamUsername = strings.TrimSuffix(awsIamUsername, "\n")
+		cfg.AwsIamUsername = strings.TrimSpace(awsIamUsername)
 	}
 
 	if cfg.AwsAccessKey == "" {
@@ -224,7 +224,7 @@ func ConfigCmdCreateAmazonRun(cfg *objects.Config) error {
 	if cfg.AwsRegion == "" {
 		fmt.Printf("Region: ")
 		region, _ = reader.ReadString('\n')
-		cfg.AwsRegion = strings.TrimSuffix(region, "\n")
+		cfg.AwsRegion = strings.TrimSpace(region)
 	}
 
 	if cfg.AwsRegion == "" {
@@ -278,19 +278,19 @@ func ConfigCmdCreateGoogleRun(cfg *objects.Config) error {
 	if cfg.GooglePath == "" {
 		fmt.Printf("Service JSON path: ")
 		googleProjectName, _ := reader.ReadString('\n')
-		cfg.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
+		cfg.GoogleProjectName = strings.TrimSpace(googleProjectName)
 	}
 
 	if cfg.GoogleProjectName == "" {
 		fmt.Printf("Project Name: ")
 		googleProjectName, _ := reader.ReadString('\n')
-		cfg.GoogleProjectName = strings.TrimSuffix(googleProjectName, "\n")
+		cfg.GoogleProjectName = strings.TrimSpace(googleProjectName)
 	}
 
 	if cfg.GoogleServiceEmail == "" {
 		fmt.Printf("Service Account Email: ")
 		googleServiceEmail, _ := reader.ReadString('\n')
-		cfg.GoogleServiceEmail = strings.TrimSuffix(googleServiceEmail, "\n")
+		cfg.GoogleServiceEmail = strings.TrimSpace(googleServiceEmail)
 	}
 
 	return nil
@@ -306,13 +306,13 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 	if cfg.Fqdn == "" {
 		fmt.Printf("Platform9 Account URL: ")
 		fqdn, _ := reader.ReadString('\n')
-		cfg.Fqdn = strings.TrimSuffix(fqdn, "\n")
+		cfg.Fqdn = strings.TrimSpace(fqdn)
 	}
 
 	if cfg.Username == "" {
 		fmt.Printf("Username: ")
 		username, _ := reader.ReadString('\n')
-		cfg.Username = strings.TrimSuffix(username, "\n")
+		cfg.Username = strings.TrimSpace(username)
 	}
 
 	if cfg.Password == "" {
@@ -325,19 +325,19 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 	if cfg.Region == "" {
 		fmt.Printf("Region [RegionOne]: ")
 		region, _ = reader.ReadString('\n')
-		cfg.Region = strings.TrimSuffix(region, "\n")
+		cfg.Region = strings.TrimSpace(region)
 	}
 	var service string
 	if cfg.Tenant == "" {
 		fmt.Printf("Tenant [service]: ")
 		service, _ = reader.ReadString('\n')
-		cfg.Tenant = strings.TrimSuffix(service, "\n")
+		cfg.Tenant = strings.TrimSpace(service)
 	}
 	var proxyURL string
 	if cfg.ProxyURL == "" {
 		fmt.Print("Proxy URL [None]: ")
 		proxyURL, _ = reader.ReadString('\n')
-		cfg.ProxyURL = strings.TrimSuffix(proxyURL, "\n")
+		cfg.ProxyURL = strings.TrimSpace(proxyURL)
 	}
 
 	if cfg.Region == "" {
@@ -352,7 +352,7 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 	if cfg.MfaToken == "" {
 		fmt.Print("MFA Token [None]: ")
 		mfaToken, _ = reader.ReadString('\n')
-		cfg.MfaToken = strings.TrimSuffix(mfaToken, "\n")
+		cfg.MfaToken = strings.TrimSpace(mfaToken)
 	}
 
 	return SetProxy(cfg.ProxyURL)
