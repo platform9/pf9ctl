@@ -135,7 +135,7 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	errLines := []string{packageInstallError}
 	zap.S().Debug("Checking OS Packages")
 
-	rhel8, _ = regexp.MatchString(`.*8\.[5-9]\.*`, string(version))
+	rhel8, _ = regexp.MatchString(`.*8\.([5-9]|1[0])\.*`, string(version))
 	rocky9, _ = regexp.MatchString(`.*9\.[1-5]\.*`, string(version))
 
 	if platform.SkipOSChecks {
@@ -181,7 +181,7 @@ func (c *CentOS) checkEnabledRepos() (bool, error) {
 
 	var centos, rhel8 bool
 	centos, _ = regexp.MatchString(`.*7\.[3-9]\.*`, string(version))
-	rhel8, _ = regexp.MatchString(`.*8\.[5-9]\.*`, string(version))
+	rhel8, _ = regexp.MatchString(`.*8\.([5-9]|1[0])\.*`, string(version))
 
 	if platform.SkipOSChecks {
 		centos, _ = regexp.MatchString(`7\.\d{1,2}`, string(version))
@@ -379,7 +379,7 @@ func (c *CentOS) Version() (string, error) {
 			return "redhat", nil
 		}
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.[5-9]\.*|.*9\.[1-5]\.*`, string(version)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.([5-9]|1[0])\.*|.*9\.[1-5]\.*`, string(version)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(version))
