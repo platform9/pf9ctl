@@ -323,7 +323,7 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 	}
 	var region string
 	if cfg.Region == "" {
-		fmt.Printf("Region [RegionOne]: ")
+		fmt.Printf("Region: ")
 		region, _ = reader.ReadString('\n')
 		cfg.Region = strings.TrimSpace(region)
 	}
@@ -339,11 +339,11 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 		proxyURL, _ = reader.ReadString('\n')
 		cfg.ProxyURL = strings.TrimSpace(proxyURL)
 	}
-
+	/* Removing Default Region.
 	if cfg.Region == "" {
 		cfg.Region = "RegionOne"
 	}
-
+	*/
 	if cfg.Tenant == "" {
 		cfg.Tenant = "service"
 	}
