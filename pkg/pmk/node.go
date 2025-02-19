@@ -144,7 +144,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Suffix = " Initialising host"
 	zap.S().Debug("Initialising host")
 	zap.S().Debug("Identifying the hostID from conf")
-	cmd := `grep host_id /etc/pf9/host_id.conf | cut -d '=' -f2`
+	cmd := `grep host_id /etc/pf9/host_id.conf && cut -d '=' -f2`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 	output = strings.TrimSpace(output)
 	if err != nil || output == "" {
