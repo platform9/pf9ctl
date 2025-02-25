@@ -54,12 +54,16 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 	commsProxyFilePath := "/etc/pf9/comms_proxy_cfg.json"
 	hostAgentEnvFile := "/opt/pf9/hostagent/pf9-hostagent.env"
 
-	var envs = "export http_proxy=" + proxy_url + "\n" +
-		"export https_proxy=" + proxy_url + "\n" +
-		"export HTTP_PROXY=" + proxy_url + "\n" +
-		"export HTTPS_PROXY=" + proxy_url + "\n" +
-		"export no_proxy=" + noProxy + "\n" +
-		"export NO_PROXY=" + noProxy
+	var envs = "http_proxy=" + proxy_url + "\n" +
+		"https_proxy=" + proxy_url + "\n" +
+		"HTTP_PROXY=" + proxy_url + "\n" +
+		"HTTPS_PROXY=" + proxy_url
+
+	if noProxyList != "" {
+		envs = envs + "\n" + "no_proxy=" + noProxyList + "\n" + "NO_PROXY=" + noProxyList
+	} else {
+		envs = envs + "\n" + "no_proxy=" + noProxy + "\n" + "NO_PROXY=" + noProxy
+	}
 
 	detachedMode := cmd.Flags().Changed("no-prompt")
 
@@ -96,7 +100,7 @@ func putNodeBehindProxyRun(cmd *cobra.Command, args []string) {
 			zap.S().Fatalf("Failed while moving temp file back to original file %s ", hostAgentEnvFile)
 		}
 		//Remove temp file
-		cmnd = fmt.Sprintf("rm -rf /opt/pf9/hostagent/pf9-hostagent.env.tmp")
+		cmnd = "rm -rf /opt/pf9/hostagent/pf9-hostagent.env.tmp"
 		_, err = executor.RunWithStdout("bash", "-c", cmnd)
 		if err != nil {
 			zap.S().Debugf("File %s.tmp not removed", hostAgentEnvFile)
