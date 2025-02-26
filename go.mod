@@ -1,8 +1,8 @@
 module github.com/platform9/pf9ctl
 
-go 1.20
+go 1.23.0
 
-//toolchain go1.19.11
+toolchain go1.23.6
 
 require (
 	github.com/Azure/azure-sdk-for-go v57.2.0+incompatible
@@ -22,7 +22,7 @@ require (
 	github.com/spf13/viper v1.6.3
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/net v0.35.0
 	google.golang.org/api v0.114.0
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0
