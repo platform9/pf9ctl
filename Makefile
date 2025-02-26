@@ -29,10 +29,10 @@ GOFLAGS ?= ""
 default: $(BIN)
 
 container-build:
-	docker run --rm --env XDG_CACHE_HOME=$(XDG_CACHE_HOME) --env SEGMENT_KEY_PRD_PMKFT=$(SEGMENT_KEY_PRD_PMKFT) --env VERSION_OVERRIDE=${VERSION_OVERRIDE} --env GOPATH=/tmp --env GOFLAGS=$(GOFLAGS) --user $(CONT_USER):$(CONT_GRP) --volume $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) --workdir $(PACKAGE_GOPATH) golang:1.23 make ldflags="-s -w -extldflags '-static'"
+	docker run --rm --env XDG_CACHE_HOME=$(XDG_CACHE_HOME) --env SEGMENT_KEY_PRD_PMKFT=$(SEGMENT_KEY_PRD_PMKFT) --env VERSION_OVERRIDE=${VERSION_OVERRIDE} --env GOPATH=/tmp --env GOFLAGS=$(GOFLAGS) --user $(CONT_USER):$(CONT_GRP) --volume $(PWD):$(PACKAGE_GOPATH) $(GIT_STORAGE_MOUNT) --workdir $(PACKAGE_GOPATH) golang:1.23 make ldflags="-s -w -extldflags \"-static\""
 
 $(BIN): test
-	go build -o $(BIN_DIR)/$(BIN) -ldflags "$(LDFLAGS) -X github.com/platform9/pf9ctl/pkg/client.SegmentWriteKey=$(SEGMENT_KEY_PRD_PMKFT) -s -w"
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o $(BIN_DIR)/$(BIN) -ldflags "$(LDFLAGS) -X github.com/platform9/pf9ctl/pkg/client.SegmentWriteKey=$(SEGMENT_KEY_PRD_PMKFT) -s -w  -extldflags \"-static\""
 
 format:
 	gofmt -w -s *.go
@@ -42,7 +42,8 @@ clean:
 	rm -rf $(BIN_DIR)
 
 build:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-s -w -extldflags '-static'" -o $(BIN_DIR)/$(BIN) main.go
+	go env
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -ldflags "-s -w -extldflags \"-static\"" -o $(BIN_DIR)/$(BIN) main.go
 
 test:
 	go test -v ./...

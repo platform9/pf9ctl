@@ -1,42 +1,48 @@
 # pf9ctl
 
-### Status
+## Status
+
 ![Go](https://github.com/platform9/pf9ctl/workflows/Go/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/platform9/pf9ctl)](https://goreportcard.com/report/github.com/platform9/pf9ctl)
 
-### Purpose
+## Purpose
+
    CLI tool for Platform9 management.
-   
-### Requirements(Prerequisites)
+ 
+## Requirements(Prerequisites)
 
 - CPUs: Minimum 2 CPUs needed on host
-- RAM: 12 GB 
+- RAM: 12 GB
 - Disk: At least 30 GB of total disk space and 15 GB of free space is needed on host
 - Sudo access to the user
-- OS(Supported) : 
-    - Ubuntu (16.04,18.04,20.04)
-    - RHEL/Centos (7.x)
+- OS(Supported) :
+  - Ubuntu (16.04,18.04,20.04)
+  - RHEL/Centos (7.x)
 
-### Proxy support
+## Proxy support
 
 The CLI allows configuration where all HTTPS requests can be routed through a proxy. See the `Configuration` section to see how to configure the proxy URL.
 
-### Non-interative mode
+## Non-interative mode
 
 The CLI can be run in a non-interactive mode with flag `--no-prompt`. Using this disables all user prompts. If required flags are not passed to a sub-command or in case of any error, the CLI returns with a non zero code.
 
-### Usage
+## Usage
+
 - Downloading the CLI 
+
 ```sh
 bash <(curl -sL https://pmkft-assets.s3-us-west-1.amazonaws.com/pf9ctl_setup) 
 ```
-- **Help** 
+
+- **Help**
+
 ```sh
 #pf9ctl --help
 
 CLI tool for Platform9 management.
-	Platform9 Managed Kubernetes cluster operations. Read more at
-	http://pf9.io/cli_clhelp.
+  Platform9 Managed Kubernetes cluster operations. Read more at
+  http://pf9.io/cli_clhelp.
 
 Usage:
   pf9ctl [command]
@@ -80,10 +86,12 @@ pf9ctl version: v1.16
 - **Upgrading**
 
   **This command is used upgrade the CLI to its newest version if there is one**
+
 ```sh
 #pf9ctl upgrade
 You already have the newest version
-```   
+```
+
 ```sh
 #pf9ctl upgrade
 New version found. Please upgrade to the newest version
@@ -131,7 +139,6 @@ Global Flags:
 Use "pf9ctl config [command] --help" for more information about a command.
 ```  
 
-
 ```sh
 #pf9ctl config set --help
 
@@ -158,7 +165,6 @@ Global Flags:
       --verbose          print verbose logs
 ```  
 
-
 - **Check Node**
 
   This command will perform the prerequisite check before a node can be added to the cluster. It checks for the following:
@@ -177,9 +183,10 @@ Global Flags:
        - Removal of existing pf9ctl(Python Based CLI)
        - Resources(CPU,Disk,Memory check)
 ```sh
+
 #pf9ctl check-node --help
 Check if a node satisfies prerequisites to be ready to be added to a Kubernetes cluster. Read more
-	at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/
+  at https://platform9.com/blog/support/managed-container-cloud-requirements-checklist/
 
 Usage:
   pf9ctl check-node [flags]
@@ -200,7 +207,7 @@ Global Flags:
 ```
 
    **Check-Node(Local)**
-   
+
  ```sh
 #pf9ctl check-node
 
@@ -219,7 +226,7 @@ Global Flags:
 ```
 
    **Check-Node(Remote)**
-   
+
  ```sh
 #pf9ctl check-node  -i 10.128.241.203 -u centos
 
@@ -240,13 +247,14 @@ Enter password for remote host:
 
 ✓ Completed Pre-Requisite Checks successfully
 ```
+
 - **prep-node**
 
  This command onboards a node. It installs platform9 packages on the host. After completion of this command, the node is available to be managed on the Platform9 control plane.
+
  ```sh
 #pf9ctl prep-node --help
-Prepare a node to be ready to be added to a Kubernetes cluster. Read more
-	at http://pf9.io/cli_clprep.
+Prepare a node to be ready to be added to a Kubernetes cluster. Read more at http://pf9.io/cli_clprep.
 
 Usage:
   pf9ctl prep-node [flags]
@@ -268,7 +276,8 @@ Global Flags:
 
 ```
   **prep-Node(Local)**
- ```sh
+ 
+```sh
 #pf9ctl prep-node
 
 ✓ Loaded Config Successfully
@@ -289,7 +298,9 @@ Global Flags:
 ✓ Initialised host successfully
 ✓ Host successfully attached to the Platform9 control-plane
 ```
+
   **prep-Node(Remote)**
+
 ```sh
 #pf9ctl prep-node -i 10.128.241.203 -u centos
 
@@ -315,6 +326,7 @@ Enter password for remote host:
 ✓ Initialised host successfully
 ✓ Host successfully attached to the Platform9 control-plane
 ```
+
 - **bundle(SupportBundle)**
 
 This is used to gather and upload a support bundle(a folder containing logs for pf9 services and pf9ctl) to the S3 location.
@@ -342,7 +354,9 @@ Global Flags:
       --verbose          print verbose logs
 
 ```
+
    **bundle(Local)**
+
 ```sh
 #pf9ctl bundle 
 
@@ -350,7 +364,9 @@ Global Flags:
 2021-05-17T06:45:03.95Z	INFO	==========Uploading supportBundle to S3 bucket==========
 ✓ Succesfully uploaded pf9ctl supportBundle to loguploads.platform9.com bucket at https://s3-us-west-2.amazonaws.com/loguploads.platform9.com/pmkft-1614749234-62656.platform9.io/172.20.7.21/ location 
 ```
+
    **bundle(Remote)**
+
 ```sh
 #pf9ctl bundle -i 10.128.241.203 -u centos
 
@@ -386,7 +402,6 @@ Global Flags:
       --verbose          print verbose logs
 ```
 
-
 ```sh
 #pf9ctl attach-node -m 172.20.7.66 -w 172.20.7.58 test-cluster
 ✓ Loaded Config Successfully
@@ -413,7 +428,6 @@ Global Flags:
       --no-prompt        disable all user prompts
       --verbose          print verbose logs
 ```
-
 
 ```sh
 #pf9ctl detach-node
@@ -466,7 +480,6 @@ Global Flags:
 ✓ Loaded Config Successfully
 Node deauthorization started....This may take a few minutes....Check the latest status in UI
 ```
-
 
   **authorize-node**
 
@@ -532,7 +545,6 @@ Cluster deletion started....This may take a few minutes.
 Cluster deletion started....This may take a few minutes.
 ```
 
-
   **decommission-node**
 
 ```sh
@@ -557,6 +569,7 @@ Global Flags:
 ```
 
 When node is connected to a cluster:
+
 ```sh
 #pf9ctl decommission-node
 ✓ Loaded Config Successfully
@@ -565,6 +578,7 @@ Node is attached to test-2 cluster
 ```
 
 When node is not connected to any cluster:
+
 ```sh
 #pf9ctl decommission-node
 ✓ Loaded Config Successfully
@@ -578,6 +592,7 @@ Node decommissioning started....This may take a few minutes....Check the latest 
 ```
 
   **check-amazon-provider**
+
 ```sh
 #pf9ctl check-amazon-provider -i iamUser -a access-key -s secret-key -r us-east-1
 
@@ -590,7 +605,9 @@ Node decommissioning started....This may take a few minutes....Check the latest 
 ✓ Autoscaling Access
 ✓ EKS Access
 ```
+
   **check-google-provider**
+
 ```sh
 #pf9ctl check-google-provider -p /home/duser/Downloads/service-account.json -n testProject -e user@email.com
 
@@ -601,6 +618,7 @@ Node decommissioning started....This may take a few minutes....Check the latest 
 ```
 
   **check-azure-provider**
+  
 ```sh
 #pf9ctl check-google-provider -t tenantID -c clientID -s subscriptionID -k secretKey
 
