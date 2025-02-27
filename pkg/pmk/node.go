@@ -144,7 +144,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Suffix = " Initialising host"
 	zap.S().Debug("Initialising host")
 	zap.S().Debug("Identifying the hostID from conf")
-	cmd := `grep host_id /etc/pf9/host_id.conf && cut -d '=' -f2`
+	cmd := `grep host_id /etc/pf9/host_id.conf`
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
 	output = strings.TrimSpace(output)
 	if err != nil || output == "" {
@@ -165,7 +165,14 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Restart()
 	s.Suffix = " Authorising host"
 	zap.S().Debug("Authorising host")
-	hostID := strings.TrimSpace(output)
+	// sample output from grep: "host_id = xxxx-9688-46a2-aa4f-xxx"
+	parts := strings.Split(output, "=")
+	if len(parts) < 2 {
+		errStr := "Error: hostid not found in  " + output
+		sendSegmentEvent(allClients, errStr, auth, true)
+		return fmt.Errorf("hostid not found in %s", output)
+	}
+	hostID := strings.TrimSpace(parts[1])
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token, util.KubeVersion); err != nil {
