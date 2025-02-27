@@ -173,6 +173,10 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 		return fmt.Errorf("hostid not found in %s", output)
 	}
 	hostID := strings.TrimSpace(parts[1])
+	if hostID == "" {
+		sendSegmentEvent(allClients, "Error: Empty host_id value found in config", auth, true)
+		return fmt.Errorf("empty host_id value found in config")
+	}
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token, util.KubeVersion); err != nil {
