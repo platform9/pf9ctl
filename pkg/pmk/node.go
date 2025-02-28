@@ -2,6 +2,7 @@
 package pmk
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -141,16 +142,13 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	}
 
 	sendSegmentEvent(allClients, "Initialising host - 3", auth, false)
-	s.Suffix = " Initialising host"
-	zap.S().Debug("Initialising host")
-	zap.S().Debug("Identifying the hostID from conf")
-	cmd := `grep host_id /etc/pf9/host_id.conf`
-	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmd)
-	output = strings.TrimSpace(output)
-	if err != nil || output == "" {
-		errStr := "Error: Unable to fetch host ID. " + err.Error()
-		sendSegmentEvent(allClients, errStr, auth, true)
-		return fmt.Errorf(errStr)
+	s.Suffix = " Identifying host"
+
+	zap.S().Debug("Fetching the hostID from conf")
+	hostID, err := getHostIDFromConf(allClients, auth)
+	if err != nil {
+		sendSegmentEvent(allClients, err.Error(), auth, true)
+		return err
 	}
 
 	s.Stop()
@@ -165,18 +163,6 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	s.Restart()
 	s.Suffix = " Authorising host"
 	zap.S().Debug("Authorising host")
-	// sample output from grep: "host_id = xxxx-9688-46a2-aa4f-xxx"
-	parts := strings.Split(output, "=")
-	if len(parts) < 2 {
-		errStr := "Error: hostid not found in  " + output
-		sendSegmentEvent(allClients, errStr, auth, true)
-		return fmt.Errorf("hostid not found in %s", output)
-	}
-	hostID := strings.TrimSpace(parts[1])
-	if hostID == "" {
-		sendSegmentEvent(allClients, "Error: Empty host_id value found in config", auth, true)
-		return fmt.Errorf("empty host_id value found in config")
-	}
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
 	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token, util.KubeVersion); err != nil {
@@ -193,6 +179,36 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	fmt.Println(color.Green("✓ ") + "Host successfully attached to the Platform9 control-plane")
 
 	return nil
+}
+
+func getHostIDFromConf(allClients client.Client, auth keystone.KeystoneAuth) (string, error) {
+	cmdGetHostIdFromConf := `grep host_id /etc/pf9/host_id.conf`
+	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmdGetHostIdFromConf)
+	output = strings.TrimSpace(output)
+	if err != nil {
+		errStr := "error: unable to grep host_id " + output
+		sendSegmentEvent(allClients, errStr, auth, true)
+		return "", errors.New(errStr)
+	}
+	if output == "" {
+		errStr := "error: host_id not found in /etc/pf9/host_id.conf"
+		sendSegmentEvent(allClients, errStr, auth, true)
+		return "", errors.New(errStr)
+	}
+
+	parts := strings.Split(output, "=")
+	if len(parts) < 2 {
+		errStr := "error: host_id key=value pair not found in config"
+		sendSegmentEvent(allClients, errStr, auth, true)
+		return "", errors.New(errStr)
+	}
+	hostID := strings.TrimSpace(parts[1])
+	if hostID == "" {
+		errStr := "error: no host_id value found in config"
+		sendSegmentEvent(allClients, errStr, auth, true)
+		return "", errors.New(errStr)
+	}
+	return hostID, nil
 }
 
 func StatusUnattendedUpdates(allClients client.Client) bool {
