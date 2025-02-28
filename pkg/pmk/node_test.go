@@ -102,7 +102,7 @@ func TestGetHostIDFromConf(t *testing.T) {
 			},
 			want: want{
 				hostID: "",
-				err:    fmt.Errorf("error: unable to grep host_id "),
+				err:    fmt.Errorf("error: unable to grep host_id: stdout:stderr:grep: /etc/pf9/host_id.conf: No such file or directory"),
 			},
 		},
 		"EmptyOutput": {
