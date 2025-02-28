@@ -186,10 +186,10 @@ func getHostIDFromConf(allClients client.Client, auth keystone.KeystoneAuth) (st
 	output, err := allClients.Executor.RunWithStdout("bash", "-c", cmdGetHostIdFromConf)
 	output = strings.TrimSpace(output)
 	if err != nil {
-		errStr := "error: unable to grep host_id " + output
-		sendSegmentEvent(allClients, errStr, auth, true)
-		return "", errors.New(errStr)
-	}
+		errStr := fmt.Sprintf("error: unable to grep host_id: %s. Output: %s", err.Error(), output)
+ 		sendSegmentEvent(allClients, errStr, auth, true)
+ 		return "", errors.New(errStr)
+ 	}
 	if output == "" {
 		errStr := "error: host_id not found in /etc/pf9/host_id.conf"
 		sendSegmentEvent(allClients, errStr, auth, true)
