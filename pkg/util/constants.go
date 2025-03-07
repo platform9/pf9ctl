@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -62,13 +63,15 @@ const (
 	PmkVersion = "1.20.11"
 	Docker     = "docker"
 	Calico     = "calico"
+
+	Ctl = "pf9ctl"
 )
 
 var (
 	// Constants for check failure messages
-	PyCliErr                = "Earlier version of pf9ctl already exists. This must be uninstalled."
+	PyCliErr                = fmt.Sprintf("Earlier version of %s already exists. This must be uninstalled.", Ctl)
 	ExisitngInstallationErr = "Platform9 packages already exist. These must be uninstalled."
-	SudoErr                 = "User running pf9ctl must have privilege (sudo) mode enabled."
+	SudoErr                 = fmt.Sprintf("User running %s must have privilege (sudo) mode enabled.", Ctl)
 	OSPackagesErr           = "Some OS packages needed for the CLI not found"
 	CPUErr                  = "At least 2 CPUs are needed on host."
 	DiskErr                 = "At least 30 GB of total disk space and 15 GB of free space is needed on host."
