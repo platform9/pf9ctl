@@ -36,6 +36,7 @@ var GoogleCloudPermissions []string
 var AzureContributorID string
 var InstallerErrors = make(map[int]string)
 var LogFileNamePath string
+var = "pf9ctl"
 
 const (
 
@@ -63,8 +64,6 @@ const (
 	PmkVersion = "1.20.11"
 	Docker     = "docker"
 	Calico     = "calico"
-
-	Ctl = "pf9ctl"
 )
 
 var (
