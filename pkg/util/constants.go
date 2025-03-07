@@ -36,7 +36,7 @@ var GoogleCloudPermissions []string
 var AzureContributorID string
 var InstallerErrors = make(map[int]string)
 var LogFileNamePath string
-var = "pf9ctl"
+var Ctl = "pf9ctl"
 
 const (
 
