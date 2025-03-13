@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go.uber.org/zap"
 	"net/http"
+	"net/http/httputil"
 )
 
 // Type definition for struct encapsulating service manager APIs.
@@ -80,12 +81,28 @@ func (s_api *ServiceManagerAPI) GetServiceID_API(
 	q.Add("type", name)
 	req.URL.RawQuery = q.Encode()
 
+	reqDump, err := httputil.DumpRequestOut(req, true)
+	if err == nil {
+		zap.S().Debug("Request Dump: ", string(reqDump))
+	} else {
+		zap.S().Error("Error dumping request: ", err)
+	}
+
+
 	resp, err := s_api.Client.Do(req)
 	if err != nil {
 		zap.S().Errorf("Failed to fetch service information for service %s, Error: %s", name, err)
 		return "", fmt.Errorf("Failed to fetch service information for service %s, Error: %s", name, err)
 	}
 	defer resp.Body.Close()
+
+	respDump, err := httputil.DumpResponse(resp, true)
+	if err == nil {
+		zap.S().Debug("Response Dump: ", string(respDump))
+	} else {
+		zap.S().Error("Error dumping response: ", err)
+	}
+
 
 	serviceInfo := ServicesInfo{}
 	// Response is received as slice of services.
@@ -94,6 +111,8 @@ func (s_api *ServiceManagerAPI) GetServiceID_API(
 		zap.S().Errorf("Failed to decode service information, Error: %s", err)
 		return "", fmt.Errorf("Failed to decode service information, Error: %s", err)
 	}
+	
+	zap.S().Debug("Decoded Service Info: ", serviceInfo)
 
 	// There is supposed to be only one service per name.
 	// Pick the ID from the first instance in the slice.
