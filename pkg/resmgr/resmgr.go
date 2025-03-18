@@ -10,6 +10,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
+	"bytes"
 
 	rhttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/platform9/pf9ctl/pkg/util"
@@ -17,7 +18,7 @@ import (
 )
 
 type Resmgr interface {
-	AuthorizeHost(hostID, token string, version string) error
+	AuthorizeHost(hostID, token string, version string, projectID string) error
 	GetHostId(token string, hostIP []string) []string
 	HostStatus(token string, hostID string) bool
 }
@@ -45,7 +46,7 @@ func NewResmgr(fqdn string, maxHttpRetry int, minWait, maxWait time.Duration, al
 }
 
 // AuthorizeHost registers the host with hostID to the resmgr.
-func (c *ResmgrImpl) AuthorizeHost(hostID string, token string, version string) error {
+func (c *ResmgrImpl) AuthorizeHost(hostID string, token string, version string, projectID string) error {
 	zap.S().Debugf("Authorizing the host: %s with DU: %s", hostID, c.fqdn)
 
 	client := rhttp.NewClient()
@@ -61,7 +62,7 @@ func (c *ResmgrImpl) AuthorizeHost(hostID string, token string, version string) 
 	if len(version) != 0 {
 		url = fmt.Sprintf("%s/resmgr/v1/hosts/%s/roles/pf9-kube/versions/%s", c.fqdn, hostID, version)
 	}
-	req, err := rhttp.NewRequest("PUT", url, nil)
+	req, err := rhttp.NewRequest("PUT", url, bytes.NewBufferString(fmt.Sprintf("{\"CLUSTER_PROJECT_ID\": \"%s\"}", projectID)))
 	if err != nil {
 		return fmt.Errorf("Unable to create a new request: %w", err)
 	}

@@ -165,7 +165,7 @@ func PrepNode(ctx objects.Config, allClients client.Client, auth keystone.Keysto
 	zap.S().Debug("Authorising host")
 	time.Sleep(ctx.WaitPeriod * time.Second)
 
-	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token, util.KubeVersion); err != nil {
+	if err := allClients.Resmgr.AuthorizeHost(hostID, auth.Token, util.KubeVersion, auth.ProjectID); err != nil {
 		errStr := "Error: Unable to authorise host. " + err.Error()
 		sendSegmentEvent(allClients, errStr, auth, true)
 		return fmt.Errorf(errStr)
