@@ -68,9 +68,9 @@ const (
 
 var (
 	// Constants for check failure messages
-	PyCliErr                = fmt.Errorf("Earlier version of %s already exists. This must be uninstalled.", os.Args[0])
+	PyCliErr                = fmt.Sprintf("Earlier version of %s already exists. This must be uninstalled.", Ctl)
 	ExisitngInstallationErr = "Platform9 packages already exist. These must be uninstalled."
-	SudoErr                 = fmt.Errorf("User running %s must have privilege (sudo) mode enabled.", os.Args[0])
+	SudoErr                 = fmt.Sprintf("User running %s must have privilege (sudo) mode enabled.", Ctl)
 	OSPackagesErr           = "Some OS packages needed for the CLI not found"
 	CPUErr                  = "At least 2 CPUs are needed on host."
 	DiskErr                 = "At least 30 GB of total disk space and 15 GB of free space is needed on host."
