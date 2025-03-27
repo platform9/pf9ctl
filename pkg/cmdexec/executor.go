@@ -85,7 +85,7 @@ func (c LocalExecutor) RunWithStdout(name string, args ...string) (string, error
 	cmd := exec.Command("sudo", args...)
 	cmd.Env = append(cmd.Env, httpsProxy+"="+c.ProxyUrl)
 	cmd.Env = append(cmd.Env, env_path+"="+os.Getenv("PATH"))
-	byt, err := cmd.Output()
+	byt, err := cmd.CombinedOutput()
 	stderr := ""
 	if exitError, ok := err.(*exec.ExitError); ok {
 		stderr = string(exitError.Stderr)
@@ -123,7 +123,7 @@ func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (strin
 	var stdout string = ""
 
 	stdoutScanner := bufio.NewScanner(stdoutPipe)
-	
+
 	// Configurations for progressbar
 	bar := progressbar.NewOptions(100,
 		progressbar.OptionSetDescription("Downloading Hostagent...	"),
