@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 
@@ -26,7 +25,7 @@ import (
 var (
 	REGION_INVALID     error = errors.New("Invalid Region")
 	INVALID_CREDS      error = errors.New("Invalid Credentials")
-	NO_CONFIG                = errors.New(fmt.Sprintf("No config found, please create with `%s config set`", filepath.Base(os.Args[0])))
+	NO_CONFIG                = errors.New(fmt.Sprintf("No config found, please create with `%s config set`", util.ExeName))
 	MISSSING_FIELDS          = errors.New("Missing mandatory field(s) (Platform9 Account URL/Username/Password/Region/Tenant)")
 	MAX_ATTEMPTS_ERROR       = errors.New("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant/Proxy URL/MFA Token)")
 )
