@@ -25,7 +25,7 @@ import (
 var (
 	REGION_INVALID     error = errors.New("Invalid Region")
 	INVALID_CREDS      error = errors.New("Invalid Credentials")
-	NO_CONFIG                = errors.New("No config found, please create with `pf9ctl config set`")
+	NO_CONFIG                = fmt.Errorf("No config found, please create with `%s config set`", util.ExeName)
 	MISSSING_FIELDS          = errors.New("Missing mandatory field(s) (Platform9 Account URL/Username/Password/Region/Tenant)")
 	MAX_ATTEMPTS_ERROR       = errors.New("Invalid credentials entered multiple times (Platform9 Account URL/Username/Password/Region/Tenant/Proxy URL/MFA Token)")
 )
@@ -369,7 +369,7 @@ func createClient(cfg *objects.Config, nc objects.NodeConfig) (client.Client, er
 	return client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false)
 }
 
-//This function clears the context if it is invalid. Before storing it.
+// This function clears the context if it is invalid. Before storing it.
 func clearContext(v interface{}) {
 	p := reflect.ValueOf(v).Elem()
 	p.Set(reflect.Zero(p.Type()))
