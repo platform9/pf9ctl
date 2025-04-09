@@ -2,9 +2,9 @@ name: Go Security Scans
 
 on:
   push:
-    branches: ["private/harsh/sast-scan"]
+    branches: ["*"]
   pull_request:
-    branches: ["private/harsh/sast-scan"]
+    branches: ["*"]
 
 jobs:
   govulncheck:
@@ -109,13 +109,23 @@ jobs:
 
   auto-pr:
     name: Create Pull Request if High/Critical Vulnerabilities Found
-    needs:
-      - trivy
+    needs: [trivy]
     if: needs.trivy.outputs.trivy-high-found == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Add dummy file for PR
+        run: |
+          echo "High vulnerabilities found at $(date)" >> .security-alert.log
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .security-alert.log
+          git commit -m "chore: security alert log"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
@@ -123,6 +133,7 @@ jobs:
           commit-message: "chore: high/critical vulnerabilities detected 🚨"
           title: "chore: high/critical security scan triggered PR"
           body: |
-            High or critical vulnerabilities were detected by Trivy or Grype.
+            High or critical vulnerabilities were detected by Trivy.
             This PR was automatically created to flag and track resolution.
           branch: "auto/high-critical-security-scan"
+          base: "master"
