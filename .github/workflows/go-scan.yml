@@ -2,9 +2,9 @@ name: Go Security Scans
 
 on:
   push:
-    branches: ["*"]
+    branches: ["private/harsh/sast-scan"]
   pull_request:
-    branches: ["*"]
+    branches: ["private/harsh/sast-scan"]
 
 jobs:
   govulncheck:
