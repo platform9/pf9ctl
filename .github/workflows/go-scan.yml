@@ -1,0 +1,128 @@
+name: Go Security Scans
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  govulncheck:
+    name: Go Vulnerability Check (govulncheck)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Install govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Run govulncheck
+        run: govulncheck -show verbose ./...
+
+  golangci:
+    name: Lint Check (golangci-lint)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54.2
+          args: --timeout 5m --config .golangci.yml
+
+  gosec:
+    name: Static Code Analysis (gosec)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Install gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Run gosec
+        run: gosec ./...
+
+  gitleaks:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --no-git -v
+
+  trivy:
+    name: (Trivy) Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    outputs:
+      trivy-high-found: ${{ steps.check.outputs.trivy-high-found }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run Trivy and Save Report
+        run: |
+          trivy fs --scanners vuln --vuln-type library --format json -o trivy-report.json .
+
+      - name: Show Trivy Report in Logs
+        run: cat trivy-report.json
+
+      - name: Check for High/Critical Vulnerabilities
+        id: check
+        run: |
+          count=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-report.json)
+          echo "trivy-high-found=$([[ $count -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+  auto-pr:
+    name: Create Pull Request if High/Critical Vulnerabilities Found
+    needs:
+      - trivy
+    if: needs.trivy.outputs.trivy-high-found == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "chore: high/critical vulnerabilities detected 🚨"
+          title: "chore: high/critical security scan triggered PR"
+          body: |
+            High or critical vulnerabilities were detected by Trivy or Grype.
+            This PR was automatically created to flag and track resolution.
+          branch: "auto/high-critical-security-scan"
