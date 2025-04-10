@@ -1,3 +1,6 @@
+run:
+  timeout: 5m
+
 linters-settings:
   gci:
     sections:
@@ -5,14 +8,16 @@ linters-settings:
       - default
       - prefix(github.com/clastix/cluster-api-control-plane-provider-kamaji)
   goheader:
-    template: |-
+    template: |
       Copyright 2023 Clastix Labs
       SPDX-License-Identifier: Apache-2.0
 
 issues:
   max-issues-per-linter: 0
+  exclude-use-default: false
 
 linters:
+  enable-all: true
   disable:
     - paralleltest
     - testpackage
@@ -32,4 +37,4 @@ linters:
     - nosnakecase
     - ifshort
     - maligned
-  enable-all: true
+    - typecheck
