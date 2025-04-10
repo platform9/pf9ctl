@@ -29,46 +29,17 @@ jobs:
         run: govulncheck -show verbose ./...
 
   golangci:
-    name: Lint (golangci-lint)
+    name: lint
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
-
-      - name: Clear Go module cache
-        run: |
-          rm -rf $GOMODCACHE
-
-      - name: Cache Go modules
-        uses: actions/cache@v3
+          go-version: stable
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-golang-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-golang-
-
-      - name: Download Go Modules
-        run: go mod download
-
-      - name: 🔨 Build the project
-        run: go build ./...
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.54.2
-          args: --timeout 5m --config .golangci.yml --issues-exit-code=1
-
-
-
+          version: latest
 
   gosec:
     name: Static Code Analysis (gosec)
