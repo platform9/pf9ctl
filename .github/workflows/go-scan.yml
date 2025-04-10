@@ -29,7 +29,7 @@ jobs:
         run: govulncheck -show verbose ./...
 
   golangci:
-    name: Lint Check (golangci-lint)
+    name: Lint (golangci-lint)
     runs-on: ubuntu-latest
 
     steps:
