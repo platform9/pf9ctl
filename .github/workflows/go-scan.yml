@@ -41,6 +41,10 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
+      - name: Clear Go module cache
+        run: |
+          rm -rf $GOMODCACHE
+
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
@@ -61,7 +65,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.54.2
-          args: --timeout 5m --config .golangci.yml
+          args: --timeout 5m --config .golangci.yml --issues-exit-code=1
 
 
 
