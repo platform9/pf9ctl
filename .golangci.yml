@@ -28,7 +28,6 @@ linters:
     - gci                # More control over import grouping
     - unused             # Detect unused vars, consts, funcs
     - gosimple           # Code simplification suggestions
-    - typecheck          # Basic type-checking; useful to enable if you want basic correctness
     - unconvert          # Detect redundant type conversions
     - ineffassign        # Detect ineffectual assignments
     - deadcode           # Detect unused functions/vars/etc.
@@ -48,4 +47,5 @@ linters:
     - gochecknoglobals   # Too restrictive for many codebases
     - gochecknoinits     # Disable if you use init functions reasonably
     - nolintlint         # Not useful unless you're maintaining linters
+    - typecheck          # Basic type-checking; useful to enable if you want basic correctness
 
