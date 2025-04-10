@@ -7,6 +7,7 @@ linters-settings:
       - standard
       - default
       - prefix(github.com/clastix/cluster-api-control-plane-provider-kamaji)
+
   goheader:
     template: |
       Copyright 2023 Clastix Labs
@@ -17,24 +18,34 @@ issues:
   exclude-use-default: false
 
 linters:
-  enable-all: true
+  enable:
+    - govet              # Essential Go static analysis
+    - staticcheck        # Strong static checks, like unused code, shadowing, etc.
+    - errcheck           # Ensures errors are checked
+    - revive             # Modern, customizable style linter (alternative to golint)
+    - gofmt              # Code formatting
+    - goimports          # Manages imports and formatting
+    - gci                # More control over import grouping
+    - unused             # Detect unused vars, consts, funcs
+    - gosimple           # Code simplification suggestions
+    - typecheck          # Basic type-checking; useful to enable if you want basic correctness
+    - unconvert          # Detect redundant type conversions
+    - ineffassign        # Detect ineffectual assignments
+    - deadcode           # Detect unused functions/vars/etc.
+    - structcheck        # Detect unused struct fields
+    - varcheck           # Detect unused global variables and constants
+    - asciicheck         # Checks for non-ASCII characters in your code
+    - depguard           # Enforce import rules (if configured)
+    - gosec              # Security linter for common issues
+
   disable:
-    - paralleltest
-    - testpackage
-    - gomoddirectives
-    - lll
-    - depguard
-    - exhaustruct
-    - gochecknoglobals
-    - gochecknoinits
-    - scopelint
-    - exhaustivestruct
-    - deadcode
-    - golint
-    - interfacer
-    - structcheck
-    - varcheck
-    - nosnakecase
-    - ifshort
-    - maligned
-    - typecheck
+    - paralleltest       # Often noisy, unless you're writing tons of tests
+    - testpackage        # Mostly useful for library devs
+    - scopelint          # Deprecated; avoid
+    - interfacer         # Deprecated; causes noise
+    - lll                # Line length checker, often annoying
+    - funlen             # Function length checker — can be restrictive
+    - gochecknoglobals   # Too restrictive for many codebases
+    - gochecknoinits     # Disable if you use init functions reasonably
+    - nolintlint         # Not useful unless you're maintaining linters
+
