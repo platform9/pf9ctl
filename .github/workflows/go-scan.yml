@@ -98,6 +98,12 @@ jobs:
         run: |
           trivy fs --scanners vuln --vuln-type library --format json -o trivy-report.json .
 
+      - name: Upload Trivy Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
+
       - name: Show Trivy Report in Logs
         run: cat trivy-report.json
 
@@ -119,21 +125,56 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Add dummy file for PR
+      - name: Download Trivy Report Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-report
+          path: tmp
+
+      - name: Generate PR Body with High/Critical Trivy Results
         run: |
-          echo "High vulnerabilities found at $(date)" >> .security-alert.log
+          echo "# 🚨 Trivy Vulnerability Report (High/Critical)" > tmp/pr-body.md
+          jq -r '
+            .Results[]
+            | select(.Vulnerabilities != null)
+            | .Target as $target
+            | .Vulnerabilities[]
+            | select(.Severity == "HIGH" or .Severity == "CRITICAL")
+            | "* Target: \($target)
+                • Package: \(.PkgName)
+                • Severity: \(.Severity)
+                • Title: \(.Title)
+                • Description: \(.Description // "N/A")
+                • Installed Version: \(.InstalledVersion)
+                • Fixed Version: \(.FixedVersion // "N/A")
+                • CWE: \(.CweIDs | join(", ") // "N/A")
+                • CVE: \(.VulnerabilityID)
+                • References: \(.PrimaryURL // "N/A")
+              "
+          ' tmp/trivy-report.json >> tmp/pr-body.md || echo "❌ No critical/high vulnerabilities found in report." >> tmp/pr-body.md
+      
+      
+      - name: Add Trivy Alert Log (Optional)
+        run: |
+          jq -r '
+            .Results[]
+            | select(.Vulnerabilities != null)
+            | .Vulnerabilities[]
+            | select(.Severity == "HIGH" or .Severity == "CRITICAL")
+            | "* \(.VulnerabilityID) - \(.PkgName) (\(.Severity))"
+          ' tmp/trivy-report.json > .security-alert.log || true
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add .security-alert.log
-          git commit -m "chore: security alert log"
+          git add -f .security-alert.log || true
+          git commit -m "chore: trivy security alert log" || true
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           commit-message: "chore: high/critical vulnerabilities detected 🚨"
-          title: "chore: high/critical security scan triggered PR"
-          body: |
-            High or critical vulnerabilities were detected by Trivy.
-            This PR was automatically created to flag and track resolution.
+          title: "chore: auto PR for Trivy scan (high/critical vulnerabilities)"
+          body-path: tmp/pr-body.md
           branch: "auto/high-critical-security-scan"
           base: "master"
+          # delete-branch: true
+
