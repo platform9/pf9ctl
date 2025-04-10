@@ -54,11 +54,15 @@ jobs:
       - name: Download Go Modules
         run: go mod download
 
+      - name: 🔨 Build the project
+        run: go build ./...
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.54.2
           args: --timeout 5m --config .golangci.yml
+
 
 
 
