@@ -62,9 +62,56 @@ jobs:
       - name: Run gosec
         run: gosec ./...
 
-  gitleaks:
-    name: Secret Scan (gitleaks)
+  # gitleaks:
+  #   name: Secret Scan (gitleaks)
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+
+  #     - name: Run Gitleaks
+  #       uses: gitleaks/gitleaks-action@v2
+  #       with:
+  #         args: detect --no-git -v
+
+  # trivy:
+  #   name: (Trivy) Dependency Vulnerability Scan
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     trivy-high-found: ${{ steps.check.outputs.trivy-high-found }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+
+  #     - name: Install Trivy
+  #       run: |
+  #         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+  #     - name: Run Trivy and Save Report
+  #       run: |
+  #         trivy fs --scanners vuln --vuln-type library --format json -o trivy-report.json .
+
+  #     - name: Upload Trivy Report
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: trivy-report
+  #         path: trivy-report.json
+
+  #     - name: Show Trivy Report in Logs
+  #       run: cat trivy-report.json
+
+  #     - name: Check for High/Critical Vulnerabilities
+  #       id: check
+  #       run: |
+  #         count=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-report.json)
+  #         echo "trivy-high-found=$([[ $count -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+  secrets-and-dependencies-scan:
+    name: 🔐 Secrets & Dependency Scan
     runs-on: ubuntu-latest
+    outputs:
+      trivy-high-found: ${{ steps.check.outputs.trivy-high-found }}
 
     steps:
       - name: Checkout code
@@ -74,15 +121,6 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         with:
           args: detect --no-git -v
-
-  trivy:
-    name: (Trivy) Dependency Vulnerability Scan
-    runs-on: ubuntu-latest
-    outputs:
-      trivy-high-found: ${{ steps.check.outputs.trivy-high-found }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
       - name: Install Trivy
         run: |
@@ -107,10 +145,17 @@ jobs:
           count=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-report.json)
           echo "trivy-high-found=$([[ $count -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
 
+      - name: Install Checkov (optional)
+        run: pip install checkov
+
+      - name: Run Checkov (IaC scan)
+        run: checkov -d . || true
+
+
   auto-pr:
     name: Create Pull Request if High/Critical Vulnerabilities Found
-    needs: [trivy]
-    if: needs.trivy.outputs.trivy-high-found == 'true'
+    needs: [secrets-and-dependencies-scan]
+    if: needs.secrets-and-dependencies-scan.outputs.trivy-high-found == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
