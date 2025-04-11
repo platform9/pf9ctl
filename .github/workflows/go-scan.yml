@@ -62,18 +62,18 @@ jobs:
       - name: Run gosec
         run: gosec ./...
 
-  # gitleaks:
-  #   name: Secret Scan (gitleaks)
-  #   runs-on: ubuntu-latest
+  gitleaks:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
 
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-  #     - name: Run Gitleaks
-  #       uses: gitleaks/gitleaks-action@v2
-  #       with:
-  #         args: detect --no-git -v
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --no-git -v
 
   # trivy:
   #   name: (Trivy) Dependency Vulnerability Scan
@@ -107,7 +107,7 @@ jobs:
   #         count=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-report.json)
   #         echo "trivy-high-found=$([[ $count -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
 
-  secrets-and-dependencies-scan:
+  dependencies-scan:
     name: 🔐 Secrets & Dependency Scan
     runs-on: ubuntu-latest
     outputs:
@@ -117,10 +117,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --no-git -v
+      # - name: Run Gitleaks
+      #   uses: gitleaks/gitleaks-action@v2
+      #   with:
+      #     args: detect --no-git -v
 
       - name: Install Trivy
         run: |
@@ -154,8 +154,8 @@ jobs:
 
   auto-pr:
     name: Create Pull Request if High/Critical Vulnerabilities Found
-    needs: [secrets-and-dependencies-scan]
-    if: needs.secrets-and-dependencies-scan.outputs.trivy-high-found == 'true'
+    needs: [dependencies-scan]
+    if: needs.dependencies-scan.outputs.trivy-high-found == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
