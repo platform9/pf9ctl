@@ -36,7 +36,7 @@ var GoogleCloudPermissions []string
 var AzureContributorID string
 var InstallerErrors = make(map[int]string)
 var LogFileNamePath string
-var ExeName string = filepath.Base(os.Args[0])
+var ExeName = "pf9ctl"
 
 const (
 
@@ -64,13 +64,15 @@ const (
 	PmkVersion = "1.20.11"
 	Docker     = "docker"
 	Calico     = "calico"
+
+	Ctl = "pf9ctl"
 )
 
 var (
 	// Constants for check failure messages
-	PyCliErr                = fmt.Sprintf("Earlier version of %s already exists. This must be uninstalled.", ExeName)
+	PyCliErr                = fmt.Sprintf("Earlier version of %s already exists. This must be uninstalled.", Ctl)
 	ExisitngInstallationErr = "Platform9 packages already exist. These must be uninstalled."
-	SudoErr                 = fmt.Sprintf("User running %s must have privilege (sudo) mode enabled.", ExeName)
+	SudoErr                 = fmt.Sprintf("User running %s must have privilege (sudo) mode enabled.", Ctl)
 	OSPackagesErr           = "Some OS packages needed for the CLI not found"
 	CPUErr                  = "At least 2 CPUs are needed on host."
 	DiskErr                 = "At least 30 GB of total disk space and 15 GB of free space is needed on host."
