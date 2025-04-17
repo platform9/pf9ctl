@@ -34,7 +34,7 @@ jobs:
         -   name: Run gosec and save report
             run: |
                 set -e
-                gosec -fmt=json -out=gosec-report.json ./... || echo "⚠️ Gosec exited with non-zero code but report may still be available"
+                gosec -fmt=json -severity=medium -out=gosec-report.json ./... || echo "⚠️ Gosec exited with non-zero code but report may still be available"
 
         -   name: Check if gosec report exists
             run: |
@@ -55,7 +55,7 @@ jobs:
         -   name: Check for High Severity Issues
             id: check
             run: |
-              count=$(jq '[.Issues[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' gosec-report.json)
+              count=$(jq '[.Issues[] | select(.severity == "HIGH" or .severity == "CRITICAL")] | length' gosec-report.json)
               echo "gosec-high-found=$([[ $count -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
 
         -   name: Fail if High/Critical Vulnerabilities Found
