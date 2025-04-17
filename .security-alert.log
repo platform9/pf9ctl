@@ -1,0 +1,2 @@
+* G402 - /home/runner/work/pf9ctl/pf9ctl/pkg/resmgr/resmgr.go:53 (HIGH) - TLS InsecureSkipVerify set true.
+* G402 - /home/runner/work/pf9ctl/pf9ctl/pkg/client/clients.go:34 (HIGH) - TLS InsecureSkipVerify set true.
