@@ -27,11 +27,19 @@ jobs:
             run: |
                 go install github.com/securego/gosec/v2/cmd/gosec@latest
                 echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+                gosec -h  # Debug step: check if gosec is installed
 
         # -   name: Run gosec
         #     run: gosec ./...
         -   name: Run gosec and save report
             run: gosec -fmt=json -out=gosec-report.json ./...
+
+        -   name: Check if gosec report exists
+            run: |
+                if [ ! -f gosec-report.json ]; then
+                  echo "❌ Gosec report not found."
+                  exit 1
+                fi
 
         -   name: Upload gosec Report
             uses: actions/upload-artifact@v4
