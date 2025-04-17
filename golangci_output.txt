@@ -1,0 +1,312 @@
+cmd/prepNode.go:63:32: Error return value of `(*github.com/spf13/pflag.FlagSet).MarkHidden` is not checked (errcheck)
+	prepNodeCmd.Flags().MarkHidden("disable-swapoff")
+	                              ^
+cmd/prepNode.go:68:32: Error return value of `(*github.com/spf13/pflag.FlagSet).MarkHidden` is not checked (errcheck)
+	prepNodeCmd.Flags().MarkHidden("skip-kube")
+	                              ^
+cmd/prepNode.go:71:32: Error return value of `(*github.com/spf13/pflag.FlagSet).MarkHidden` is not checked (errcheck)
+	prepNodeCmd.Flags().MarkHidden("kube-version")
+	                              ^
+cmd/putNodeBehindProxy.go:33:40: Error return value of `putNodeBehindProxycmd.MarkFlagRequired` is not checked (errcheck)
+	putNodeBehindProxycmd.MarkFlagRequired("protocol")
+	                                      ^
+cmd/putNodeBehindProxy.go:34:40: Error return value of `putNodeBehindProxycmd.MarkFlagRequired` is not checked (errcheck)
+	putNodeBehindProxycmd.MarkFlagRequired("host-ip")
+	                                      ^
+cmd/putNodeBehindProxy.go:35:40: Error return value of `putNodeBehindProxycmd.MarkFlagRequired` is not checked (errcheck)
+	putNodeBehindProxycmd.MarkFlagRequired("port")
+	                                      ^
+cmd/version.go:85:18: Error return value of `file.Close` is not checked (errcheck)
+	defer file.Close()
+	                ^
+cmd/version.go:128:14: Error return value of `bashCmd.Wait` is not checked (errcheck)
+	bashCmd.Wait()
+	            ^
+pkg/client/segment.go:125:16: Error return value of `c.client.Close` is not checked (errcheck)
+	c.client.Close()
+	              ^
+pkg/cmdexec/executor.go:50:13: Error return value of `output.Wait` is not checked (errcheck)
+	output.Wait()
+	           ^
+pkg/cmdexec/executor.go:148:9: Error return value of `s.Color` is not checked (errcheck)
+	s.Color("red")
+	       ^
+pkg/cmdexec/executor.go:176:13: Error return value of `bar.Set` is not checked (errcheck)
+					bar.Set(currentProgress)
+					       ^
+pkg/cmdexec/executor.go:192:12: Error return value of `bar.Set` is not checked (errcheck)
+				bar.Set(nextStageProgress)
+				       ^
+pkg/config/config.go:39:23: Error return value of `copier.CopyWithOption` is not checked (errcheck)
+	copier.CopyWithOption(&cfgCopy, cfg, copier.Option{IgnoreEmpty: true, DeepCopy: true})
+	                     ^
+pkg/config/config.go:52:15: Error return value of `f.Close` is not checked (errcheck)
+	defer f.Close()
+	             ^
+pkg/config/config.go:75:15: Error return value of `f.Close` is not checked (errcheck)
+	defer f.Close()
+	             ^
+pkg/config/config.go:88:23: Error return value of `copier.CopyWithOption` is not checked (errcheck)
+	copier.CopyWithOption(cfg, &fileConfig, copier.Option{IgnoreEmpty: true})
+	                     ^
+pkg/config/config.go:396:13: Error return value of `fmt.Scanf` is not checked (errcheck)
+			fmt.Scanf("%d", &choice)
+			         ^
+pkg/keystone/endpoints.go:92:23: Error return value of `resp.Body.Close` is not checked (errcheck)
+	defer resp.Body.Close()
+	                     ^
+pkg/keystone/services.go:88:23: Error return value of `resp.Body.Close` is not checked (errcheck)
+	defer resp.Body.Close()
+	                     ^
+pkg/log/log.go:54:19: Error return value of `logger.Sync` is not checked (errcheck)
+	defer logger.Sync()
+	                 ^
+pkg/platform/centos/centos.go:92:26: Error return value of `c.checkDocker` is not checked (errcheck)
+		} else if c.checkDocker(); err != nil {
+		                       ^
+pkg/platform/debian/debian.go:94:26: Error return value of `d.checkDocker` is not checked (errcheck)
+		} else if d.checkDocker(); err != nil {
+		                       ^
+pkg/pmk/checkAzureProvider.go:116:11: Error return value of `os.Setenv` is not checked (errcheck)
+	os.Setenv("AZURE_CLIENT_ID", appID)
+	         ^
+pkg/pmk/checkAzureProvider.go:117:11: Error return value of `os.Setenv` is not checked (errcheck)
+	os.Setenv("AZURE_CLIENT_SECRET", secretKey)
+	         ^
+pkg/pmk/checkAzureProvider.go:118:11: Error return value of `os.Setenv` is not checked (errcheck)
+	os.Setenv("AZURE_TENANT_ID", tenantID)
+	         ^
+pkg/pmk/checkNode.go:48:9: Error return value of `s.Color` is not checked (errcheck)
+	s.Color("red")
+	       ^
+pkg/pmk/checkNode.go:178:14: Error return value of `fmt.Scanf` is not checked (errcheck)
+				fmt.Scanf("%s", &removeCurrentInstallation)
+				         ^
+pkg/pmk/cluster.go:33:9: Error return value of `s.Color` is not checked (errcheck)
+	s.Color("red")
+	       ^
+pkg/pmk/network.go:13:18: Error return value of `conn.Close` is not checked (errcheck)
+	defer conn.Close()
+	                ^
+pkg/resmgr/resmgr.go:77:23: Error return value of `resp.Body.Close` is not checked (errcheck)
+	defer resp.Body.Close()
+	                     ^
+pkg/ssh/sshclient.go:138:21: Error return value of `localFp.Close` is not checked (errcheck)
+	defer localFp.Close()
+	                   ^
+pkg/ssh/sshclient.go:152:24: Error return value of `remoteFile.Close` is not checked (errcheck)
+	defer remoteFile.Close()
+	                      ^
+pkg/ssh/sshclient.go:158:22: Error return value of `c.sftpClient.Remove` is not checked (errcheck)
+		c.sftpClient.Remove(remoteFilePath)
+		                   ^
+pkg/ssh/sshclient.go:175:22: Error return value of `remoteFP.Close` is not checked (errcheck)
+	defer remoteFP.Close()
+	                    ^
+pkg/ssh/sshclient.go:188:23: Error return value of `localFile.Close` is not checked (errcheck)
+	defer localFile.Close()
+	                     ^
+pkg/ssh/sshclient.go:192:12: Error return value of `os.Remove` is not checked (errcheck)
+		os.Remove(localFilePath)
+		         ^
+pkg/ssh/sshclient.go:197:12: Error return value of `os.Remove` is not checked (errcheck)
+		os.Remove(localFilePath)
+		         ^
+pkg/swapoff/swapoff_test.go:77:19: Error return value of `os.Remove` is not checked (errcheck)
+			defer os.Remove(tmpFile.Name())
+			               ^
+pkg/platform/centos/centos.go:42:26: composites: github.com/platform9/pf9ctl/pkg/platform.Check struct literal uses unkeyed fields (govet)
+	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
+	                        ^
+pkg/platform/centos/centos.go:45:26: composites: github.com/platform9/pf9ctl/pkg/platform.Check struct literal uses unkeyed fields (govet)
+	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", false, result, err, util.ExisitngInstallationErr})
+	                        ^
+pkg/platform/centos/centos.go:48:26: composites: github.com/platform9/pf9ctl/pkg/platform.Check struct literal uses unkeyed fields (govet)
+	checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
+	                        ^
+pkg/pmk/node.go:514:2: unreachable: unreachable code (govet)
+	return packagesPresent, newPackagesPresent, nil
+	^
+pkg/pmk/node.go:444:23: ineffectual assignment to newPackagesPresent (ineffassign)
+	var packagesPresent, newPackagesPresent bool = false, false
+	                     ^
+pkg/pmk/node.go:499:6: ineffectual assignment to newPackagesPresent (ineffassign)
+					newPackagesPresent = true
+					^
+pkg/ssh/sshclient.go:70:14: ineffectual assignment to err (ineffassign)
+	sftpClient, err := sftp.NewClient(sshClient)
+	            ^
+pkg/ssh/sshclient.go:110:10: ineffectual assignment to err (ineffassign)
+	stdOut, err := ioutil.ReadAll(stdOutPipe)
+	        ^
+pkg/ssh/sshclient.go:111:10: ineffectual assignment to err (ineffassign)
+	stdErr, err := ioutil.ReadAll(stdErrPipe)
+	        ^
+pkg/ssh/sshclient.go:114:3: ineffectual assignment to retError (ineffassign)
+		retError := err
+		^
+cmd/bootstrap.go:333:3: QF1003: could use tagged switch on result (staticcheck)
+		if result == pmk.RequiredFail {
+		^
+cmd/checkNode.go:118:2: QF1003: could use tagged switch on result (staticcheck)
+	if result == pmk.RequiredFail {
+	^
+cmd/config.go:7:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package [io] or package [os], and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+cmd/config.go:59:4: SA1006: printf-style function with dynamic format string and no further arguments should use print-style function instead (staticcheck)
+			fmt.Printf(string(data))
+			^
+cmd/prepNode.go:25:2: SA1019: "golang.org/x/crypto/ssh/terminal" is deprecated: this package moved to golang.org/x/term. (staticcheck)
+	"golang.org/x/crypto/ssh/terminal"
+	^
+cmd/prepNode.go:152:2: QF1003: could use tagged switch on result (staticcheck)
+	if result == pmk.RequiredFail {
+	^
+cmd/prepNode.go:201:3: S1006: should use for {} instead of for true {} (staticcheck)
+		for true {
+		^
+cmd/version.go:100:16: SA1019: session.New is deprecated: Use NewSession functions to create sessions instead. NewSession has the same functionality as New except an error can be returned when the func is called instead of waiting to receive an error until a request is made. (staticcheck)
+	svc := s3.New(session.New(
+	              ^
+pkg/client/segment.go:145:2: S1023: redundant return statement (staticcheck)
+	return
+	^
+pkg/cmdexec/executor.go:123:13: ST1023: should omit type string from declaration; it will be inferred from the right-hand side (staticcheck)
+	var stdout string = ""
+	           ^
+pkg/cmdexec/executor_fake.go:21:9: SA5007: infinite recursive call (staticcheck)
+	return m.RunCommandWait(name)
+	       ^
+pkg/config/config.go:22:2: SA1019: "golang.org/x/crypto/ssh/terminal" is deprecated: this package moved to golang.org/x/term. (staticcheck)
+	"golang.org/x/crypto/ssh/terminal"
+	^
+pkg/config/config.go:78:2: SA4006: this value of err is never used (staticcheck)
+	err = json.NewDecoder(f).Decode(&fileConfig)
+	^
+pkg/config/config.go:104:2: QF1003: could use tagged switch on err (staticcheck)
+	if err == NO_CONFIG {
+	^
+pkg/config/config.go:123:2: QF1003: could use tagged switch on loc (staticcheck)
+	if loc == "amazon.json" {
+	^
+pkg/config/config.go:171:2: SA5001: should check error returned from createClient() before deferring c.Segment.Close() (staticcheck)
+	defer c.Segment.Close()
+	^
+pkg/platform/centos/centos.go:175:17: SA1006: printf-style function with dynamic format string and no further arguments should use print-style function instead (staticcheck)
+		return false, fmt.Errorf(strings.Join(errLines, " "))
+		              ^
+pkg/platform/centos/centos.go:366:9: S1039: unnecessary use of fmt.Sprintf (staticcheck)
+		cmd = fmt.Sprintf("grep -oP '(?<=^VERSION_ID=).+' /etc/os-release")
+		      ^
+pkg/platform/centos/centos_test.go:67:27: QF1008: could remove embedded field "want" from selector (staticcheck)
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+			                       ^
+pkg/platform/centos/centos_test.go:123:27: QF1008: could remove embedded field "want" from selector (staticcheck)
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+			                       ^
+pkg/platform/centos/centos_test.go:179:27: QF1008: could remove embedded field "want" from selector (staticcheck)
+			if diff := cmp.Diff(tc.want.result, o); diff != "" {
+			                       ^
+pkg/platform/debian/debian.go:356:12: QF1004: could use strings.ReplaceAll instead (staticcheck)
+		output = strings.Replace(output, "\n", "", -1)
+		         ^
+pkg/platform/debian/debian.go:357:3: SA4004: the surrounding loop is unconditionally terminated (staticcheck)
+		return fmt.Sprintf("Process: '%s', Pid: %s ", output, PID), nil
+		^
+pkg/pmk/checkAmazonProvider.go:22:20: SA1019: session.New is deprecated: Use NewSession functions to create sessions instead. NewSession has the same functionality as New except an error can be returned when the func is called instead of waiting to receive an error until a request is made. (staticcheck)
+	svc := iamAws.New(session.New(
+	                  ^
+pkg/pmk/clients_test.go:47:23: QF1008: could remove embedded field "Client" from selector (staticcheck)
+			assert.Equal(t, tc.Client.Resmgr, client.Resmgr)
+			                   ^
+pkg/pmk/clients_test.go:48:23: QF1008: could remove embedded field "Client" from selector (staticcheck)
+			assert.Equal(t, tc.Client.Keystone, client.Keystone)
+			                   ^
+pkg/pmk/clients_test.go:49:23: QF1008: could remove embedded field "Client" from selector (staticcheck)
+			assert.Equal(t, tc.Client.Qbert, client.Qbert)
+			                   ^
+pkg/pmk/cluster.go:162:2: QF1003: could use tagged switch on os (staticcheck)
+	if os == "debian" {
+	^
+pkg/pmk/node.go:132:3: QF1003: could use tagged switch on HostAgent (staticcheck)
+		if HostAgent == HostAgentCertless {
+		^
+pkg/pmk/node_test.go:60:40: QF1008: could remove embedded field "args" from selector (staticcheck)
+			result, err := OpenOSReleaseFile(tc.args.exec)
+			                                    ^
+pkg/pmk/node_test.go:154:64: QF1008: could remove embedded field "args" from selector (staticcheck)
+			hostID, err := getHostIDFromConf(client.Client{Executor: tc.args.exec, Segment: client.NewSegment("mgain.pf9.test", false)}, tc.args.auth)
+			                                                            ^
+pkg/qbert/qbert.go:9:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package [io] or package [os], and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+pkg/qbert/qbert.go:168:14: SA1006: printf-style function with dynamic format string and no further arguments should use print-style function instead (staticcheck)
+		return "", fmt.Errorf(string(bodyBytes))
+		           ^
+pkg/qbert/qbert.go:539:16: S1039: unnecessary use of fmt.Sprintf (staticcheck)
+		Monitoring = fmt.Sprintf(`,"monitoring":"{\"retentionTime\":\"7d\"}"`)
+		             ^
+pkg/qbert/qbert.go:556:10: S1039: unnecessary use of fmt.Sprintf (staticcheck)
+			Tag = fmt.Sprintf(`,"tags":{"pf9-system:monitoring":"true"}`)
+			      ^
+pkg/ssh/sshclient.go:12:2: SA1019: "io/ioutil" has been deprecated since Go 1.19: As of Go 1.16, the same functionality is now provided by package [io] or package [os], and those implementations should be preferred in new code. See the specific function documentation for details. (staticcheck)
+	"io/ioutil"
+	^
+pkg/ssh/sshclient.go:141:10: ST1005: error strings should not be capitalized (staticcheck)
+		return fmt.Errorf("Unable to find size of the file %s", localFile)
+		       ^
+pkg/swapoff/swapoff_test.go:90:26: QF1008: could remove embedded field "args" from selector (staticcheck)
+			err = swapOffFstab(tc.args.exec, tmpFile.Name())
+			                      ^
+pkg/util/helper.go:84:17: ST1005: error strings should not be capitalized (staticcheck)
+		return false, fmt.Errorf("Unable to show options to user: %s", err.Error())
+		              ^
+pkg/util/helper.go:91:17: ST1005: error strings should not be capitalized (staticcheck)
+		return false, fmt.Errorf("Unable to read i/p: %s", err.Error())
+		              ^
+cmd/cloudProviders.go:18:2: var loadConfig is unused (unused)
+	loadConfig bool
+	^
+cmd/cluster.go:11:5: var clusterCmdGet is unused (unused)
+var clusterCmdGet = &cobra.Command{
+    ^
+cmd/cluster.go:22:5: var clusterCmdCreate is unused (unused)
+var clusterCmdCreate = &cobra.Command{
+    ^
+cmd/create.go:11:5: var createCmd is unused (unused)
+var createCmd = &cobra.Command{
+    ^
+cmd/detachNode.go:151:6: func getClusters is unused (unused)
+func getClusters(allNodes []qbert.Node) []string {
+     ^
+cmd/get.go:10:5: var getCmd is unused (unused)
+var getCmd = &cobra.Command{
+    ^
+cmd/prepNode.go:44:2: var user is unused (unused)
+	user           string
+	^
+cmd/prepNode.go:45:2: var password is unused (unused)
+	password       string
+	^
+cmd/prepNode.go:46:2: var sshKey is unused (unused)
+	sshKey         string
+	^
+cmd/prepNode.go:47:2: var ips is unused (unused)
+	ips            []string
+	^
+cmd/root.go:18:5: var cfgFile is unused (unused)
+var cfgFile string
+    ^
+cmd/use.go:10:5: var useCmd is unused (unused)
+var useCmd = &cobra.Command{
+    ^
+pkg/platform/centos/centos_test.go:14:5: var errOSPackage is unused (unused)
+var errOSPackage = errors.New("Packages not found:  ntp curl")
+    ^
+102 issues:
+* errcheck: 39
+* govet: 4
+* ineffassign: 6
+* staticcheck: 40
+* unused: 13
