@@ -356,7 +356,7 @@ func installHostAgentCertless(ctx objects.Config, regionURL string, auth keyston
 		_, err = exec.RunWithStdout("bash", "-c", cmd)
 	}
 
-//		removeTempDirAndInstaller(exec)
+		removeTempDirAndInstaller(exec)
 
 	if err != nil {
 		_, exitCode := cmdexec.ExitCodeChecker(err)
