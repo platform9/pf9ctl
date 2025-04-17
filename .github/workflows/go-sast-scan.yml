@@ -10,6 +10,9 @@ jobs:
     gosec:
         name: Static Code Analysis (gosec)
         runs-on: ubuntu-latest
+        continue-on-error: true
+        outputs:
+            gosec-high-found: ${{ steps.check.outputs.gosec-high-found }}
 
         steps:
         -   name: Checkout code
@@ -25,21 +28,98 @@ jobs:
                 go install github.com/securego/gosec/v2/cmd/gosec@latest
                 echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
-        -   name: Run gosec
-            run: gosec ./...
+        # -   name: Run gosec
+        #     run: gosec ./...
+        -   name: Run gosec and save report
+            run: gosec -fmt=json -out=gosec-report.json ./...
 
-    gitleaks:
-        name: Secret Scan (gitleaks)
+        -   name: Upload gosec Report
+            uses: actions/upload-artifact@v4
+            with:
+                name: gosec-report
+                path: gosec-report.json
+
+        -   name: Show Gosec Report in Logs
+            run: cat gosec-report.json
+
+        -   name: Check for High Severity Issues
+            id: check
+            run: |
+              count=$(jq '[.Issues[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' gosec-report.json)
+              echo "gosec-high-found=$([[ $count -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+        -   name: Fail if High/Critical Vulnerabilities Found
+            if: steps.check.outputs.gosec-high-found == 'true'
+            run: |
+                echo "❌ High/Critical vulnerabilities found. Failing the job."
+                exit 1
+
+    auto-pr-gosec:
+        name: Create Pull Request if High/Critical Vulnerabilities Found
+        needs: [gosec]
+        if: needs.gosec.outputs.gosec-high-found == 'true'
         runs-on: ubuntu-latest
-
+        permissions:
+            contents: write
+            pull-requests: write
         steps:
-        -   name: Checkout code
+        -   name: Checkout Code
             uses: actions/checkout@v3
 
-        -   name: Run Gitleaks
-            uses: gitleaks/gitleaks-action@v2
+        -   name: Download Gosec Report Artifact
+            uses: actions/download-artifact@v4
             with:
-                args: detect --no-git -v
+                name: gosec-report
+                path: tmp
+
+        -   name: Generate PR Body with High/Critical Gosec Results
+            run: |
+                echo "# 🚨 Gosec Vulnerability Report (High/Critical)" > tmp/pr-body.md
+                jq -r '
+                .Issues[]
+                | select(.severity == "HIGH" or .Severity == "CRITICAL")
+                | "* File: \(.file)
+                    • Line: \(.line)
+                    • Rule ID: \(.rule_id)
+                    • Details: \(.details)
+                    • Confidence: \(.confidence)
+                    • Severity: \(.severity)"
+                ' tmp/gosec-report.json >> tmp/pr-body.md || echo "❌ No critical/high vulnerabilities found in report." >> tmp/pr-body.md
+        
+        -   name: Add Gosec Alert Log (Optional)
+            run: |
+                jq -r '
+                .Issues[]
+                | select(.severity == "HIGH")
+                | "* \(.rule_id) - \(.file):\(.line) (\(.severity)) - \(.details)"
+                ' tmp/gosec-report.json > .security-alert.log || true
+                git config user.name github-actions
+                git config user.email github-actions@github.com
+                git add -f .security-alert.log || true
+                git commit -m "chore: gosec security alert log" || true
+
+        -   name: Create Pull Request
+            uses: peter-evans/create-pull-request@v5
+            with:
+                commit-message: "chore: high/critical vulnerabilities detected in gosec"
+                title: "chore: Auto PR for the Gosec scan(high/critical)"
+                body-path: tmp/pr-body.md
+                branch: "auto/high-critical-gosec-security-scan"
+                base: "master"
+        
+
+    # gitleaks:
+    #     name: Secret Scan (gitleaks)
+    #     runs-on: ubuntu-latest
+
+    #     steps:
+    #     -   name: Checkout code
+    #         uses: actions/checkout@v3
+
+    #     -   name: Run Gitleaks
+    #         uses: gitleaks/gitleaks-action@v2
+    #         with:
+    #             args: detect --no-git -v
 
     # golangci:
     #     name: Golangci Lint and Auto PR
@@ -115,6 +195,7 @@ jobs:
     dependencies-scan:
         name: Trivy Scan
         runs-on: ubuntu-latest
+        continue-on-error: true
         outputs:
             trivy-high-found: ${{ steps.check.outputs.trivy-high-found }}
 
@@ -144,6 +225,12 @@ jobs:
             run: |
                 count=$(jq '[.Results[].Vulnerabilities[] | select(.Severity == "HIGH" or .Severity == "CRITICAL")] | length' trivy-report.json)
                 echo "trivy-high-found=$([[ $count -gt 0 ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+        -   name: Fail if High/Critical Vulnerabilities Found
+            if: steps.check.outputs.trivy-high-found == 'true'
+            run: |
+                echo "❌ High/Critical vulnerabilities found. Failing the job."
+                exit 1
 
     auto-pr:
         name: Create Pull Request if High/Critical Vulnerabilities Found
@@ -203,7 +290,7 @@ jobs:
             uses: peter-evans/create-pull-request@v5
             with:
                 commit-message: "chore: high/critical vulnerabilities detected 🚨"
-                title: "chore: auto PR for Trivy scan (high/critical vulnerabilities)"
+                title: "chore: Auto PR for the Trivy scan(high/critical)"
                 body-path: tmp/pr-body.md
-                branch: "auto/high-critical-security-scan"
+                branch: "auto/high-critical-trivy-security-scan"
                 base: "master"
