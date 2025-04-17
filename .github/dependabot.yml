@@ -1,33 +1,25 @@
 version: 2
 updates:
-  # Go modules (weekly updates for all dependencies)
+  # Go dependencies (weekly updates)
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "weekly"
-    target-branch: "main"
-    open-pull-requests-limit: 10
-    reviewers:
-      - "hsri-pf9"
-
-  # Go modules (daily updates for security only)
-  - package-ecosystem: "gomod"
-    directory: "/"
-    schedule:
-      interval: "daily"
-    target-branch: "main"
+    target-branch: "private/harsh/sast-scan"
     open-pull-requests-limit: 5
     labels:
       - "security"
     reviewers:
       - "hsri-pf9"
 
-  # GitHub Actions updates (weekly)
+  # GitHub Actions dependencies (weekly updates)
   - package-ecosystem: "github-actions"
     directory: "/.github/workflows"
     schedule:
       interval: "weekly"
-    target-branch: "main"
+    target-branch: "private/harsh/sast-scan"
     open-pull-requests-limit: 5
+    labels:
+      - "security"
     reviewers:
       - "hsri-pf9"
