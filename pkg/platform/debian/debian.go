@@ -291,15 +291,13 @@ func (d *Debian) Version() (string, error) {
 	//using cat command content of os-release file is printed on terminal
 	//using grep command os name and version are searched (pretty_name)
 	//using cut command required field is selected
-	//in this case (PRETTY_NAME="Ubuntu 18.04.2 LTS") second field(18.04.2) is selected using (cut -d ' ' -f 2) command
+	//in this case (PRETTY_NAME="Ubuntu 20.04.2 LTS") second field(20.04.2) is selected using (cut -d ' ' -f 2) command
 	majorVersion, minorVersion, _, err := d.getVersion()
 	if err != nil {
 		return "", fmt.Errorf("Couldn't read the OS configuration file os-release: %s", err.Error())
 	}
 	var isVersionMatch bool
-	if strings.Contains(string(majorVersion), "18") && strings.Contains(string(minorVersion), "04") {
-		isVersionMatch = true
-	} else if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
+	if strings.Contains(string(majorVersion), "20") && strings.Contains(string(minorVersion), "04") {
 		isVersionMatch = true
 	} else if strings.Contains(string(majorVersion), "22") && strings.Contains(string(minorVersion), "04") {
 		isVersionMatch = true
