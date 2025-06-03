@@ -50,7 +50,7 @@ func removeHostagent(c client.Client, hostOS string) {
 	} else {
 		fmt.Println("Removed hostagent")
 	}
-	fmt.Println("Removing logs...")
+	fmt.Println("Removing PF9 logs and configs...")
 	for _, file := range util.Files {
 		cmd := fmt.Sprintf("rm -rf %s", file)
 		c.Executor.RunCommandWait(cmd)
