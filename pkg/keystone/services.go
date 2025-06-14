@@ -5,8 +5,9 @@ package keystone
 import (
 	"encoding/json"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 // Type definition for struct encapsulating service manager APIs.
@@ -95,6 +96,9 @@ func (s_api *ServiceManagerAPI) GetServiceID_API(
 		return "", fmt.Errorf("Failed to decode service information, Error: %s", err)
 	}
 
+	if len(serviceInfo.Services) == 0 {
+		return "", fmt.Errorf("no services found for service %s", name)
+	}
 	// There is supposed to be only one service per name.
 	// Pick the ID from the first instance in the slice.
 	service_id := serviceInfo.Services[0].ID
