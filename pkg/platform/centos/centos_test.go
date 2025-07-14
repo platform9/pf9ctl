@@ -17,7 +17,7 @@ type args struct {
 	exec cmdexec.Executor
 }
 
-//CPU check test case
+// CPU check test case
 func TestCPU(t *testing.T) {
 	type want struct {
 		result bool
@@ -62,7 +62,7 @@ func TestCPU(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, err := c.checkCPU()
+			o, err := c.CheckCPU()
 
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
@@ -118,7 +118,7 @@ func TestRAM(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, err := c.checkMem()
+			o, err := c.CheckMem()
 
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
@@ -174,7 +174,7 @@ func TestDisk(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, err := c.checkDisk()
+			o, err := c.CheckDisk()
 
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
@@ -185,7 +185,7 @@ func TestDisk(t *testing.T) {
 	}
 }
 
-//Sudo check test case
+// Sudo check test case
 func TestSudo(t *testing.T) {
 	type want struct {
 		result bool
@@ -230,7 +230,7 @@ func TestSudo(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, err := c.checkSudo()
+			o, err := c.CheckSudo()
 
 			if diff := cmp.Diff(tc.want.err, err); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
@@ -242,7 +242,7 @@ func TestSudo(t *testing.T) {
 	}
 }
 
-//Port check test case
+// Port check test case
 func TestPort(t *testing.T) {
 	type want struct {
 		result bool
@@ -285,7 +285,7 @@ func TestPort(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, _ := c.checkPort()
+			o, _ := c.CheckPort()
 
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
@@ -294,7 +294,7 @@ func TestPort(t *testing.T) {
 	}
 }
 
-//ExistingInstallation check test case
+// ExistingInstallation check test case
 func TestExistingInstallation(t *testing.T) {
 	type want struct {
 		result bool
@@ -395,7 +395,7 @@ func TestOSPackages(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			o, err := c.checkOSPackages()
+			o, err := c.CheckOSPackages()
 
 			if diff := cmp.Diff(tc.want.result, o); diff != "" {
 				t.Errorf("r: -want, +got:\n%s", diff)
@@ -406,7 +406,7 @@ func TestOSPackages(t *testing.T) {
 	}
 }
 
-//Test case for RemovePyCli check
+// Test case for RemovePyCli check
 func TestRemovePyCli(t *testing.T) {
 	type want struct {
 		result bool
@@ -451,7 +451,7 @@ func TestRemovePyCli(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			result, err := c.removePyCli()
+			result, err := c.RemovePyCli()
 
 			assert.Equal(t, tc.want.err, err)
 			assert.Equal(t, tc.want.result, result)
@@ -607,7 +607,7 @@ func TestDisableSwap(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			result, err := c.disableSwap()
+			result, err := c.DisableSwap()
 			assert.Equal(t, tc.result, result)
 			assert.Equal(t, tc.err, err)
 		})
@@ -657,7 +657,7 @@ func TestPIDofSystemdCheck(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			result, err := c.checkPIDofSystemd()
+			result, err := c.CheckPIDofSystemd()
 			assert.Equal(t, tc.result, result)
 			assert.Equal(t, tc.err, err)
 		})
@@ -707,7 +707,7 @@ func TestCheckFirewalldService(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			c := &CentOS{exec: tc.exec}
-			result, err := c.checkFirewalldIsRunning()
+			result, err := c.CheckFirewalldIsRunning()
 			assert.Equal(t, tc.result, result)
 			assert.Equal(t, tc.err, err)
 		})
