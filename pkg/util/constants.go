@@ -130,8 +130,8 @@ var (
 		regexp.MustCompile(`.*/etc/pf9/certs/hostagent/key\.pem`),
 		regexp.MustCompile(`.*/etc/pf9/certs/ca/cert\.pem`),
 		regexp.MustCompile(`.*/etc/pf9/hostagent\.conf`),
-		regexp.MustCompile(`.*pf9-hostagent-.*\.x86_64\.deb`),
-		regexp.MustCompile(`.*pf9-comms-.*\.x86_64\.deb`),
+		regexp.MustCompile(`.*pf9-hostagent-.*\.x86_64\.*`),
+		regexp.MustCompile(`.*pf9-comms-.*\.x86_64\.*`),
 		regexp.MustCompile(`.*download_nocert_routine executed successfully.*`),
 	}
 	HostAgentprogressPercentage = []int{5, 10, 15, 20, 25, 75, 100}
