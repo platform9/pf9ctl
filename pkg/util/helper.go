@@ -69,7 +69,7 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 	// the server time to recover, as 500's are typically not permanent
 	// errors and may relate to outages on the server side. This will catch
 	// invalid response codes as well, like 0 and 999.
-	if resp.StatusCode == 0 || resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusNotFound || (resp.StatusCode >= http.StatusInternalServerError && resp.StatusCode != http.StatusNotImplemented) {
+	if resp.StatusCode == 0 || resp.StatusCode == http.StatusNotFound || (resp.StatusCode >= http.StatusInternalServerError && resp.StatusCode != http.StatusNotImplemented) {
 		return true, nil
 	}
 
@@ -109,7 +109,8 @@ type ZapWrapper struct {
 }
 
 /*
-	Implmenting the LeveledLogger for retry http
+Implementing the LeveledLogger for retry http
+
 	type LeveledLogger interface {
 		Error(msg string, keysAndValues ...interface{})
 		Info(msg string, keysAndValues ...interface{})
