@@ -1,0 +1,236 @@
+{
+	"Golang errors": {},
+	"Issues": [
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "295",
+				"url": "https://cwe.mitre.org/data/definitions/295.html"
+			},
+			"rule_id": "G402",
+			"details": "TLS InsecureSkipVerify set true.",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/resmgr/resmgr.go",
+			"code": "52: \tclient := rhttp.NewClient()\n53: \tclient.HTTPClient.Transport.(*http.Transport).TLSClientConfig = \u0026tls.Config{InsecureSkipVerify: true}\n54: \n",
+			"line": "53",
+			"column": "98",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "295",
+				"url": "https://cwe.mitre.org/data/definitions/295.html"
+			},
+			"rule_id": "G402",
+			"details": "TLS InsecureSkipVerify set true.",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/client/clients.go",
+			"code": "33: \tif allowInsecure {\n34: \t\thttp.DefaultTransport.(*http.Transport).TLSClientConfig = \u0026tls.Config{InsecureSkipVerify: true}\n35: \t}\n",
+			"line": "34",
+			"column": "93",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "328",
+				"url": "https://cwe.mitre.org/data/definitions/328.html"
+			},
+			"rule_id": "G401",
+			"details": "Use of weak cryptographic primitive",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/cmd/version.go",
+			"code": "85: \tdefer file.Close()\n86: \thash := md5.New()\n87: \t_, err = io.Copy(hash, file)\n",
+			"line": "86",
+			"column": "10",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "322",
+				"url": "https://cwe.mitre.org/data/definitions/322.html"
+			},
+			"rule_id": "G106",
+			"details": "Use of ssh InsecureIgnoreHostKey should be audited",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/ssh/sshclient.go",
+			"code": "62: \t\t// by default ignore host key checks\n63: \t\tHostKeyCallback: ssh.InsecureIgnoreHostKey(),\n64: \t}\n",
+			"line": "63",
+			"column": "20",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "78",
+				"url": "https://cwe.mitre.org/data/definitions/78.html"
+			},
+			"rule_id": "G204",
+			"details": "Subprocess launched with a potential tainted input or cmd arguments",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/cmd/version.go",
+			"code": "124: \t}\n125: \tbashCmd := exec.Command(\"bash\", \"-c\", string(curlCmd))\n126: \terr = bashCmd.Start()\n",
+			"line": "125",
+			"column": "13",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "78",
+				"url": "https://cwe.mitre.org/data/definitions/78.html"
+			},
+			"rule_id": "G204",
+			"details": "Subprocess launched with a potential tainted input or cmd arguments",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/cmd/version.go",
+			"code": "120: \tfmt.Println(\"\\nDownloading the CLI\")\n121: \tcurlCmd, err := exec.Command(\"curl\", \"-sL\", util.BucketPath).Output()\n122: \tif err != nil {\n",
+			"line": "121",
+			"column": "18",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G304",
+			"details": "Potential file inclusion via variable",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/ssh/sshclient.go",
+			"code": "183: \n184: \tlocalFile, err := os.Create(localFilePath)\n185: \tif err != nil {\n",
+			"line": "184",
+			"column": "20",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G304",
+			"details": "Potential file inclusion via variable",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/ssh/sshclient.go",
+			"code": "133: \t// first check if the local file exists or not\n134: \tlocalFp, err := os.Open(localFile)\n135: \tif err != nil {\n",
+			"line": "134",
+			"column": "18",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G304",
+			"details": "Potential file inclusion via variable",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/log/log.go",
+			"code": "27: \t// If the file doesn't exist, create it, or append to the file\n28: \tf, err := os.OpenFile(runLogLocation, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)\n29: \tif err != nil {\n",
+			"line": "28",
+			"column": "12",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G304",
+			"details": "Potential file inclusion via variable",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/config/config.go",
+			"code": "63: \n64: \tf, err := os.Open(loc)\n65: \tif err != nil {\n",
+			"line": "64",
+			"column": "12",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G304",
+			"details": "Potential file inclusion via variable",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/config/config.go",
+			"code": "46: \n47: \tf, err := os.Create(loc)\n48: \tif err != nil {\n",
+			"line": "47",
+			"column": "12",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "MEDIUM",
+			"cwe": {
+				"id": "88",
+				"url": "https://cwe.mitre.org/data/definitions/88.html"
+			},
+			"rule_id": "G107",
+			"details": "Potential HTTP request made with variable url",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/keystone/keystone.go",
+			"code": "157: \t}\n158: \tresp, err := http.Post(url, \"application/json\", strings.NewReader(body))\n159: \tif err != nil {\n",
+			"line": "158",
+			"column": "15",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "276",
+				"url": "https://cwe.mitre.org/data/definitions/276.html"
+			},
+			"rule_id": "G302",
+			"details": "Expect file permissions to be 0600 or less",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/pkg/log/log.go",
+			"code": "27: \t// If the file doesn't exist, create it, or append to the file\n28: \tf, err := os.OpenFile(runLogLocation, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)\n29: \tif err != nil {\n",
+			"line": "28",
+			"column": "12",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "327",
+				"url": "https://cwe.mitre.org/data/definitions/327.html"
+			},
+			"rule_id": "G501",
+			"details": "Blocklisted import crypto/md5: weak cryptographic primitive",
+			"file": "/home/runner/work/pf9ctl/pf9ctl/cmd/version.go",
+			"code": "5: import (\n6: \t\"crypto/md5\"\n7: \t\"encoding/hex\"\n",
+			"line": "6",
+			"column": "2",
+			"nosec": false,
+			"suppressions": null
+		}
+	],
+	"Stats": {
+		"files": 53,
+		"lines": 8257,
+		"nosec": 0,
+		"found": 14
+	},
+	"GosecVersion": "dev"
+}
