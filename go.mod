@@ -23,7 +23,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.40.0
-	golang.org/x/net v0.41.0
+	golang.org/x/net v0.42.0
 	google.golang.org/api v0.114.0
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0
 )
