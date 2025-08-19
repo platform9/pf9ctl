@@ -38,17 +38,17 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 		if v, ok := err.(*url.Error); ok {
 			// Don't retry if the error was due to too many redirects.
 			if redirectsErrorRe.MatchString(v.Error()) {
-				return false, nil
+				return false, err
 			}
 
 			// Don't retry if the error was due to an invalid protocol scheme.
 			if schemeErrorRe.MatchString(v.Error()) {
-				return false, nil
+				return false, err
 			}
 
 			// Don't retry if the error was due to TLS cert verification failure.
 			if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
-				return false, nil
+				return false, err
 			}
 		}
 
@@ -73,7 +73,7 @@ func RetryPolicyOn404(ctx context.Context, resp *http.Response, err error) (bool
 		return true, nil
 	}
 
-	return false, nil
+	return false, err
 }
 
 // AskBool function asks for the user input
