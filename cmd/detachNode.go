@@ -126,7 +126,7 @@ func detachNodeRun(cmd *cobra.Command, args []string) {
 
 }
 
-//returns the nodes whos ip's were passed in the flag (or the node installed on the machine if no ip was passed)
+// returns the nodes whos ip's were passed in the flag (or the node installed on the machine if no ip was passed)
 func getNodesFromUuids(nodeUuids []string, allNodes []qbert.Node) ([]qbert.Node, error) {
 
 	var nodesUuid []qbert.Node
@@ -147,7 +147,7 @@ func getNodesFromUuids(nodeUuids []string, allNodes []qbert.Node) ([]qbert.Node,
 	return nodesUuid, nil
 }
 
-//returns a list of all clusters the nodes are attached to
+// returns a list of all clusters the nodes are attached to
 func getClusters(allNodes []qbert.Node) []string {
 
 	var clusters []string
@@ -170,7 +170,7 @@ func getClusters(allNodes []qbert.Node) []string {
 
 }
 
-//returns all nodes attached to a specific clusters, used to detach all nodes from clusters
+// returns all nodes attached to a specific clusters, used to detach all nodes from clusters
 func getAllClusterNodes(allNodes []qbert.Node, clusters []string) []qbert.Node {
 
 	var clusterNodes []qbert.Node
