@@ -38,44 +38,44 @@ func NewCentOS(exec cmdexec.Executor) *CentOS {
 func (c *CentOS) Check() []platform.Check {
 	var checks []platform.Check
 
-	result, err := c.removePyCli()
+	result, err := c.RemovePyCli()
 	checks = append(checks, platform.Check{"Removal of existing CLI", false, result, err, util.PyCliErr})
 
 	result, err = c.CheckExistingInstallation()
 	checks = append(checks, platform.Check{"Existing Platform9 Packages Check", false, result, err, util.ExisitngInstallationErr})
 
-	result, err = c.checkOSPackages()
+	result, err = c.CheckOSPackages()
 	checks = append(checks, platform.Check{"Required OS Packages Check", true, result, err, fmt.Sprintf("%s. %s", util.OSPackagesErr, err)})
 
-	result, err = c.checkSudo()
+	result, err = c.CheckSudo()
 	checks = append(checks, platform.Check{"SudoCheck", true, result, err, util.SudoErr})
 
-	result, err = c.checkEnabledRepos()
+	result, err = c.CheckEnabledRepos()
 	checks = append(checks, platform.Check{"Required Enabled Repositories Check", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = c.checkCPU()
+	result, err = c.CheckCPU()
 	checks = append(checks, platform.Check{"CPUCheck", false, result, err, fmt.Sprintf("%s %s", util.CPUErr, err)})
 
-	result, err = c.checkDisk()
+	result, err = c.CheckDisk()
 	checks = append(checks, platform.Check{"DiskCheck", false, result, err, fmt.Sprintf("%s %s", util.DiskErr, err)})
 
-	result, err = c.checkMem()
+	result, err = c.CheckMem()
 	checks = append(checks, platform.Check{"MemoryCheck", false, result, err, fmt.Sprintf("%s %s", util.MemErr, err)})
 
-	result, err = c.checkPort()
+	result, err = c.CheckPort()
 	checks = append(checks, platform.Check{"PortCheck", false, result, err, fmt.Sprintf("%s", err)})
 
 	result, err = c.CheckKubernetesCluster()
 	checks = append(checks, platform.Check{"Existing Kubernetes Cluster Check", false, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = c.checkPIDofSystemd()
+	result, err = c.CheckPIDofSystemd()
 	checks = append(checks, platform.Check{"Check if system is booted with systemd", true, result, err, fmt.Sprintf("%s", err)})
 
-	result, err = c.checkFirewalldIsRunning()
+	result, err = c.CheckFirewalldIsRunning()
 	checks = append(checks, platform.Check{"Check if firewalld service is not running", false, result, err, fmt.Sprintf("%s", err)})
 
 	if !util.SwapOffDisabled {
-		result, err = c.disableSwap()
+		result, err = c.DisableSwap()
 		checks = append(checks, platform.Check{"Disabling swap and removing swap in fstab", true, result, err, fmt.Sprintf("%s", err)})
 	}
 
@@ -129,7 +129,7 @@ func (c *CentOS) CheckExistingInstallation() (bool, error) {
 	return true, nil
 }
 
-func (c *CentOS) checkOSPackages() (bool, error) {
+func (c *CentOS) CheckOSPackages() (bool, error) {
 
 	var rhel8, rocky9 bool
 	errLines := []string{packageInstallError}
@@ -177,7 +177,7 @@ func (c *CentOS) checkOSPackages() (bool, error) {
 	return true, nil
 }
 
-func (c *CentOS) checkEnabledRepos() (bool, error) {
+func (c *CentOS) CheckEnabledRepos() (bool, error) {
 
 	var centos, rhel8 bool
 	centos, _ = regexp.MatchString(`.*7\.[3-9]\.*`, string(version))
@@ -227,7 +227,7 @@ func (c *CentOS) checkEnabledRepos() (bool, error) {
 	return true, nil
 }
 
-func (c *CentOS) checkSudo() (bool, error) {
+func (c *CentOS) CheckSudo() (bool, error) {
 	idS, err := c.exec.RunWithStdout("bash", "-c", "id -u | tr -d '\\n'")
 	if err != nil {
 		return false, err
@@ -241,7 +241,7 @@ func (c *CentOS) checkSudo() (bool, error) {
 	return id == 0, nil
 }
 
-func (c *CentOS) checkCPU() (bool, error) {
+func (c *CentOS) CheckCPU() (bool, error) {
 	cpuS, err := c.exec.RunWithStdout("bash", "-c", "grep -c ^processor /proc/cpuinfo | tr -d '\\n'")
 	if err != nil {
 		return false, err
@@ -260,7 +260,7 @@ func (c *CentOS) checkCPU() (bool, error) {
 	return false, fmt.Errorf("Number of CPUs found: %d", cpu)
 }
 
-func (c *CentOS) checkMem() (bool, error) {
+func (c *CentOS) CheckMem() (bool, error) {
 	memS, err := c.exec.RunWithStdout("bash", "-c", "echo $(($(getconf _PHYS_PAGES) * $(getconf PAGE_SIZE) / (1024 * 1024))) | tr -d '\\n'")
 	if err != nil {
 		return false, err
@@ -279,7 +279,7 @@ func (c *CentOS) checkMem() (bool, error) {
 	return false, fmt.Errorf("Total memory found: %.0f GB", math.Ceil(mem/1024))
 }
 
-func (c *CentOS) checkDisk() (bool, error) {
+func (c *CentOS) CheckDisk() (bool, error) {
 	diskS, err := c.exec.RunWithStdout("bash", "-c", "df -k / --output=size | sed 1d | xargs | tr -d '\\n'")
 	if err != nil {
 		return false, err
@@ -314,7 +314,7 @@ func (c *CentOS) checkDisk() (bool, error) {
 	return false, fmt.Errorf("Available disk space: %.0f GB", math.Trunc(avail/util.GB))
 }
 
-func (c *CentOS) checkPort() (bool, error) {
+func (c *CentOS) CheckPort() (bool, error) {
 	var arg string
 
 	// For remote execution the command is wrapped under quotes ("") which creates
@@ -345,7 +345,7 @@ func (c *CentOS) checkPort() (bool, error) {
 	return true, nil
 }
 
-func (c *CentOS) removePyCli() (bool, error) {
+func (c *CentOS) RemovePyCli() (bool, error) {
 
 	if _, err := c.exec.RunWithStdout("rm", "-rf", util.PyCliPath); err != nil {
 		return false, err
@@ -422,7 +422,7 @@ func (c *CentOS) installOSPackages(p string) error {
 	return nil
 }
 
-func (c *CentOS) disableSwap() (bool, error) {
+func (c *CentOS) DisableSwap() (bool, error) {
 	err := swapoff.SetupNode(c.exec)
 	if err != nil {
 		return false, errors.New("error occurred while disabling swap")
@@ -431,7 +431,7 @@ func (c *CentOS) disableSwap() (bool, error) {
 	}
 }
 
-func (c *CentOS) checkPIDofSystemd() (bool, error) {
+func (c *CentOS) CheckPIDofSystemd() (bool, error) {
 	_, err := c.exec.RunWithStdout("bash", "-c", "ps -p 1 -o comm= | grep systemd")
 	if err != nil {
 		return false, errors.New("System is not booted with systemd")
@@ -440,7 +440,7 @@ func (c *CentOS) checkPIDofSystemd() (bool, error) {
 	}
 }
 
-func (c *CentOS) checkFirewalldIsRunning() (bool, error) {
+func (c *CentOS) CheckFirewalldIsRunning() (bool, error) {
 	_, err := c.exec.RunWithStdout("bash", "-c", "systemctl is-active firewalld")
 	if err != nil {
 		return true, nil
