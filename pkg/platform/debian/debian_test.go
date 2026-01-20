@@ -15,7 +15,7 @@ type args struct {
 	exec cmdexec.Executor
 }
 
-//CPU check test case
+// CPU check test case
 func TestCPU(t *testing.T) {
 	type want struct {
 		result bool
@@ -71,7 +71,7 @@ func TestCPU(t *testing.T) {
 	}
 }
 
-//RAM check test case
+// RAM check test case
 func TestRAM(t *testing.T) {
 	type want struct {
 		result bool
@@ -127,7 +127,7 @@ func TestRAM(t *testing.T) {
 	}
 }
 
-//Sudo check test case
+// Sudo check test case
 func TestSudo(t *testing.T) {
 	type want struct {
 		result bool
@@ -184,7 +184,7 @@ func TestSudo(t *testing.T) {
 	}
 }
 
-//Port check test case
+// Port check test case
 func TestPort(t *testing.T) {
 	type want struct {
 		result bool
@@ -236,7 +236,7 @@ func TestPort(t *testing.T) {
 	}
 }
 
-//Disk check test case
+// Disk check test case
 func TestDisk(t *testing.T) {
 	type want struct {
 		result bool
@@ -253,7 +253,7 @@ func TestDisk(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "31457280", nil
+						return "32212254720", nil
 					},
 				},
 			},
@@ -267,7 +267,7 @@ func TestDisk(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "15728640", nil
+						return "16106127360", nil
 					},
 				},
 			},
@@ -291,7 +291,7 @@ func TestDisk(t *testing.T) {
 	}
 }
 
-//ExistingInstallation check test case
+// ExistingInstallation check test case
 func TestExistingInstallation(t *testing.T) {
 	type want struct {
 		result bool
@@ -403,7 +403,7 @@ func TestOSPackages(t *testing.T) {
 	}
 }
 
-//Test case for RemovePyCli check
+// Test case for RemovePyCli check
 func TestRemovePyCli(t *testing.T) {
 	type want struct {
 		result bool
