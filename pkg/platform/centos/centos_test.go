@@ -146,7 +146,7 @@ func TestDisk(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "31457280", nil
+						return "32212254720", nil
 					},
 				},
 			},
@@ -160,7 +160,7 @@ func TestDisk(t *testing.T) {
 			args: args{
 				exec: &cmdexec.MockExecutor{
 					MockRunWithStdout: func(name string, args ...string) (string, error) {
-						return "15728640", nil
+						return "16106127360", nil
 					},
 				},
 			},

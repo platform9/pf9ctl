@@ -45,7 +45,7 @@ const (
 	// RAM in GiBs
 	MinMem = 12
 	// Measure of a GiB in terms of bytes
-	GB = 1024 * 1024
+	GB = 1024 * 1024 * 1024
 	// Disk size in GiBs
 	MinDisk = 30
 	// Disk size in GiBs
