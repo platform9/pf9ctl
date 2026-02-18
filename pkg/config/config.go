@@ -339,6 +339,11 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 		proxyURL, _ = reader.ReadString('\n')
 		cfg.ProxyURL = strings.TrimSpace(proxyURL)
 	}
+	if strings.TrimSpace(cfg.ProxyURL) != "" && cfg.NoProxy == "" {
+		fmt.Print("No proxy (comma-separated hosts or domains to bypass proxy) [optional]: ")
+		noProxyLine, _ := reader.ReadString('\n')
+		cfg.NoProxy = strings.TrimSpace(noProxyLine)
+	}
 
 	if cfg.Region == "" {
 		cfg.Region = "RegionOne"
