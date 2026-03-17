@@ -3,14 +3,63 @@
 package keystone
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
+
+func keystoneRootCAs() *x509.CertPool {
+	rootCAs := x509.NewCertPool()
+
+	// Prefer the DU cert if present (installed by pcdctl).
+	for _, p := range []string{
+		"/etc/pki/ca-trust/source/anchors/du.crt",
+		"/usr/local/share/ca-certificates/du.crt",
+	} {
+		if b, err := os.ReadFile(p); err == nil {
+			_ = rootCAs.AppendCertsFromPEM(b)
+		}
+	}
+
+	// Load OS CA bundle directly (avoids per-process caching).
+	for _, p := range []string{
+		"/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem", // RHEL-family
+		"/etc/ssl/certs/ca-certificates.crt",               // Debian-family
+	} {
+		if b, err := os.ReadFile(p); err == nil && rootCAs.AppendCertsFromPEM(b) {
+			return rootCAs
+		}
+	}
+
+	// Fallback: best-effort system pool (may be cached).
+	if sysPool, sysErr := x509.SystemCertPool(); sysErr == nil && sysPool != nil {
+		return sysPool
+	}
+
+	return rootCAs
+}
+
+func newKeystoneHTTPClient() *http.Client {
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		TLSClientConfig: &tls.Config{
+			RootCAs:    keystoneRootCAs(),
+			MinVersion: tls.VersionTLS12,
+		},
+	}
+	return &http.Client{
+		Timeout:   30 * time.Second,
+		Transport: transport,
+	}
+}
 
 type KeystoneAuth struct {
 	DUFqdn    string
@@ -155,14 +204,24 @@ func (k KeystoneImpl) GetAuth(
 			}`, username, password, tenant)
 		}
 	}
-	resp, err := http.Post(url, "application/json", strings.NewReader(body))
+
+	client := newKeystoneHTTPClient()
+
+	req, err := http.NewRequest("POST", url, strings.NewReader(body))
+	if err != nil {
+		return auth, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		zap.S().Debugf("Error calling keystone API:%s\n", err.Error())
 		return auth, err
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 201 {
-		zap.S().Debugf("Error in StatusCode:%s\n", resp.StatusCode)
+		zap.S().Debugf("Error in StatusCode:%d\n", resp.StatusCode)
 		return auth, fmt.Errorf("Unable to get keystone token, status: %d", resp.StatusCode)
 	}
 

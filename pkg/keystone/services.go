@@ -50,7 +50,7 @@ func GetServiceID(
 	url := fmt.Sprintf("%s/keystone/v3/services", fqdn)
 
 	// Generate the http client object
-	client := &http.Client{}
+	client := newKeystoneHTTPClient()
 
 	// Create the context to invoke the service manager API.
 	s_api := ServiceManagerAPI{client, url, auth.Token}
