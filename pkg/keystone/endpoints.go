@@ -54,7 +54,7 @@ func GetEndpointForRegion(
 	url := fmt.Sprintf("%s/keystone/v3/endpoints", fqdn)
 
 	// Generate the http client object
-	client := &http.Client{}
+	client := newKeystoneHTTPClient()
 
 	// Create the context to invoke the service manager API.
 	e_api := EndpointManagerAPI{client, url, auth.Token}

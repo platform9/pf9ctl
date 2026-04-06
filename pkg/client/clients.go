@@ -2,8 +2,6 @@
 package client
 
 import (
-	"crypto/tls"
-	"net/http"
 	"time"
 
 	"github.com/platform9/pf9ctl/pkg/cmdexec"
@@ -29,10 +27,6 @@ type Client struct {
 // New creates the clients needed by the CLI
 // to interact with the external services.
 func NewClient(fqdn string, executor cmdexec.Executor, allowInsecure bool, noTracking bool) (Client, error) {
-	// Bring the hammer down to make default http allow insecure
-	if allowInsecure {
-		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	}
 	return Client{
 		Resmgr:   resmgr.NewResmgr(fqdn, HTTPMaxRetry, HTTPRetryMinWait, HTTPRetryMaxWait, allowInsecure),
 		Keystone: keystone.NewKeystone(fqdn),
