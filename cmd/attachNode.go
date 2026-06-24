@@ -95,7 +95,7 @@ func attachNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("No nodes were specified to be attached to the cluster")
 	}
 
-	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
+	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken, cfg.SystemScope, cfg.UserDomain)
 	if err != nil {
 		zap.S().Fatalf("Failed to get keystone %s", err.Error())
 	}

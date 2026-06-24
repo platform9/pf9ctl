@@ -254,6 +254,8 @@ func bootstrapCmdRun(cmd *cobra.Command, args []string) {
 		cfg.Password,
 		cfg.Tenant,
 		cfg.MfaToken,
+		cfg.SystemScope,
+		cfg.UserDomain,
 	)
 	if err != nil {
 		zap.S().Fatalf("Failed to get keystone %s", err.Error())

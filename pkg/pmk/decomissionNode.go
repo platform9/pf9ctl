@@ -85,7 +85,7 @@ func DecommissionNode(cfg *objects.Config, nc objects.NodeConfig, removePf9 bool
 	if c, err = client.NewClient(cfg.Fqdn, executor, cfg.AllowInsecure, false); err != nil {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
-	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
+	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken, cfg.SystemScope, cfg.UserDomain)
 	if err != nil {
 		zap.S().Debug("Failed to get keystone %s", err.Error())
 	}
