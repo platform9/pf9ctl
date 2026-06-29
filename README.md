@@ -144,11 +144,13 @@ Usage:
 
 Flags:
   -u, --account-url string   sets account_url
+  -d, --domain string        sets domain
   -h, --help                 help for set
       --mfa string           set MFA token
   -p, --password string      sets password (use 'single quotes' to pass password)
   -l, --proxy-url string     sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>
   -r, --region string        sets region
+  -s, --system               sets system scope
   -t, --tenant string        sets tenant
   -e, --username string      sets username
 

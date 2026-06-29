@@ -67,7 +67,7 @@ func deauthNodeRun(cmd *cobra.Command, args []string) {
 		zap.S().Fatalf("Unable to create client: %s\n", err.Error())
 	}
 
-	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken)
+	auth, err := c.Keystone.GetAuth(cfg.Username, cfg.Password, cfg.Tenant, cfg.MfaToken, cfg.SystemScope, cfg.UserDomain)
 	if err != nil {
 		zap.S().Fatalf("Failed to get keystone %s", err.Error())
 	}

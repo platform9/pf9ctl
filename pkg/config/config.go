@@ -178,6 +178,8 @@ func ValidateUserCredentials(cfg *objects.Config, nc objects.NodeConfig) error {
 		cfg.Password,
 		cfg.Tenant,
 		cfg.MfaToken,
+		cfg.SystemScope,
+		cfg.UserDomain,
 	)
 	if err != nil {
 		zap.S().Debug(err)
@@ -327,10 +329,9 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 		region, _ = reader.ReadString('\n')
 		cfg.Region = strings.TrimSpace(region)
 	}
-	var service string
-	if cfg.Tenant == "" {
+	if cfg.Tenant == "" && !cfg.SystemScope {
 		fmt.Printf("Tenant [service]: ")
-		service, _ = reader.ReadString('\n')
+		service, _ := reader.ReadString('\n')
 		cfg.Tenant = strings.TrimSpace(service)
 	}
 	var proxyURL string
@@ -344,7 +345,7 @@ func ConfigCmdCreateRun(cfg *objects.Config) error {
 		cfg.Region = "RegionOne"
 	}
 
-	if cfg.Tenant == "" {
+	if cfg.Tenant == "" && !cfg.SystemScope {
 		cfg.Tenant = "service"
 	}
 
@@ -423,7 +424,11 @@ func SetProxy(proxyURL string) error {
 }
 
 func validateConfigFields(cfg *objects.Config) error {
-	if cfg.Fqdn == "" || cfg.Username == "" || cfg.Password == "" || cfg.Region == "" || cfg.Tenant == "" {
+	if cfg.Fqdn == "" || cfg.Username == "" || cfg.Password == "" || cfg.Region == "" {
+		return MISSSING_FIELDS
+	}
+	// Tenant is not required under system scope; the token ignores it.
+	if cfg.Tenant == "" && !cfg.SystemScope {
 		return MISSSING_FIELDS
 	}
 	return nil

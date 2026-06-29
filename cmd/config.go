@@ -75,6 +75,8 @@ func init() {
 	configCmdSet.Flags().StringVarP(&cfg.ProxyURL, "proxy-url", "l", "", "sets proxy URL, can be specified as [<protocol>][<username>:<password>@]<host>:<port>")
 	configCmdSet.Flags().StringVarP(&cfg.Region, "region", "r", "", "sets region")
 	configCmdSet.Flags().StringVarP(&cfg.Tenant, "tenant", "t", "", "sets tenant")
+	configCmdSet.Flags().BoolVarP(&cfg.SystemScope, "system", "s", false, "sets system scope")
+	configCmdSet.Flags().StringVarP(&cfg.UserDomain, "domain", "d", "", "sets domain")
 	configCmdSet.Flags().StringVar(&cfg.MfaToken, "mfa", "", "set MFA token")
 }
 

@@ -8,6 +8,8 @@ type Config struct {
 	Username                 string        `json:"username"`
 	Password                 string        `json:"password"`
 	Tenant                   string        `json:"tenant"`
+	SystemScope              bool          `json:"system_scope"`
+	UserDomain               string        `json:"user_domain"`
 	Region                   string        `json:"region"`
 	WaitPeriod               time.Duration `json:"wait_period"`
 	AllowInsecure            bool          `json:"allow_insecure"`

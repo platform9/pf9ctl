@@ -90,6 +90,8 @@ func checkNodeRun(cmd *cobra.Command, args []string) {
 		cfg.Password,
 		cfg.Tenant,
 		cfg.MfaToken,
+		cfg.SystemScope,
+		cfg.UserDomain,
 	)
 
 	if err != nil {
