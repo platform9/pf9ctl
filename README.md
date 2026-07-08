@@ -3,6 +3,7 @@
 ### Status
 ![Go](https://github.com/platform9/pf9ctl/workflows/Go/badge.svg)
 [![Go Report Card](https://goreportcard.com/badge/github.com/platform9/pf9ctl)](https://goreportcard.com/report/github.com/platform9/pf9ctl)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fplatform9%2Fpf9ctl.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fplatform9%2Fpf9ctl?ref=badge_shield)
 
 ### Purpose
    CLI tool for Platform9 management.
@@ -703,3 +704,7 @@ Prep local node as master node for kubernetes cluster (y/n): y
 ✓ Bootstrap successfully finished
 Cluster creation started....This may take a few minutes....Check the latest status in UI
 ```
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fplatform9%2Fpf9ctl.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fplatform9%2Fpf9ctl?ref=badge_large)
