@@ -131,24 +131,26 @@ func (c *CentOS) CheckExistingInstallation() (bool, error) {
 
 func (c *CentOS) CheckOSPackages() (bool, error) {
 
-	var rhel8, rocky9 bool
+	var rhel8, rocky9, rhel9 bool
 	errLines := []string{packageInstallError}
 	zap.S().Debug("Checking OS Packages")
 
 	rhel8, _ = regexp.MatchString(`.*8\.([5-9]|1[0])\.*`, string(version))
-	rocky9, _ = regexp.MatchString(`.*9\.([1-5]|8)\.*`, string(version))
+	rocky9, _ = regexp.MatchString(`.*9\.[1-5]\.*`, string(version))
+	rhel9, _ = regexp.MatchString(`.*9\.8\.*`, string(version))
 
 	if platform.SkipOSChecks {
 		rhel8, _ = regexp.MatchString(`8\.\d{1,2}`, string(version))
 		rocky9, _ = regexp.MatchString(`9\.\d{1,2}`, string(version))
+		rhel9, _ = regexp.MatchString(`9\.\d{1,2}`, string(version))
 	}
 	for _, p := range packages {
-		if !centos && (rhel8 || rocky9) {
+		if !centos && (rhel8 || rocky9 || rhel9) {
 			switch p {
 			case "policycoreutils-python":
 				if rhel8 {
 					p = "python3-policycoreutils"
-				} else if rocky9 {
+				} else if rocky9 || rhel9 {
 					p = "policycoreutils-python-utils"
 				}
 
