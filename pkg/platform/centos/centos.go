@@ -136,7 +136,7 @@ func (c *CentOS) CheckOSPackages() (bool, error) {
 	zap.S().Debug("Checking OS Packages")
 
 	rhel8, _ = regexp.MatchString(`.*8\.([5-9]|1[0])\.*`, string(version))
-	rocky9, _ = regexp.MatchString(`.*9\.[1-5]\.*`, string(version))
+	rocky9, _ = regexp.MatchString(`.*9\.([1-5]|8)\.*`, string(version))
 
 	if platform.SkipOSChecks {
 		rhel8, _ = regexp.MatchString(`8\.\d{1,2}`, string(version))
@@ -179,13 +179,15 @@ func (c *CentOS) CheckOSPackages() (bool, error) {
 
 func (c *CentOS) CheckEnabledRepos() (bool, error) {
 
-	var centos, rhel8 bool
+	var centos, rhel8, rhel9 bool
 	centos, _ = regexp.MatchString(`.*7\.[3-9]\.*`, string(version))
 	rhel8, _ = regexp.MatchString(`.*8\.([5-9]|1[0])\.*`, string(version))
+	rhel9, _ = regexp.MatchString(`.*9\.8\.*`, string(version))
 
 	if platform.SkipOSChecks {
 		centos, _ = regexp.MatchString(`7\.\d{1,2}`, string(version))
 		rhel8, _ = regexp.MatchString(`8\.\d{1,2}`, string(version))
+		rhel9, _ = regexp.MatchString(`9\.\d{1,2}`, string(version))
 	}
 
 	output, err := c.exec.RunWithStdout("bash", "-c", "yum repolist")
@@ -212,6 +214,14 @@ func (c *CentOS) CheckEnabledRepos() (bool, error) {
 		}
 		if !strings.Contains(string(output), "AppStream") {
 			enable_repos = append(enable_repos, "rhel-8-for-x86_64-appstream-rpms")
+		}
+	} else if rhel9 {
+		command = "subscription-manager repos --enable %s"
+		if !strings.Contains(string(output), "BaseOS") {
+			enable_repos = append(enable_repos, "rhel-9-for-x86_64-baseos-rpms")
+		}
+		if !strings.Contains(string(output), "AppStream") {
+			enable_repos = append(enable_repos, "rhel-9-for-x86_64-appstream-rpms")
 		}
 	}
 
@@ -379,7 +389,7 @@ func (c *CentOS) Version() (string, error) {
 			return "redhat", nil
 		}
 	}
-	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.([5-9]|1[0])\.*|.*9\.[1-5]\.*`, string(version)); match {
+	if match, _ := regexp.MatchString(`.*7\.[3-9]\.*|.*8\.([5-9]|1[0])\.*|.*9\.([1-5]|8)\.*`, string(version)); match {
 		return "redhat", nil
 	}
 	return "", fmt.Errorf("Unable to determine OS type: %s", string(version))
