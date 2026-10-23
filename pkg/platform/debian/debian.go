@@ -303,6 +303,8 @@ func (d *Debian) Version() (string, error) {
 		isVersionMatch = true
 	} else if strings.Contains(string(majorVersion), "24") && strings.Contains(string(minorVersion), "04") {
 		isVersionMatch = true
+	} else if strings.Contains(string(majorVersion), "26") && strings.Contains(string(minorVersion), "04") {
+		isVersionMatch = true
 	}
 
 	if isVersionMatch {
@@ -408,7 +410,7 @@ func (d *Debian) checkIfTimesyncServiceRunning() (bool, error) {
 				zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
 			}
 			var err error
-			if (strings.Contains(string(majorVersion), "20") || strings.Contains(string(majorVersion), "22") || strings.Contains(string(majorVersion), "24")) && strings.Contains(string(minorVersion), "04") {
+			if (strings.Contains(string(majorVersion), "20") || strings.Contains(string(majorVersion), "22") || strings.Contains(string(majorVersion), "24") || strings.Contains(string(majorVersion), "26")) && strings.Contains(string(minorVersion), "04") {
 				err = d.start("systemd-timesyncd")
 			} else {
 				err = d.start("ntp")
@@ -519,7 +521,7 @@ func (d *Debian) DownloadAndInstallTimesyncPkg() error {
 		zap.S().Debugf("Couldn't read the OS configuration file os-release: %s", err1.Error())
 	}
 	var err error
-	if (strings.Contains(string(majorVersion), "20") || strings.Contains(string(majorVersion), "22") || strings.Contains(string(majorVersion), "24")) && strings.Contains(string(minorVersion), "04") {
+	if (strings.Contains(string(majorVersion), "20") || strings.Contains(string(majorVersion), "22") || strings.Contains(string(majorVersion), "24") || strings.Contains(string(majorVersion), "26")) && strings.Contains(string(minorVersion), "04") {
 		err = d.installOSPackages("systemd-timesyncd")
 	} else {
 		err = d.installOSPackages("ntp")
