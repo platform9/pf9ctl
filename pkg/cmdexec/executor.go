@@ -201,6 +201,11 @@ func (c LocalExecutor) RunWithProgressStages(name string, args ...string) (strin
 			}
 			stdout += outputLine + "\n"
 		}
+		// Installer output ended before every stage matched: stop the fake
+		// progress goroutine, or wg.Wait() below blocks forever.
+		if stageCount < len(util.HostAgentProgressBarStages) {
+			quit <- true
+		}
 
 		//Check for Hostagent installation
 		s.Start()
