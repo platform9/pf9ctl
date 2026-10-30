@@ -43,16 +43,56 @@ func ConfigureGlobalLog(debug bool, logFile string) error {
 	fileLogs := zapcore.Lock(f)
 
 	// Create custom zap config
-	core := zapcore.NewTee(
+	core := maskingCore{zapcore.NewTee(
 		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleConfig()), consoleLogs, lvl),
 		zapcore.NewCore(zapcore.NewJSONEncoder(fileConfig()), fileLogs, zap.DebugLevel),
-	)
+	)}
 
 	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 	zap.ReplaceGlobals(logger)
 
 	defer logger.Sync()
 	return nil
+}
+
+// maskingCore runs every message and string/error field through util.Mask
+// before the wrapped core writes it (PCD-9384). Commands, their output and
+// errors are logged from many places; masking here covers all of them, on the
+// console and in the log file.
+type maskingCore struct {
+	zapcore.Core
+}
+
+func (c maskingCore) With(fields []zapcore.Field) zapcore.Core {
+	return maskingCore{c.Core.With(maskFields(fields))}
+}
+
+func (c maskingCore) Check(ent zapcore.Entry, ce *zapcore.CheckedEntry) *zapcore.CheckedEntry {
+	if c.Enabled(ent.Level) {
+		return ce.AddCore(ent, c)
+	}
+	return ce
+}
+
+func (c maskingCore) Write(ent zapcore.Entry, fields []zapcore.Field) error {
+	ent.Message = util.Mask(ent.Message)
+	return c.Core.Write(ent, maskFields(fields))
+}
+
+func maskFields(fields []zapcore.Field) []zapcore.Field {
+	masked := make([]zapcore.Field, len(fields))
+	for i, f := range fields {
+		switch f.Type {
+		case zapcore.StringType:
+			f.String = util.Mask(f.String)
+		case zapcore.ErrorType:
+			if err, ok := f.Interface.(error); ok {
+				f = zap.String(f.Key, util.Mask(err.Error()))
+			}
+		}
+		masked[i] = f
+	}
+	return masked
 }
 
 func fileConfig() zapcore.EncoderConfig {

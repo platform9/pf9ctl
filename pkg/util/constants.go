@@ -120,6 +120,7 @@ var (
 	MsgRed   = "/var/log/messages"
 	LockRed  = "/var/log/yum.log"
 
+	// Deprecated: no longer used by pf9ctl; credentials are masked by Mask.
 	Confidential = []string{"--password", "--user-token"}
 )
 
