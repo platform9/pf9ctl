@@ -291,25 +291,7 @@ func NewRemoteExecutor(host string, port int, username string, privateKey []byte
 
 // Avoid confidential information from getting logged
 func ConfidentialInfoRemover(cmd string) string {
-	// To find the command that contains confidential info
-
-	for _, flag := range util.Confidential {
-		// If confidential flags are found, remove those
-		if strings.Contains(cmd, flag) {
-
-			index := strings.Index(cmd, flag)
-			lastindexbreak := strings.Index(cmd[index:], " ")
-
-			// If confidential parameter is the last flag in the command.
-			if lastindexbreak < 0 {
-				cmd = cmd[:index] + flag + "='*****']"
-			} else {
-				// If confidential parameter flag is present in the middle or start of the command.
-				cmd = cmd[:index] + flag + "='*****'" + cmd[index+lastindexbreak:]
-			}
-		}
-	}
-	return cmd
+	return util.Mask(cmd)
 }
 
 func GetExecutor(proxyURL string, nc objects.NodeConfig) (Executor, error) {
