@@ -1,6 +1,7 @@
 package log
 
 import (
+	"bytes"
 	"errors"
 	"strings"
 	"testing"
@@ -62,5 +63,28 @@ func TestMaskingCore_LeavesOrdinaryLogsAlone(t *testing.T) {
 	}
 	if entries[0].Message != "Hostagent download completed successfully" || entries[0].ContextMap()["host"] != "10.0.0.5" {
 		t.Errorf("ordinary entry changed: %+v", entries[0])
+	}
+}
+
+// Debug lines go to the log file only, unless --debug, and both outputs are
+// masked.
+func TestNewCore_DebugReachesOnlyTheLogFile(t *testing.T) {
+	var console, file bytes.Buffer
+	log := zap.New(newCore(zapcore.AddSync(&console), zapcore.AddSync(&file), zap.InfoLevel)).Sugar()
+
+	log.Debug("Ran command sudo installer.sh --password=S3cret")
+	log.Info("Hostagent download completed successfully")
+
+	if strings.Contains(console.String(), "Ran command") {
+		t.Errorf("debug line reached the console:\n%s", console.String())
+	}
+	if !strings.Contains(console.String(), "Hostagent download completed") {
+		t.Errorf("info line missing from the console:\n%s", console.String())
+	}
+	if !strings.Contains(file.String(), "installer.sh --password=*****") {
+		t.Errorf("masked debug line missing from the log file:\n%s", file.String())
+	}
+	if strings.Contains(console.String()+file.String(), "S3cret") {
+		t.Errorf("password reached the logs")
 	}
 }

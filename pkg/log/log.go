@@ -42,17 +42,21 @@ func ConfigureGlobalLog(debug bool, logFile string) error {
 	consoleLogs := zapcore.Lock(os.Stderr)
 	fileLogs := zapcore.Lock(f)
 
-	// Create custom zap config
-	core := maskingCore{zapcore.NewTee(
-		zapcore.NewCore(zapcore.NewConsoleEncoder(consoleConfig()), consoleLogs, lvl),
-		zapcore.NewCore(zapcore.NewJSONEncoder(fileConfig()), fileLogs, zap.DebugLevel),
-	)}
-
-	logger := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
+	logger := zap.New(newCore(consoleLogs, fileLogs, lvl), zap.AddCaller(), zap.AddCallerSkip(1))
 	zap.ReplaceGlobals(logger)
 
 	defer logger.Sync()
 	return nil
+}
+
+// newCore logs to the console at lvl and to the log file at debug level. Each
+// core is wrapped on its own: a maskingCore around the tee would take the
+// tee's lowest level and write debug lines to the console too.
+func newCore(consoleLogs, fileLogs zapcore.WriteSyncer, lvl zapcore.Level) zapcore.Core {
+	return zapcore.NewTee(
+		maskingCore{zapcore.NewCore(zapcore.NewConsoleEncoder(consoleConfig()), consoleLogs, lvl)},
+		maskingCore{zapcore.NewCore(zapcore.NewJSONEncoder(fileConfig()), fileLogs, zap.DebugLevel)},
+	)
 }
 
 // maskingCore runs every message and string/error field through util.Mask
